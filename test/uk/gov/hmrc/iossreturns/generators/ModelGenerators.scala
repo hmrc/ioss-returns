@@ -22,7 +22,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 
 import java.math.MathContext
-import java.time.{Instant, LocalDate, LocalDateTime, Month, ZonedDateTime}
+import java.time.{Instant, LocalDate, LocalDateTime, Month, ZonedDateTime, ZoneId}
 import java.time.temporal.ChronoUnit
 import scala.math.BigDecimal.RoundingMode
 
@@ -128,7 +128,7 @@ trait ModelGenerators {
         totalAmountVatDueGBP <- arbitrary[BigDecimal]
         amountOfMsconSupplies <- Gen.oneOf(List(1, 2, 3))
         msconSupplies <- Gen.listOfN(amountOfMsconSupplies, arbitrary[CoreMsconSupply])
-        changeDate <- Gen.option(arbitrary[LocalDateTime].map(x => x.withYear(2023)).map(_.truncatedTo(ChronoUnit.MILLIS)))
+        changeDate <- arbitrary[LocalDateTime].map(x => x.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("Z")).withYear(2023).truncatedTo(ChronoUnit.MILLIS).toLocalDateTime)
 
       } yield CoreVatReturn(
         vatReturnReferenceNumber = vatReturnReferenceNumber,
@@ -140,7 +140,7 @@ trait ModelGenerators {
         submissionDateTime = submissionDateTime,
         totalAmountVatDueGBP = totalAmountVatDueGBP,
         msconSupplies = msconSupplies,
-        changeDate = changeDate
+        changeDate = Some(changeDate)
       )
     }
 
