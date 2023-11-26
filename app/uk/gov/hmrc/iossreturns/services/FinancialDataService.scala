@@ -18,15 +18,14 @@ package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataConnector
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser.FinancialDataResponse
-import uk.gov.hmrc.iossreturns.models.IOSSNumber
-import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialDataException, FinancialData, FinancialDataQueryParameters}
+import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataException, FinancialDataQueryParameters}
 
 import java.time.LocalDate
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class FinancialDataService @Inject()(financialDataConnector: FinancialDataConnector)(implicit executionContext: ExecutionContext) {
-  def getFinancialData(iossNumber: IOSSNumber, fromDate: Option[LocalDate], toDate: Option[LocalDate]): Future[Option[FinancialData]] = {
+  def getFinancialData(iossNumber: String, fromDate: Option[LocalDate], toDate: Option[LocalDate]): Future[Option[FinancialData]] = {
     val result: Future[FinancialDataResponse] = financialDataConnector.getFinancialData(iossNumber, FinancialDataQueryParameters(fromDate = fromDate, toDate = toDate))
 
     result.flatMap {

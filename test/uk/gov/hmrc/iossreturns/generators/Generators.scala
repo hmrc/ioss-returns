@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models
+package uk.gov.hmrc.iossreturns.generators
 
-import play.api.libs.json.Json
+import org.scalacheck.Gen
 
-final case class IOSSNumber(value: String) extends AnyVal
+import java.time.{Instant, LocalDate, ZoneOffset}
 
-object IOSSNumber {
-  implicit val format = Json.valueFormat[IOSSNumber]
+trait Generators extends ModelGenerators {
+
+  def datesBetween(min: LocalDate, max: LocalDate): Gen[LocalDate] = {
+
+    def toMillis(date: LocalDate): Long =
+      date.atStartOfDay.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
+
+    Gen.choose(toMillis(min), toMillis(max)).map {
+      millis =>
+        Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDate
+    }
+  }
+
 }

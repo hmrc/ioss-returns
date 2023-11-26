@@ -1,2 +1,4 @@
 # microservice specific routes
-GET         /financial-data/get/:commencementDate/:iossNumber                  uk.gov.hmrc.iossreturns.controllers.FinancialDataController.get(commencementDate: LocalDate, iossNumber: String)
+GET         /financial-data/get/:commencementDate        uk.gov.hmrc.iossreturns.controllers.FinancialDataController.get(commencementDate: LocalDate)
+
+POST        /return                                      uk.gov.hmrc.iossreturns.controllers.ReturnController.submit

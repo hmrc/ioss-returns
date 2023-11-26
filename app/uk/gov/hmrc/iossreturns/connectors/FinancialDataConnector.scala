@@ -20,7 +20,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpException}
 import uk.gov.hmrc.iossreturns.config.FinancialDataConfig
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser._
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.IOSSNumber
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialDataQueryParameters, UnexpectedResponseStatus}
 
 import javax.inject.Inject
@@ -34,10 +33,10 @@ class FinancialDataConnector @Inject()(
   private implicit val emptyHc: HeaderCarrier = HeaderCarrier()
   private val headers: Seq[(String, String)] = financialDataConfig.financialDataHeaders
 
-  private def financialDataUrl(iossNumber: IOSSNumber) =
-    s"${financialDataConfig.baseUrl}enterprise/financial-data/IOSS/${iossNumber.value}/${financialDataConfig.regimeType}"
+  private def financialDataUrl(iossNumber: String) =
+    s"${financialDataConfig.baseUrl}enterprise/financial-data/IOSS/$iossNumber/${financialDataConfig.regimeType}"
 
-  def getFinancialData(iossNumber: IOSSNumber, queryParameters: FinancialDataQueryParameters): Future[FinancialDataResponse] = {
+  def getFinancialData(iossNumber: String, queryParameters: FinancialDataQueryParameters): Future[FinancialDataResponse] = {
     val url = financialDataUrl(iossNumber)
     http.GET[FinancialDataResponse](
       url,

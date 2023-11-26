@@ -17,26 +17,27 @@
 package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.iossreturns.models.IOSSNumber
+import play.api.mvc.{Action, AnyContent}
+import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData._
 import uk.gov.hmrc.iossreturns.services.FinancialDataService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import java.time.LocalDate
+import java.time.{Clock, LocalDate}
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class FinancialDataController @Inject()(
-                                         cc: ControllerComponents,
-                                         service: FinancialDataService
+                                         cc: DefaultAuthenticatedControllerComponents,
+                                         service: FinancialDataService,
+                                         clock: Clock
                                        )(implicit ec: ExecutionContext) extends BackendController(cc) {
-  def get(commencementDate: LocalDate, iossNumber: String): Action[AnyContent] = Action.async {
+  def get(commencementDate: LocalDate): Action[AnyContent] = cc.auth().async {
     implicit request => {
-      val result = service.getFinancialData(IOSSNumber(iossNumber), Some(commencementDate), Some(LocalDate.now()))
+      service.getFinancialData(request.iossNumber, Some(commencementDate), Some(LocalDate.now(clock)))
         .map(data =>
-          Ok(Json.toJson(data)))
-      result
+          Ok(Json.toJson(data))
+        )
     }
   }
 }
