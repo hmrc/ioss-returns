@@ -18,10 +18,17 @@ package uk.gov.hmrc.iossreturns.config
 
 import play.api.Configuration
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
+class DesConfig @Inject()(config: Configuration) {
 
-  val appName: String = config.get[String]("appName")
+  val baseUrl: Service = config.get[Service]("microservice.services.des")
+  val authorizationToken: String = config.get[String]("microservice.services.des.authorizationToken")
+  val environment: String = config.get[String]("microservice.services.des.environment")
+  val regimeType: String = config.get[String]("microservice.services.des.regimeType")
+
+  val desHeaders: Seq[(String, String)] = Seq(
+    "Authorization" -> s"Bearer $authorizationToken",
+    "Environment" -> environment
+  )
 }

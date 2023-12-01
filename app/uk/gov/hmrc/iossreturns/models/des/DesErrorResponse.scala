@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.models.des
 
-import play.api.Configuration
-
-import javax.inject.{Inject, Singleton}
-
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
+sealed trait DesErrorResponse {
+  val body: String
 }
+
+case object InvalidJson extends DesErrorResponse {
+  override val body: String = "Invalid Response"
+}
+
+final case class DesException(message: String) extends Exception(message)
+
+final case class UnexpectedResponseStatus(status: Int, body: String) extends DesErrorResponse

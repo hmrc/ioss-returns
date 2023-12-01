@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.logging
 
-import play.api.Configuration
+import org.slf4j.{Logger, LoggerFactory}
 
-import javax.inject.{Inject, Singleton}
+trait Logging {
 
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
+  protected val logger: Logger =
+    LoggerFactory.getLogger("application." + getClass.getCanonicalName)
 }
