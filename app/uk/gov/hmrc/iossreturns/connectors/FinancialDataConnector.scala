@@ -32,7 +32,7 @@ class FinancialDataConnector @Inject()(
                                       )(implicit ec: ExecutionContext) extends Logging {
 
   private implicit val emptyHc: HeaderCarrier = HeaderCarrier()
-  private val headers: Seq[(String, String)] = financialDataConfig.desHeaders
+  private val headers: Seq[(String, String)] = financialDataConfig.financialDataHeaders
 
   private def financialDataUrl(iossNumber: IOSSNumber) =
     s"${financialDataConfig.baseUrl}enterprise/financial-data/IOSS/${iossNumber.value}/${financialDataConfig.regimeType}"

@@ -22,12 +22,12 @@ import javax.inject.Inject
 
 class FinancialDataConfig @Inject()(config: Configuration) {
 
-  val baseUrl: Service = config.get[Service]("microservice.services.des")
-  val authorizationToken: String = config.get[String]("microservice.services.des.authorizationToken")
-  val environment: String = config.get[String]("microservice.services.des.environment")
-  val regimeType: String = config.get[String]("microservice.services.des.regimeType")
+  val baseUrl: Service = config.get[Service]("microservice.services.financial-data")
+  val authorizationToken: String = config.get[String]("microservice.services.financial-data.authorizationToken")
+  val environment: String = config.get[String]("microservice.services.financial-data.environment")
+  val regimeType: String = config.get[String]("microservice.services.financial-data.regimeType")
 
-  val desHeaders: Seq[(String, String)] = Seq(
+  val financialDataHeaders: Seq[(String, String)] = Seq(
     "Authorization" -> s"Bearer $authorizationToken",
     "Environment" -> environment
   )

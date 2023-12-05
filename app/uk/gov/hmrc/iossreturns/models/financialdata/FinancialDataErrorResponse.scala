@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.iossreturns.models.financialdata
 
-sealed trait DesErrorResponse {
+sealed trait FinancialDataErrorResponse {
   val body: String
 }
 
-case object InvalidJson extends DesErrorResponse {
+case object InvalidJson extends FinancialDataErrorResponse {
   override val body: String = "Invalid Response"
 }
 
 final case class FinancialDataException(message: String) extends Exception(message)
 
-final case class UnexpectedResponseStatus(status: Int, body: String) extends DesErrorResponse
+final case class UnexpectedResponseStatus(status: Int, body: String) extends FinancialDataErrorResponse
