@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.iossreturns.generators
 
-import models._
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.{Arbitrary, Gen}
+import uk.gov.hmrc.iossreturns.models.IOSSNumber
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 
 import java.time.{LocalDate, ZonedDateTime}
-import org.scalacheck.{Arbitrary, Gen}
-import org.scalacheck.Arbitrary.arbitrary
-import uk.gov.hmrc.iossreturns.models.IOSSNumber
+import scala.math.BigDecimal.RoundingMode
 
 trait ModelGenerators {
   implicit val arbitraryFinancialData: Arbitrary[FinancialData] = Arbitrary {
@@ -30,9 +30,9 @@ trait ModelGenerators {
       idType <- arbitrary[String]
       idNumber <- arbitrary[Int]
       regimeType <- arbitrary[String]
-      processingData <- arbitrary[ZonedDateTime]
+      processingDate <- arbitrary[ZonedDateTime]
       financialTransaction <- arbitrary[FinancialTransaction]
-    } yield FinancialData(Some(idType), Some(idNumber.toString), Some(regimeType), processingData, Some(List(financialTransaction)))
+    } yield FinancialData(Some(idType), Some(idNumber.toString), Some(regimeType), processingDate.withNano(0), Some(List(financialTransaction)))
   }
 
   implicit val arbitraryItem: Arbitrary[Item] = Arbitrary {
@@ -42,7 +42,13 @@ trait ModelGenerators {
       paymentReference <- arbitrary[String]
       paymentAmount <- arbitrary[BigDecimal]
       paymentMethod <- arbitrary[String]
-    } yield Item(Some(amount), Some(clearingReason), Some(paymentReference), Some(paymentAmount), Some(paymentMethod))
+    } yield Item(
+      Some(amount.setScale(2, RoundingMode.HALF_UP)),
+      Some(clearingReason),
+      Some(paymentReference),
+      Some(paymentAmount.setScale(2, RoundingMode.HALF_UP)),
+      Some(paymentMethod)
+    )
   }
 
   implicit val arbitraryFinancialTransaction: Arbitrary[FinancialTransaction] = Arbitrary {
@@ -55,11 +61,20 @@ trait ModelGenerators {
       outstandingAmount <- arbitrary[BigDecimal]
       clearedAmount <- arbitrary[BigDecimal]
       item <- arbitrary[Item]
-    } yield FinancialTransaction(Some(chargeType), Some(mainType), Some(taxPeriodFrom), Some(taxPeriodTo), Some(originalAmount), Some(outstandingAmount), Some(clearedAmount), Some(List(item)))
+    } yield FinancialTransaction(
+      Some(chargeType),
+      Some(mainType),
+      Some(taxPeriodFrom),
+      Some(taxPeriodTo),
+      Some(originalAmount.setScale(2, RoundingMode.HALF_UP)),
+      Some(outstandingAmount.setScale(2, RoundingMode.HALF_UP)),
+      Some(clearedAmount.setScale(2, RoundingMode.HALF_UP)),
+      Some(List(item))
+    )
   }
 
   implicit val arbitraryIOSSNumber: Arbitrary[IOSSNumber] =
     Arbitrary {
-      Gen.listOfN(9, Gen.numChar).map(_.mkString).map(IOSSNumber(_))
+      Gen.listOfN(9, Gen.uuid).map(_.mkString).map(IOSSNumber(_))
     }
 }

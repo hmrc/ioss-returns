@@ -12,9 +12,9 @@ import play.api.http.Status.{BAD_REQUEST, IM_A_TEAPOT, NOT_FOUND, SERVICE_UNAVAI
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.running
 import uk.gov.hmrc.iossreturns.generators.ModelGenerators
-import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialDataErrorResponse, FinancialData, FinancialDataQueryParameters, FinancialTransaction, Item, UnexpectedResponseStatus}
+import uk.gov.hmrc.iossreturns.models.financialdata._
 
-import java.time.{LocalDate, ZonedDateTime}
+import java.time.{LocalDate, ZoneOffset, ZonedDateTime}
 
 class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
   def application: Application =
@@ -27,6 +27,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
         "microservice.services.financial-data.regimeType" -> "ECOM"
       )
       .build()
+
   private val now = FinancialDataConnectorFixture.zonedNow.toLocalDate
   "getFinancialData" - {
 
@@ -130,11 +131,11 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
 object FinancialDataConnectorFixture extends ModelGenerators with OptionValues {
   val iossNumber = arbitraryIOSSNumber.arbitrary.sample.value
   val financialDataUrl = s"/ioss-returns-stub/enterprise/financial-data/IOSS/${iossNumber.value}/ECOM"
-  val dateFrom = LocalDate.now().minusMonths(1)
-  val dateTo = LocalDate.now()
-  val queryParameters = FinancialDataQueryParameters(fromDate = Some(dateFrom), toDate = Some(dateTo))
+  val zonedNow = ZonedDateTime.of(2023, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
 
-  val zonedNow = ZonedDateTime.now()
+  val dateFrom = zonedNow.toLocalDate.minusMonths(1)
+  val dateTo = zonedNow.toLocalDate
+  val queryParameters = FinancialDataQueryParameters(fromDate = Some(dateFrom), toDate = Some(dateTo))
 
   val responseJson =
     s"""{
