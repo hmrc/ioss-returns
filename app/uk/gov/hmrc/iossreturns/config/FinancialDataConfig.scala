@@ -20,7 +20,7 @@ import play.api.Configuration
 
 import javax.inject.Inject
 
-class DesConfig @Inject()(config: Configuration) {
+class FinancialDataConfig @Inject()(config: Configuration) {
 
   val baseUrl: Service = config.get[Service]("microservice.services.des")
   val authorizationToken: String = config.get[String]("microservice.services.des.authorizationToken")

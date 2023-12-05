@@ -12,8 +12,7 @@ import play.api.http.Status.{BAD_REQUEST, IM_A_TEAPOT, NOT_FOUND, SERVICE_UNAVAI
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.running
 import uk.gov.hmrc.iossreturns.generators.ModelGenerators
-import uk.gov.hmrc.iossreturns.models.des.{DesErrorResponse, UnexpectedResponseStatus}
-import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataQueryParameters, FinancialTransaction, Item}
+import uk.gov.hmrc.iossreturns.models.financialdata.{DesErrorResponse, FinancialData, FinancialDataQueryParameters, FinancialTransaction, Item, UnexpectedResponseStatus}
 
 import java.time.{LocalDate, ZonedDateTime}
 
@@ -28,7 +27,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
         "microservice.services.des.regimeType" -> "ECOM"
       )
       .build()
-
+  private val now = FinancialDataConnectorFixture.zonedNow.toLocalDate
   "getFinancialData" - {
 
     "when the server returns OK and a recognised payload" - {
@@ -38,7 +37,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
         server.stubFor(
           get(urlEqualTo(s"${FinancialDataConnectorFixture.desUrl}?dateFrom=${FinancialDataConnectorFixture.dateFrom.toString}&dateTo=${FinancialDataConnectorFixture.queryParameters.toDate.get.toString}"))
             .withQueryParam("dateFrom", new EqualToPattern(FinancialDataConnectorFixture.dateFrom.toString))
-            .withQueryParam("dateTo", new EqualToPattern(LocalDate.now.toString))
+            .withQueryParam("dateTo", new EqualToPattern(now.toString))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
             .withHeader("Environment", equalTo("test-environment"))
             .willReturn(ok(FinancialDataConnectorFixture.responseJson))
@@ -46,7 +45,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
 
         running(app) {
           val connector = app.injector.instanceOf[FinancialDataConnector]
-          val result = connector.getFinancialData(FinancialDataConnectorFixture.vrn, FinancialDataConnectorFixture.queryParameters).futureValue
+          val result = connector.getFinancialData(FinancialDataConnectorFixture.iossNumber, FinancialDataConnectorFixture.queryParameters).futureValue
 
           result mustEqual FinancialDataConnectorFixture.expectedResult
         }
@@ -57,7 +56,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
       server.stubFor(
         get(urlEqualTo(s"${FinancialDataConnectorFixture.desUrl}?dateFrom=${FinancialDataConnectorFixture.dateFrom}&dateTo=${FinancialDataConnectorFixture.queryParameters.toDate.get.toString}"))
           .withQueryParam("dateFrom", new EqualToPattern(FinancialDataConnectorFixture.dateFrom.toString))
-          .withQueryParam("dateTo", new EqualToPattern(LocalDate.now.toString))
+          .withQueryParam("dateTo", new EqualToPattern(now.toString))
           .withHeader("Authorization", equalTo("Bearer auth-token"))
           .withHeader("Environment", equalTo("test-environment"))
           .willReturn(
@@ -68,7 +67,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
 
       running(application) {
         val connector = application.injector.instanceOf[FinancialDataConnector]
-        val result = connector.getFinancialData(FinancialDataConnectorFixture.vrn, FinancialDataConnectorFixture.queryParameters).futureValue
+        val result = connector.getFinancialData(FinancialDataConnectorFixture.iossNumber, FinancialDataConnectorFixture.queryParameters).futureValue
         result mustBe Right(None)
       }
 
@@ -79,7 +78,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
         server.stubFor(
           get(urlEqualTo(s"${FinancialDataConnectorFixture.desUrl}?dateFrom=${FinancialDataConnectorFixture.dateFrom.toString}&dateTo=${FinancialDataConnectorFixture.queryParameters.toDate.get.toString}"))
             .withQueryParam("dateFrom", new EqualToPattern(FinancialDataConnectorFixture.dateFrom.toString))
-            .withQueryParam("dateTo", new EqualToPattern(LocalDate.now.toString))
+            .withQueryParam("dateTo", new EqualToPattern(now.toString))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
             .withHeader("Environment", equalTo("test-environment"))
             .willReturn(
@@ -91,7 +90,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
 
         running(application) {
           val connector = application.injector.instanceOf[FinancialDataConnector]
-          whenReady(connector.getFinancialData(FinancialDataConnectorFixture.vrn, FinancialDataConnectorFixture.queryParameters), Timeout(Span(30, Seconds))) { exp =>
+          whenReady(connector.getFinancialData(FinancialDataConnectorFixture.iossNumber, FinancialDataConnectorFixture.queryParameters), Timeout(Span(30, Seconds))) { exp =>
             exp.isLeft mustBe true
             exp.left.toOption.get mustBe a[DesErrorResponse]
           }
@@ -106,7 +105,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
             server.stubFor(
               get(urlEqualTo(s"${FinancialDataConnectorFixture.desUrl}?dateFrom=${FinancialDataConnectorFixture.dateFrom.toString}&dateTo=${FinancialDataConnectorFixture.queryParameters.toDate.get.toString}"))
                 .withQueryParam("dateFrom", new EqualToPattern(FinancialDataConnectorFixture.dateFrom.toString))
-                .withQueryParam("dateTo", new EqualToPattern(LocalDate.now.toString))
+                .withQueryParam("dateTo", new EqualToPattern(now.toString))
                 .withHeader("Authorization", equalTo("Bearer auth-token"))
                 .withHeader("Environment", equalTo("test-environment"))
                 .willReturn(
@@ -117,7 +116,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
 
             running(application) {
               val connector = application.injector.instanceOf[FinancialDataConnector]
-              val result = connector.getFinancialData(FinancialDataConnectorFixture.vrn, FinancialDataConnectorFixture.queryParameters).futureValue
+              val result = connector.getFinancialData(FinancialDataConnectorFixture.iossNumber, FinancialDataConnectorFixture.queryParameters).futureValue
               result mustBe Left(UnexpectedResponseStatus(status, s"Unexpected response from DES, received status $status"))
             }
           }
@@ -129,17 +128,17 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper {
 }
 
 object FinancialDataConnectorFixture extends ModelGenerators with OptionValues {
-  val vrn = arbitraryVrn.arbitrary.sample.value
-  val desUrl = s"/ioss-returns-stub/enterprise/financial-data/VRN/${vrn.value}/ECOM"
+  val iossNumber = arbitraryIOSSNumber.arbitrary.sample.value
+  val desUrl = s"/ioss-returns-stub/enterprise/financial-data/IOSS/${iossNumber.value}/ECOM"
   val dateFrom = LocalDate.now().minusMonths(1)
   val dateTo = LocalDate.now()
   val queryParameters = FinancialDataQueryParameters(fromDate = Some(dateFrom), toDate = Some(dateTo))
 
-  private val zonedNow = ZonedDateTime.now()
+  val zonedNow = ZonedDateTime.now()
 
   val responseJson =
     s"""{
-       | "idType": "VRN",
+       | "idType": "IOSS",
        | "idNumber": "123456789",
        | "regimeType": "ECOM",
        | "processingDate": "${zonedNow.toString}",
@@ -188,7 +187,7 @@ object FinancialDataConnectorFixture extends ModelGenerators with OptionValues {
   )
 
   val expectedResult = Right(Some(FinancialData(
-    idType = Some("VRN"),
+    idType = Some("IOSS"),
     idNumber = Some("123456789"),
     regimeType = Some("ECOM"),
     processingDate = zonedNow,

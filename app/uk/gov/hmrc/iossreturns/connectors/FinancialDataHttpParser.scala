@@ -20,8 +20,7 @@ import play.api.http.Status._
 import play.api.libs.json.{JsError, JsSuccess}
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.des.{DesErrorResponse, InvalidJson, UnexpectedResponseStatus}
-import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData
+import uk.gov.hmrc.iossreturns.models.financialdata.{DesErrorResponse, FinancialData, InvalidJson, UnexpectedResponseStatus}
 
 object FinancialDataHttpParser extends Logging {
 

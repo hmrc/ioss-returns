@@ -17,7 +17,7 @@
 package uk.gov.hmrc.iossreturns.controllers
 
 import base.SpecBase
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, anyString}
 import org.mockito.Mockito
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -26,8 +26,8 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.iossreturns.generators.ModelGenerators
-import uk.gov.hmrc.iossreturns.models.des.DesException
-import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData
+import uk.gov.hmrc.iossreturns.models.IOSSNumber
+import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataException}
 import uk.gov.hmrc.iossreturns.services.FinancialDataService
 
 import java.time.LocalDate
@@ -49,7 +49,7 @@ class FinancialDataControllerSpec
   ".getFinancialData" - {
 
     lazy val request =
-      FakeRequest(GET, uk.gov.hmrc.iossreturns.controllers.routes.FinancialDataController.get(FinancialDataControllerFixture.commencementDate, FinancialDataControllerFixture.vrn.vrn).url)
+      FakeRequest(GET, uk.gov.hmrc.iossreturns.controllers.routes.FinancialDataController.get(FinancialDataControllerFixture.commencementDate, FinancialDataControllerFixture.iossNumber.value).url)
 
     "error if api errors" in {
 
@@ -58,7 +58,7 @@ class FinancialDataControllerSpec
           .overrides(bind[FinancialDataService].to(mockFinancialDataService))
           .build()
 
-      when(mockFinancialDataService.getFinancialData(any(), any(), any())) thenReturn Future.failed(DesException("Some exception"))
+      when(mockFinancialDataService.getFinancialData(IOSSNumber(anyString()), any(), any())) thenReturn Future.failed(FinancialDataException("Some exception"))
 
       running(app) {
 
@@ -74,11 +74,11 @@ class FinancialDataControllerSpec
           .overrides(bind[FinancialDataService].to(mockFinancialDataService))
           .build()
 
-      when(mockFinancialDataService.getFinancialData(any(), any(), any())) thenReturn Future.successful(Some(FinancialDataControllerFixture.financialData))
+      when(mockFinancialDataService.getFinancialData(IOSSNumber(anyString()), any(), any())) thenReturn Future.successful(Some(FinancialDataControllerFixture.financialData))
 
       running(app) {
 
-        val result = route(app, FakeRequest(GET, uk.gov.hmrc.iossreturns.controllers.routes.FinancialDataController.get(LocalDate.now(), FinancialDataControllerFixture.vrn.vrn).url)).value
+        val result = route(app, FakeRequest(GET, uk.gov.hmrc.iossreturns.controllers.routes.FinancialDataController.get(LocalDate.now(), FinancialDataControllerFixture.iossNumber.value).url)).value
 
         status(result) mustBe OK
         contentAsJson(result) mustBe Json.toJson(Some(FinancialDataControllerFixture.financialData))
@@ -88,7 +88,7 @@ class FinancialDataControllerSpec
 }
 
 object FinancialDataControllerFixture extends ModelGenerators with OptionValues {
-  val vrn = arbitraryVrn.arbitrary.sample.value
+  val iossNumber = arbitraryIOSSNumber.arbitrary.sample.value
   val financialData: FinancialData = arbitraryFinancialData.arbitrary.sample.value
   val commencementDate = LocalDate.now()
 }

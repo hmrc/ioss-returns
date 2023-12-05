@@ -18,7 +18,7 @@ package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.domain.Vrn
+import uk.gov.hmrc.iossreturns.models.IOSSNumber
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData._
 import uk.gov.hmrc.iossreturns.services.FinancialDataService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -31,9 +31,9 @@ class FinancialDataController @Inject()(
                                          cc: ControllerComponents,
                                          service: FinancialDataService
                                        )(implicit ec: ExecutionContext) extends BackendController(cc) {
-  def get(commencementDate: LocalDate, vrn: String): Action[AnyContent] = Action.async {
+  def get(commencementDate: LocalDate, iossNumber: String): Action[AnyContent] = Action.async {
     implicit request => {
-      val result = service.getFinancialData(Vrn(vrn), Some(commencementDate), Some(LocalDate.now()))
+      val result = service.getFinancialData(IOSSNumber(iossNumber), Some(commencementDate), Some(LocalDate.now()))
         .map(data =>
           Ok(Json.toJson(data)))
       result

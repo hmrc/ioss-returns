@@ -22,7 +22,7 @@ import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTra
 import java.time.{LocalDate, ZonedDateTime}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary.arbitrary
-import uk.gov.hmrc.domain.Vrn
+import uk.gov.hmrc.iossreturns.models.IOSSNumber
 
 trait ModelGenerators {
   implicit val arbitraryFinancialData: Arbitrary[FinancialData] = Arbitrary {
@@ -58,8 +58,8 @@ trait ModelGenerators {
     } yield FinancialTransaction(Some(chargeType), Some(mainType), Some(taxPeriodFrom), Some(taxPeriodTo), Some(originalAmount), Some(outstandingAmount), Some(clearedAmount), Some(List(item)))
   }
 
-  implicit val arbitraryVrn: Arbitrary[Vrn] =
+  implicit val arbitraryIOSSNumber: Arbitrary[IOSSNumber] =
     Arbitrary {
-      Gen.listOfN(9, Gen.numChar).map(_.mkString).map(Vrn)
+      Gen.listOfN(9, Gen.numChar).map(_.mkString).map(IOSSNumber(_))
     }
 }

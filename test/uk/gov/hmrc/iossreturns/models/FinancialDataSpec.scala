@@ -14,7 +14,7 @@ class FinancialDataSpec extends AnyFreeSpec with Matchers with ScalaCheckPropert
   private val zonedNow = ZonedDateTime.now()
   private val financialDataJson =
     s"""{
-       | "idType": "VRN",
+       | "idType": "IOSS",
        | "idNumber": "123456789",
        | "regimeType": "ECOM",
        | "processingDate": "${zonedNow.toString}",
@@ -43,7 +43,7 @@ class FinancialDataSpec extends AnyFreeSpec with Matchers with ScalaCheckPropert
 
   private val financialTransaction = FinancialTransaction(Some("G Ret AT EU-OMS"), None, Some(FinancialDataConnectorFixture.dateFrom), Some(FinancialDataConnectorFixture.dateTo), Some(1000), Some(500), Some(500), Some(Seq(item)))
 
-  private val financialData = FinancialData(Some("VRN"), Some("123456789"), Some("ECOM"), zonedNow, Some(Seq(financialTransaction)))
+  private val financialData = FinancialData(Some("IOSS"), Some("123456789"), Some("ECOM"), zonedNow, Some(Seq(financialTransaction)))
 
   "FinancialData" - {
     "must deserialise correctly" in {

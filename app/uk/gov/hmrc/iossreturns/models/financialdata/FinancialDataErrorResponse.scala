@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.des
+package uk.gov.hmrc.iossreturns.models.financialdata
 
 sealed trait DesErrorResponse {
   val body: String
@@ -24,6 +24,6 @@ case object InvalidJson extends DesErrorResponse {
   override val body: String = "Invalid Response"
 }
 
-final case class DesException(message: String) extends Exception(message)
+final case class FinancialDataException(message: String) extends Exception(message)
 
 final case class UnexpectedResponseStatus(status: Int, body: String) extends DesErrorResponse

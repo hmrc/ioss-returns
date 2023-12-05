@@ -16,22 +16,21 @@
 
 package uk.gov.hmrc.iossreturns.services
 
-import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataConnector
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser.FinancialDataResponse
-import uk.gov.hmrc.iossreturns.models.des.DesException
-import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataQueryParameters}
+import uk.gov.hmrc.iossreturns.models.IOSSNumber
+import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialDataException, FinancialData, FinancialDataQueryParameters}
 
 import java.time.LocalDate
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class FinancialDataService @Inject()(financialDataConnector: FinancialDataConnector)(implicit executionContext: ExecutionContext) {
-  def getFinancialData(vrn: Vrn, fromDate: Option[LocalDate], toDate: Option[LocalDate]): Future[Option[FinancialData]] = {
-    val result: Future[FinancialDataResponse] = financialDataConnector.getFinancialData(vrn, FinancialDataQueryParameters(fromDate = fromDate, toDate = toDate))
+  def getFinancialData(iossNumber: IOSSNumber, fromDate: Option[LocalDate], toDate: Option[LocalDate]): Future[Option[FinancialData]] = {
+    val result: Future[FinancialDataResponse] = financialDataConnector.getFinancialData(iossNumber, FinancialDataQueryParameters(fromDate = fromDate, toDate = toDate))
 
     result.flatMap {
-      case Left(errorResponse) => Future.failed(DesException(errorResponse.body))
+      case Left(errorResponse) => Future.failed(FinancialDataException(errorResponse.body))
       case Right(r) => Future.successful(r)
     }
   }
