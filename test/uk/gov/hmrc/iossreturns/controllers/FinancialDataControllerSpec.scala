@@ -52,7 +52,7 @@ class FinancialDataControllerSpec
   ".getFinancialData" - {
 
     lazy val request =
-      FakeRequest(GET, routes.FinancialDataController.get(commencementDate, iossNumber).url)
+      FakeRequest(GET, routes.FinancialDataController.get(commencementDate).url)
 
     "error if api errors" in {
 
@@ -83,7 +83,7 @@ class FinancialDataControllerSpec
 
       running(app) {
 
-        val result = route(app, FakeRequest(GET, routes.FinancialDataController.get(LocalDate.now(), iossNumber).url)).value
+        val result = route(app, FakeRequest(GET, routes.FinancialDataController.get(LocalDate.now()).url)).value
 
         status(result) mustBe OK
         contentAsJson(result) mustBe Json.toJson(Some(financialData))

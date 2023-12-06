@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.iossreturns.models
 
-import akka.util.Helpers.Requiring
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
 import org.scalatest.freespec.AnyFreeSpec

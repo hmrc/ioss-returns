@@ -17,11 +17,10 @@
 package uk.gov.hmrc.iossreturns.generators
 
 import org.scalacheck.{Arbitrary, Gen}
-import uk.gov.hmrc.iossreturns.models.{CoreCorrection, CoreMsconSupply, CorePeriod, CoreSupply, CoreTraderId, CoreVatReturn, Period}
 import org.scalacheck.Arbitrary.arbitrary
+import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 
-import java.math.MathContext
 import java.time.{Instant, LocalDate, LocalDateTime, Month, ZonedDateTime, ZoneId}
 import java.time.temporal.ChronoUnit
 import scala.math.BigDecimal.RoundingMode
