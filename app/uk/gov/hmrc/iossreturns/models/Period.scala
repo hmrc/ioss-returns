@@ -85,7 +85,7 @@ object Period {
     }
 
     override def unbind(key: String, value: Period): String = {
-      s"$key=${value.toString}"
+      s"$key=$value"
     }
   }
 

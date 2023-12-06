@@ -54,7 +54,7 @@ class AuthActionImpl @Inject()(
         }
 
       case _ =>
-        logger.warn(s"Unable to retrieve authorisation data")
+        logger.warn("Unable to retrieve authorisation data")
         throw new UnauthorizedException("Unable to retrieve authorisation data")
     } recover {
       case _: AuthorisationException =>
