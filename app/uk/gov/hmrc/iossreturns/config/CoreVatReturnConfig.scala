@@ -32,7 +32,7 @@ class CoreVatReturnConfig @Inject()(config: Configuration, clock: Clock) {
 
   private val XCorrelationId = "X-Correlation-Id"
 
-  def ifHeaders(correlationId: String): Seq[(String, String)] = Seq(
+  def submissionHeaders(correlationId: String): Seq[(String, String)] = Seq(
     CONTENT_TYPE -> MimeTypes.JSON,
     ACCEPT -> MimeTypes.JSON,
     AUTHORIZATION -> s"Bearer $authorizationToken",

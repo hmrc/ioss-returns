@@ -27,20 +27,8 @@ class FinancialDataConfig @Inject()(config: Configuration) {
   val environment: String = config.get[String]("microservice.services.financial-data.environment")
   val regimeType: String = config.get[String]("microservice.services.financial-data.regimeType")
 
-<<<<<<< Updated upstream:app/uk/gov/hmrc/iossreturns/config/FinancialDataConfig.scala
   val financialDataHeaders: Seq[(String, String)] = Seq(
     "Authorization" -> s"Bearer $authorizationToken",
     "Environment" -> environment
-=======
-  private val XCorrelationId = "X-Correlation-Id"
-
-  def submissionHeaders(correlationId: String): Seq[(String, String)] = Seq(
-    CONTENT_TYPE -> MimeTypes.JSON,
-    ACCEPT -> MimeTypes.JSON,
-    AUTHORIZATION -> s"Bearer $authorizationToken",
-    DATE -> Formatters.dateTimeFormatter.format(LocalDateTime.now(clock)),
-    XCorrelationId -> correlationId,
-    X_FORWARDED_HOST -> "MDTP"
->>>>>>> Stashed changes:app/uk/gov/hmrc/iossreturns/config/CoreVatReturnConfig.scala
   )
 }
