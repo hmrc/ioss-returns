@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.models
 
-import play.api.Configuration
+import play.api.libs.json.Json
 
-import javax.inject.{Inject, Singleton}
+final case class IOSSNumber(value: String) extends AnyVal
 
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
+object IOSSNumber {
+  implicit val format = Json.valueFormat[IOSSNumber]
 }

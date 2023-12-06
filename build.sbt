@@ -1,3 +1,5 @@
+import play.sbt.routes.RoutesKeys
+
 lazy val microservice = Project("ioss-returns", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)
   .settings(
@@ -7,6 +9,11 @@ lazy val microservice = Project("ioss-returns", file("."))
     // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
     // suppress warnings in generated routes files
     scalacOptions += "-Wconf:src=routes/.*:s",
+    RoutesKeys.routesImport ++= Seq(
+      "java.time.LocalDate",
+      "models._",
+      "uk.gov.hmrc.iossreturns.models.binders._"
+    )
   )
   .settings(PlayKeys.playDefaultPort := 10194)
   .configs(IntegrationTest)

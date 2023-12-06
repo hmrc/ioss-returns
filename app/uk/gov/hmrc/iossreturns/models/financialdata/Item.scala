@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.models.financialdata
 
-import play.api.Configuration
+import play.api.libs.json.{Format, Json}
 
-import javax.inject.{Inject, Singleton}
+final case class Item(
+                       amount: Option[BigDecimal],
+                       clearingReason: Option[String],
+                       paymentReference: Option[String],
+                       paymentAmount: Option[BigDecimal],
+                       paymentMethod: Option[String]
+                     )
 
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
+object Item {
+  implicit val format: Format[Item] = Json.format[Item]
 }

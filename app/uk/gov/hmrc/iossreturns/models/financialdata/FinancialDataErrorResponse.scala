@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.models.financialdata
 
-import play.api.Configuration
-
-import javax.inject.{Inject, Singleton}
-
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
+sealed trait FinancialDataErrorResponse {
+  val body: String
 }
+
+case object InvalidJson extends FinancialDataErrorResponse {
+  override val body: String = "Invalid Response"
+}
+
+final case class FinancialDataException(message: String) extends Exception(message)
+
+final case class UnexpectedResponseStatus(status: Int, body: String) extends FinancialDataErrorResponse
