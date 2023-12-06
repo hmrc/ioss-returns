@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.iossreturns.controllers
 
-import base.SpecBase
-import org.mockito.ArgumentMatchers.{any, anyString}
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
+import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.iossreturns.generators.ModelGenerators
-import uk.gov.hmrc.iossreturns.models.IOSSNumber
+import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
+import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataException}
 import uk.gov.hmrc.iossreturns.services.FinancialDataService
 
@@ -37,8 +39,9 @@ class FinancialDataControllerSpec
   extends SpecBase
     with ScalaCheckPropertyChecks
     with BeforeAndAfterEach
-    with OptionValues {
-  
+    with OptionValues
+    with FinancialDataControllerFixture {
+
   private val mockFinancialDataService = mock[FinancialDataService]
 
   override def beforeEach(): Unit = {
@@ -49,16 +52,17 @@ class FinancialDataControllerSpec
   ".getFinancialData" - {
 
     lazy val request =
-      FakeRequest(GET, uk.gov.hmrc.iossreturns.controllers.routes.FinancialDataController.get(FinancialDataControllerFixture.commencementDate, FinancialDataControllerFixture.iossNumber.value).url)
+      FakeRequest(GET, routes.FinancialDataController.get(commencementDate).url)
 
     "error if api errors" in {
 
       val app =
-        applicationBuilder
+        applicationBuilder()
           .overrides(bind[FinancialDataService].to(mockFinancialDataService))
           .build()
 
-      when(mockFinancialDataService.getFinancialData(IOSSNumber(anyString()), any(), any())) thenReturn Future.failed(FinancialDataException("Some exception"))
+      when(mockFinancialDataService.getFinancialData(any(), any(), any())) thenReturn
+        Future.failed(FinancialDataException("Some exception"))
 
       running(app) {
 
@@ -70,25 +74,41 @@ class FinancialDataControllerSpec
 
     "return financial data returned from downstream" in {
       val app =
-        applicationBuilder
+        applicationBuilder()
           .overrides(bind[FinancialDataService].to(mockFinancialDataService))
           .build()
 
-      when(mockFinancialDataService.getFinancialData(IOSSNumber(anyString()), any(), any())) thenReturn Future.successful(Some(FinancialDataControllerFixture.financialData))
+      when(mockFinancialDataService.getFinancialData(any(), any(), any())) thenReturn
+        Future.successful(Some(financialData))
 
       running(app) {
 
-        val result = route(app, FakeRequest(GET, uk.gov.hmrc.iossreturns.controllers.routes.FinancialDataController.get(LocalDate.now(), FinancialDataControllerFixture.iossNumber.value).url)).value
+        val result = route(app, FakeRequest(GET, routes.FinancialDataController.get(LocalDate.now()).url)).value
 
         status(result) mustBe OK
-        contentAsJson(result) mustBe Json.toJson(Some(FinancialDataControllerFixture.financialData))
+        contentAsJson(result) mustBe Json.toJson(Some(financialData))
+      }
+    }
+
+    "must respond with Unauthorized when the user is not authorised" in {
+
+      val app =
+        new GuiceApplicationBuilder()
+          .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
+          .build()
+
+      running(app) {
+
+        val result = route(app, request).value
+        status(result) mustEqual UNAUTHORIZED
       }
     }
   }
 }
 
-object FinancialDataControllerFixture extends ModelGenerators with OptionValues {
-  val iossNumber = arbitraryIOSSNumber.arbitrary.sample.value
+trait FinancialDataControllerFixture {
+  self: SpecBase =>
+
   val financialData: FinancialData = arbitraryFinancialData.arbitrary.sample.value
-  val commencementDate = LocalDate.now()
+  val commencementDate: LocalDate = LocalDate.now()
 }

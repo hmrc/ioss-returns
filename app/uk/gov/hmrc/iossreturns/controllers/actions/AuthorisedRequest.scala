@@ -14,16 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.controllers.actions
 
-import play.api.Configuration
+import play.api.mvc.{Request, WrappedRequest}
+import uk.gov.hmrc.domain.Vrn
 
-import javax.inject.{Inject, Singleton}
-
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
-
-  val iossEnrolment: String = config.get[String]("features.enrolment.ioss-enrolment-key")
-}
+case class AuthorisedRequest[A](request: Request[A], userId: String, vrn: Vrn, iossNumber: String) extends WrappedRequest[A](request)

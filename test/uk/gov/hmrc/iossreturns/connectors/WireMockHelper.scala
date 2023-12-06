@@ -1,4 +1,4 @@
-package connectors
+package uk.gov.hmrc.iossreturns.connectors
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
