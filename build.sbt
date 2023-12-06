@@ -22,6 +22,11 @@ lazy val microservice = Project("ioss-returns", file("."))
   .settings(inConfig(Test)(testSettings): _*)
   .settings(resolvers += Resolver.jcenterRepo)
   .settings(CodeCoverageSettings.settings: _*)
+  .settings(
+    RoutesKeys.routesImport ++= Seq(
+      "uk.gov.hmrc.iossreturns.models._"
+    )
+  )
 
 lazy val itSettings = Defaults.itSettings ++ Seq(
   unmanagedSourceDirectories := Seq(

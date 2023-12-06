@@ -20,6 +20,7 @@ import play.api.libs.json._
 import play.api.mvc.{PathBindable, QueryStringBindable}
 
 import java.time.Month
+import java.time.Month._
 import java.time.format.TextStyle
 import java.util.Locale
 import scala.util.matching.Regex
@@ -30,6 +31,30 @@ case class Period(year: Int, month: Month) {
     s"${month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)} ${year}"
 
   override def toString: String = s"$year-M${month.getValue}"
+
+  def toEtmpPeriodString: String = {
+    val lastYearDigits = year.toString.substring(2)
+
+    s"$lastYearDigits${toEtmpMonthString(month)}"
+  }
+
+  // TODO create util & tests - is there a better way of doing this?
+  private def toEtmpMonthString(month: Month): String = {
+    month match {
+      case JANUARY => "AA"
+      case FEBRUARY => "AB"
+      case MARCH => "AC"
+      case APRIL => "AD"
+      case MAY => "AE"
+      case JUNE => "AF"
+      case JULY => "AG"
+      case AUGUST => "AH"
+      case SEPTEMBER => "AI"
+      case OCTOBER => "AJ"
+      case NOVEMBER => "AK"
+      case DECEMBER => "AL"
+    }
+  }
 }
 
 object Period {

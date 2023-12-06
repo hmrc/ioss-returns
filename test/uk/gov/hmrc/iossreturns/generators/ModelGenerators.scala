@@ -19,6 +19,7 @@ package uk.gov.hmrc.iossreturns.generators
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary.arbitrary
 import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 
 import java.time.{Instant, LocalDate, LocalDateTime, Month, ZonedDateTime, ZoneId}
@@ -191,4 +192,82 @@ trait ModelGenerators {
     )
   }
 
+  implicit val arbitraryEtmpVatReturnGoodsSupply: Arbitrary[EtmpVatReturnGoodsSupplied] =
+    Arbitrary {
+      for {
+        msOfConsumption <- arbitrary[String]
+        vatRateType <- Gen.oneOf(EtmpVatRateType.values)
+        taxableAmountGBP <- arbitrary[BigDecimal]
+        vatAmountGBP <- arbitrary[BigDecimal]
+      } yield EtmpVatReturnGoodsSupplied(
+        msOfConsumption = msOfConsumption,
+        vatRateType = vatRateType,
+        taxableAmountGBP = taxableAmountGBP,
+        vatAmountGBP = vatAmountGBP
+      )
+    }
+
+  implicit val arbitraryEtmpVatReturnCorrection: Arbitrary[EtmpVatReturnCorrection] =
+    Arbitrary {
+      for {
+        periodKey <- arbitrary[String]
+        periodFrom <- arbitrary[String]
+        periodTo <- arbitrary[String]
+        msOfConsumption <- arbitrary[String]
+      } yield EtmpVatReturnCorrection(
+        periodKey = periodKey,
+        periodFrom = periodFrom,
+        periodTo = periodTo,
+        msOfConsumption = msOfConsumption
+      )
+    }
+
+  implicit val arbitraryEtmpVatReturnBalanceOfVatDue: Arbitrary[EtmpVatReturnBalanceOfVatDue] =
+    Arbitrary {
+      for {
+        msOfConsumption <- arbitrary[String]
+        totalVATDueGBP <- arbitrary[BigDecimal]
+        totalVATEUR <- arbitrary[BigDecimal]
+      } yield EtmpVatReturnBalanceOfVatDue(
+        msOfConsumption = msOfConsumption,
+        totalVATDueGBP = totalVATDueGBP,
+        totalVATEUR = totalVATEUR
+      )
+    }
+
+  implicit val arbitraryEtmpVatReturn: Arbitrary[EtmpVatReturn] =
+    Arbitrary {
+      for {
+        returnReference <- arbitrary[String]
+        periodKey <- arbitrary[String]
+        returnPeriodFrom <- arbitrary[LocalDate]
+        returnPeriodTo <- arbitrary[LocalDate]
+        amountOfGoodsSupplied <- Gen.oneOf(List(1, 2, 3))
+        goodsSupplied <- Gen.listOfN(amountOfGoodsSupplied, arbitrary[EtmpVatReturnGoodsSupplied])
+        totalVATGoodsSuppliedGBP <- arbitrary[BigDecimal]
+        totalVATAmountPayable <- arbitrary[BigDecimal]
+        totalVATAmountPayableAllSpplied <- arbitrary[BigDecimal]
+        amountOfCorrections <- Gen.oneOf(List(1, 2, 3))
+        correctionPreviousVATReturn <- Gen.listOfN(amountOfCorrections, arbitrary[EtmpVatReturnCorrection])
+        totalVATAmountFromCorrectionGBP <- arbitrary[BigDecimal]
+        amountOfBalanceOfVATDueForMS <- Gen.oneOf(List(1, 2, 3))
+        balanceOfVATDueForMS <- Gen.listOfN(amountOfBalanceOfVATDueForMS, arbitrary[EtmpVatReturnBalanceOfVatDue])
+        totalVATAmountDueForAllMSEUR <- arbitrary[BigDecimal]
+        paymentReference <- arbitrary[String]
+      } yield EtmpVatReturn(
+        returnReference = returnReference,
+        periodKey = periodKey,
+        returnPeriodFrom = returnPeriodFrom,
+        returnPeriodTo = returnPeriodTo,
+        goodsSupplied = goodsSupplied,
+        totalVATGoodsSuppliedGBP = totalVATGoodsSuppliedGBP,
+        totalVATAmountPayable = totalVATAmountPayable,
+        totalVATAmountPayableAllSpplied = totalVATAmountPayableAllSpplied,
+        correctionPreviousVATReturn = correctionPreviousVATReturn,
+        totalVATAmountFromCorrectionGBP = totalVATAmountFromCorrectionGBP,
+        balanceOfVATDueForMS = balanceOfVATDueForMS,
+        totalVATAmountDueForAllMSEUR = totalVATAmountDueForAllMSEUR,
+        paymentReference = paymentReference
+      )
+    }
 }

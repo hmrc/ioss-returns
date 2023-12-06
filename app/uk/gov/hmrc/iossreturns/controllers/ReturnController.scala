@@ -17,10 +17,10 @@
 package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
-import play.api.mvc.Action
-import uk.gov.hmrc.iossreturns.connectors.CoreVatReturnConnector
+import play.api.mvc.{Action, AnyContent}
+import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
-import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn}
+import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -28,7 +28,7 @@ import scala.concurrent.ExecutionContext
 
 class ReturnController @Inject()(
                                   cc: DefaultAuthenticatedControllerComponents,
-                                  coreVatReturnConnector: CoreVatReturnConnector
+                                  coreVatReturnConnector: VatReturnConnector
                                 )(implicit ec: ExecutionContext)
   extends BackendController(cc) {
 
@@ -41,5 +41,12 @@ class ReturnController @Inject()(
       }
   }
 
+  def get(period: Period): Action[AnyContent] = cc.auth().async {
+    implicit request =>
+      coreVatReturnConnector.get(request.iossNumber, period).map {
+        case Right(vatReturn) => Ok(Json.toJson(vatReturn))
+        case Left(errorResponse) => InternalServerError(Json.toJson(errorResponse.body))
+      }
+  }
 
 }
