@@ -29,12 +29,13 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.connectors.CoreVatReturnConnector
+import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
-import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, EisErrorResponse}
+import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.CoreErrorResponse.REGISTRATION_NOT_FOUND
+import uk.gov.hmrc.iossreturns.models.etmp.EtmpVatReturn
 
-import java.time.Instant
+import java.time.{Instant, Month}
 import scala.concurrent.Future
 
 class ReturnControllerSpec
@@ -42,7 +43,7 @@ class ReturnControllerSpec
     with ScalaCheckPropertyChecks
     with BeforeAndAfterEach {
 
-  private val mockCoreVatReturnConnector = mock[CoreVatReturnConnector]
+  private val mockCoreVatReturnConnector = mock[VatReturnConnector]
 
   override def beforeEach(): Unit = {
     Mockito.reset(mockCoreVatReturnConnector)
@@ -63,7 +64,7 @@ class ReturnControllerSpec
 
       val app =
         applicationBuilder()
-          .overrides(bind[CoreVatReturnConnector].toInstance(mockCoreVatReturnConnector))
+          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
           .build()
 
       running(app) {
@@ -84,7 +85,7 @@ class ReturnControllerSpec
 
       val app =
         applicationBuilder()
-          .overrides(bind[CoreVatReturnConnector].toInstance(mockCoreVatReturnConnector))
+          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
           .build()
 
       running(app) {
@@ -104,7 +105,7 @@ class ReturnControllerSpec
 
       val app =
         applicationBuilder()
-          .overrides(bind[CoreVatReturnConnector].toInstance(mockCoreVatReturnConnector))
+          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
           .build()
 
       running(app) {
@@ -124,6 +125,60 @@ class ReturnControllerSpec
 
       running(app) {
 
+        val result = route(app, request).value
+        status(result) mustEqual UNAUTHORIZED
+      }
+    }
+  }
+
+  ".get" - {
+    val period = Period(2023, Month.NOVEMBER)
+
+    lazy val request = FakeRequest(GET, routes.ReturnController.get(period).url)
+
+    "must respond with OK and a sequence of returns when some exist for this user" in {
+
+      val vatReturn = arbitrary[EtmpVatReturn].sample.value
+
+      when(mockCoreVatReturnConnector.get(any(), any())) thenReturn Future.successful(Right(vatReturn))
+
+      val app =
+        applicationBuilder()
+          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
+          .build()
+
+      running(app) {
+        val result = route(app, request).value
+
+        status(result) mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(vatReturn)
+      }
+    }
+
+    "must respond with and error when the connector responds with an error" in {
+
+      when(mockCoreVatReturnConnector.get(any(), any())) thenReturn Future.successful(Left(ServerError))
+
+      val app =
+        applicationBuilder()
+          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
+          .build()
+
+      running(app) {
+        val result = route(app, request).value
+
+        status(result) mustEqual INTERNAL_SERVER_ERROR
+      }
+    }
+
+    "must respond with Unauthorized when the user is not authorised" in {
+
+      val app =
+        new GuiceApplicationBuilder()
+          .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
+          .build()
+
+      running(app) {
         val result = route(app, request).value
         status(result) mustEqual UNAUTHORIZED
       }

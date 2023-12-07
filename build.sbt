@@ -11,7 +11,7 @@ lazy val microservice = Project("ioss-returns", file("."))
     scalacOptions += "-Wconf:src=routes/.*:s",
     RoutesKeys.routesImport ++= Seq(
       "java.time.LocalDate",
-      "models._",
+      "uk.gov.hmrc.iossreturns.models._",
       "uk.gov.hmrc.iossreturns.models.binders._"
     )
   )

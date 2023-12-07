@@ -24,15 +24,15 @@ import uk.gov.hmrc.iossreturns.utils.Formatters
 import java.time.{Clock, LocalDateTime}
 import javax.inject.Inject
 
-class CoreVatReturnConfig @Inject()(config: Configuration, clock: Clock) {
+class EtmpDisplayReturnConfig @Inject()(config: Configuration, clock: Clock) {
 
-  val baseUrl: Service = config.get[Service]("microservice.services.core-vat-return")
-  val authorizationToken: String = config.get[String]("microservice.services.core-vat-return.authorizationToken")
-  val environment: String = config.get[String]("microservice.services.core-vat-return.environment")
+  val baseUrl: Service = config.get[Service]("microservice.services.etmp-display-vat-return")
+  val authorizationToken: String = config.get[String]("microservice.services.etmp-display-vat-return.authorizationToken")
+  val environment: String = config.get[String]("microservice.services.etmp-display-vat-return.environment")
 
   private val XCorrelationId = "X-Correlation-Id"
 
-  def submissionHeaders(correlationId: String): Seq[(String, String)] = Seq(
+  def headers(correlationId: String): Seq[(String, String)] = Seq(
     CONTENT_TYPE -> MimeTypes.JSON,
     ACCEPT -> MimeTypes.JSON,
     AUTHORIZATION -> s"Bearer $authorizationToken",
