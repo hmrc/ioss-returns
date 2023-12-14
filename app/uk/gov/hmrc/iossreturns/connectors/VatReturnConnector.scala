@@ -80,7 +80,7 @@ class VatReturnConnector @Inject()(
 
     def url = s"${etmpDisplayReturnConfig.baseUrl}/$iossNumber/${period.toEtmpPeriodString}"
 
-    logger.info(s"Sending getRegistration request to ETMP with headers $headersWithoutAuth")
+    logger.info(s"Sending get request to ETMP with headers $headersWithoutAuth")
 
     httpClient.GET[EtmpDisplayVatReturnResponse](
       url,
