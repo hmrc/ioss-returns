@@ -22,13 +22,10 @@ sealed trait EtmpObligationsFulfilmentStatus
 
 object EtmpObligationsFulfilmentStatus extends Enumerable.Implicits {
 
-  case object Open extends WithName("O") with EtmpObligationsFulfilmentStatus
-
-  case object Fulfilled extends WithName("F") with EtmpObligationsFulfilmentStatus
+  case object All extends WithName("A") with EtmpObligationsFulfilmentStatus
 
   val values: Seq[EtmpObligationsFulfilmentStatus] = Seq(
-    Open,
-    Fulfilled
+    All
   )
 
   implicit val enumerable: Enumerable[EtmpObligationsFulfilmentStatus] =

@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.iossreturns.models.etmp
 
-import org.scalacheck.Arbitrary.arbitrary
 import play.api.libs.json.{JsSuccess, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.genBankDetails
 
 class EtmpBankDetailsSpec extends SpecBase {
 
-  private val accountName = arbitrary[String].sample.value
-  private val genBic = arbitraryBic.arbitrary.sample.value
-  private val genIban = arbitraryIban.arbitrary.sample.value
+  private val accountName = genBankDetails.accountName
+  private val bic = genBankDetails.bic
+  private val iban = genBankDetails.iban
 
   "must deserialise/serialise to and from EtmpBankDetails" - {
 
@@ -32,14 +32,14 @@ class EtmpBankDetailsSpec extends SpecBase {
 
       val json = Json.obj(
         "accountName" -> accountName,
-        "bic" -> genBic,
-        "iban" -> genIban
+        "bic" -> bic,
+        "iban" -> iban
       )
 
       val expectedResult = EtmpBankDetails(
         accountName = accountName,
-        bic = Some(genBic),
-        iban = genIban
+        bic = bic,
+        iban = iban
       )
 
       Json.toJson(expectedResult) mustBe json
@@ -50,13 +50,13 @@ class EtmpBankDetailsSpec extends SpecBase {
 
       val json = Json.obj(
         "accountName" -> accountName,
-        "iban" -> genIban
+        "iban" -> iban
       )
 
       val expectedResult = EtmpBankDetails(
         accountName = accountName,
         bic = None,
-        iban = genIban
+        iban = iban
       )
 
       Json.toJson(expectedResult) mustBe json

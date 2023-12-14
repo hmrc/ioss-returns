@@ -17,8 +17,8 @@
 package uk.gov.hmrc.iossreturns.controllers
 
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
-import org.mockito.Mockito.{times, verify, when}
 import org.mockito.Mockito
+import org.mockito.Mockito.{times, verify, when}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -31,9 +31,10 @@ import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
-import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.CoreErrorResponse.REGISTRATION_NOT_FOUND
-import uk.gov.hmrc.iossreturns.models.etmp.EtmpVatReturn
+import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpVatReturn}
+import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
 import java.time.{Instant, Month}
 import scala.concurrent.Future
@@ -131,7 +132,7 @@ class ReturnControllerSpec
     }
   }
 
-  ".get" - {
+  ".getRegistration" - {
     val period = Period(2023, Month.NOVEMBER)
 
     lazy val request = FakeRequest(GET, routes.ReturnController.get(period).url)
@@ -187,9 +188,55 @@ class ReturnControllerSpec
 
   ".getObligations" - {
 
+    val etmpObligations: EtmpObligations = arbitraryObligations.arbitrary.sample.value
+    val idNumber: String = arbitrary[String].sample.value
+
+    lazy val request = FakeRequest(GET, routes.ReturnController.getObligations(idNumber).url)
+
     "must respond with OK and return a valid response" in {
 
+      when(mockCoreVatReturnConnector.getObligations(any(), any(), any(), any())) thenReturn Right(etmpObligations).toFuture
 
+      val app =
+        applicationBuilder()
+          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
+          .build()
+
+      running(app) {
+        val result = route(app, request).value
+
+        status(result) mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(etmpObligations)
+      }
+    }
+
+    "must respond with and error when the connector responds with an error" in {
+
+      when(mockCoreVatReturnConnector.getObligations(any(), any(), any(), any())) thenReturn Left(ServerError).toFuture
+
+      val app =
+        applicationBuilder()
+          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
+          .build()
+
+      running(app) {
+        val result = route(app, request).value
+
+        status(result) mustEqual INTERNAL_SERVER_ERROR
+      }
+    }
+
+    "must respond with Unauthorized when the user is not authorised" in {
+
+      val app =
+        new GuiceApplicationBuilder()
+          .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
+          .build()
+
+      running(app) {
+        val result = route(app, request).value
+        status(result) mustEqual UNAUTHORIZED
+      }
     }
   }
 }

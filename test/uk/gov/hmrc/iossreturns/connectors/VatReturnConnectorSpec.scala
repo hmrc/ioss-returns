@@ -164,7 +164,7 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
 
   }
 
-  "get" - {
+  "getRegistration" - {
     val iossNumber = "IM9001234567"
     val period = Period(2023, Month.NOVEMBER)
     val etmpPeriodKey = "23AK"

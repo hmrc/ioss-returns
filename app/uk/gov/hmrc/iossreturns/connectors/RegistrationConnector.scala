@@ -24,12 +24,11 @@ import uk.gov.hmrc.iossreturns.models.EtmpRegistration
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-// TODO -> Tests
 class RegistrationConnector @Inject()(config: Configuration, httpClient: HttpClient)
                                      (implicit ec: ExecutionContext) extends HttpErrorFunctions {
 
   private val baseUrl = config.get[Service]("microservice.services.ioss-registration")
 
-  def get()(implicit hc: HeaderCarrier): Future[EtmpRegistration] =
+  def getRegistration()(implicit hc: HeaderCarrier): Future[EtmpRegistration] =
     httpClient.GET[EtmpRegistration](s"$baseUrl/registration")
 }

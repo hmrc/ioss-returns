@@ -7,7 +7,6 @@ import java.time.LocalDateTime
 
 class EtmpAdminUseSpec extends SpecBase {
 
-  // TODO -> needs withSecond or fails
   private val changeDate: LocalDateTime = LocalDateTime.now(stubClockAtArbitraryDate).withSecond(1)
 
   "EtmpAdminUse" - {

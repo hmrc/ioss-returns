@@ -18,10 +18,10 @@ package uk.gov.hmrc.iossreturns.models.etmp
 
 import play.api.libs.json.{JsSuccess, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.etmpSchemeDetails
 
 class EtmpSchemeDetailsSpec extends SpecBase {
 
-  private val etmpSchemeDetails: EtmpSchemeDetails = arbitraryEtmpSchemeDetails.arbitrary.sample.value
   private val commencementDate = etmpSchemeDetails.commencementDate
   private val euRegistrationDetails = etmpSchemeDetails.euRegistrationDetails
   private val previousEURegistrationDetails = etmpSchemeDetails.previousEURegistrationDetails

@@ -80,7 +80,7 @@ class VatReturnConnector @Inject()(
 
     def url = s"${etmpDisplayReturnConfig.baseUrl}/$iossNumber/${period.toEtmpPeriodString}"
 
-    logger.info(s"Sending get request to ETMP with headers $headersWithoutAuth")
+    logger.info(s"Sending getRegistration request to ETMP with headers $headersWithoutAuth")
 
     httpClient.GET[EtmpDisplayVatReturnResponse](
       url,
@@ -92,16 +92,26 @@ class VatReturnConnector @Inject()(
     }
   }
 
-  // TODO controller to get from and to dates -> From = reg start date, to = today???
   def getObligations(idNumber: String, dateFrom: String, dateTo: String, status: String): Future[EtmpListObligationsResponse] = {
+
+    val correlationId = UUID.randomUUID().toString
+    val headersWithCorrelationId = displayHeaders(correlationId)
+
+    val headersWithoutAuth = headersWithCorrelationId.filterNot {
+      case (key, _) => key.matches(AUTHORIZATION)
+    }
 
     def url = s"${etmpListObligationsConfig.baseUrl}enterprise/obligation-data/${etmpListObligationsConfig.idType}/$idNumber/${etmpListObligationsConfig.regimeType}/$dateFrom/$dateTo/$status"
 
-    httpClient.GET[EtmpListObligationsResponse](url)
-      .recover {
-        case e: HttpException =>
-          logger.error(s"Unexpected error response from ETMP $url, received status ${e.responseCode}, body of response was: ${e.message}")
-          Left(GatewayTimeout)
-      }
+    logger.info(s"Sending getObligations request to ETMP with headers $headersWithoutAuth")
+
+    httpClient.GET[EtmpListObligationsResponse](
+      url,
+      headers = headersWithCorrelationId
+    ).recover {
+      case e: HttpException =>
+        logger.error(s"Unexpected error response from ETMP $url, received status ${e.responseCode}, body of response was: ${e.message}")
+        Left(GatewayTimeout)
+    }
   }
 }

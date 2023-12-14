@@ -16,20 +16,21 @@
 
 package uk.gov.hmrc.iossreturns.models.etmp
 
+import org.scalacheck.Arbitrary.arbitrary
 import play.api.libs.json.{JsSuccess, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.etmpEuRegistrationDetails
 
 class EtmpEuRegistrationDetailsSpec extends SpecBase {
 
-  private val etmpEuRegistrationDetails: EtmpEuRegistrationDetails = arbitraryEtmpEuRegistrationDetails.arbitrary.sample.value
   private val countryOfRegistration = etmpEuRegistrationDetails.countryOfRegistration
   private val traderId = etmpEuRegistrationDetails.traderId
   private val tradingName = etmpEuRegistrationDetails.tradingName
   private val fixedEstablishmentAddressLine1 = etmpEuRegistrationDetails.fixedEstablishmentAddressLine1
-  private val fixedEstablishmentAddressLine2 = etmpEuRegistrationDetails.fixedEstablishmentAddressLine2
+  private val fixedEstablishmentAddressLine2 = arbitrary[String].sample.value
   private val townOrCity = etmpEuRegistrationDetails.townOrCity
-  private val regionOrState = etmpEuRegistrationDetails.regionOrState
-  private val postcode = etmpEuRegistrationDetails.postcode
+  private val regionOrState = arbitrary[String].sample.value
+  private val postcode = arbitrary[String].sample.value
 
   "EtmpEuRegistrationDetails" - {
 
@@ -53,10 +54,10 @@ class EtmpEuRegistrationDetailsSpec extends SpecBase {
           traderId = traderId,
           tradingName = tradingName,
           fixedEstablishmentAddressLine1 = fixedEstablishmentAddressLine1,
-          fixedEstablishmentAddressLine2 = fixedEstablishmentAddressLine2,
+          fixedEstablishmentAddressLine2 = Some(fixedEstablishmentAddressLine2),
           townOrCity = townOrCity,
-          regionOrState = regionOrState,
-          postcode = postcode
+          regionOrState = Some(regionOrState),
+          postcode = Some(postcode)
         )
 
         Json.toJson(expectedResult) mustBe json
