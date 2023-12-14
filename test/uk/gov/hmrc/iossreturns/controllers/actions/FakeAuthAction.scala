@@ -9,7 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class FakeAuthAction @Inject()(bodyParsers: PlayBodyParsers) extends AuthAction {
 
   override def invokeBlock[A](request: Request[A], block: AuthorisedRequest[A] => Future[Result]): Future[Result] =
-    block(AuthorisedRequest(request, "id", Vrn("123456789"), "IM9001234567"))
+    block(AuthorisedRequest(request, "id", Vrn("123456789"), "IM9001234567", ???)) // TODO -> Add EtmpRegistration
 
   override def parser: BodyParser[AnyContent] =
     bodyParsers.default

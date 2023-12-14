@@ -5,13 +5,15 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
 import play.api.Application
+import play.api.http.Status.OK
 import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, EisErrorResponse, EtmpDisplayReturnError, GatewayTimeout, Period, ServerError}
-import uk.gov.hmrc.iossreturns.models.etmp.EtmpVatReturn
+import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpObligationsFulfilmentStatus, EtmpVatReturn}
+import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 
-import java.time.{Instant, Month}
+import java.time.{Instant, LocalDate, Month}
 import java.util.UUID
 
 class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
@@ -26,7 +28,12 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
         "microservice.services.etmp-display-vat-return.host" -> "127.0.0.1",
         "microservice.services.etmp-display-vat-return.port" -> server.port,
         "microservice.services.etmp-display-vat-return.authorizationToken" -> "auth-token",
-        "microservice.services.etmp-display-vat-return.environment" -> "test-environment"
+        "microservice.services.etmp-display-vat-return.environment" -> "test-environment",
+        "microservice.services.etmp-list-obligations.host" -> "127.0.0.1",
+        "microservice.services.etmp-list-obligations.port" -> server.port,
+        "microservice.services.etmp-list-obligations.authorizationToken" -> "auth-token",
+        "microservice.services.etmp-list-obligations.environment" -> "test-environment",
+        "microservice.services.etmp-list-obligations.regimeType" -> "IOSS"
       )
       .build()
 
@@ -282,6 +289,41 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
 
           result mustBe Left(expectedResponse)
         }
+      }
+    }
+  }
+
+  "getObligations" - {
+
+    val idType = "IOSS"
+    val idNumber = "IM9001234567"
+    val regimeType = "IOSS"
+    val dateFrom = LocalDate.now(stubClockAtArbitraryDate).format(etmpDateFormatter)
+    val dateTo = LocalDate.now(stubClockAtArbitraryDate).format(etmpDateFormatter)
+    val status = EtmpObligationsFulfilmentStatus.values.head.toString
+    val url = s"/ioss-returns-stub/enterprise/obligation-data/$idType/$idNumber/$regimeType/$dateFrom/$dateTo/$status"
+
+    "must return OK when server return OK and a recognised payload" in {
+
+      val obligations = arbitrary[EtmpObligations].sample.value
+      val jsonStringBody = Json.toJson(obligations).toString()
+
+      val app = application
+
+      server.stubFor(
+        get(urlEqualTo(url))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(jsonStringBody)
+          )
+      )
+
+      running(app) {
+        val connector = app.injector.instanceOf[VatReturnConnector]
+        val result = connector.getObligations(idNumber, dateFrom, dateTo, status).futureValue
+
+        result mustBe Right(obligations)
       }
     }
   }

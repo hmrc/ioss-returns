@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.controllers.actions
+package uk.gov.hmrc.iossreturns.models.etmp
 
-import play.api.mvc.{Request, WrappedRequest}
-import uk.gov.hmrc.domain.Vrn
-import uk.gov.hmrc.iossreturns.models.EtmpRegistration
+import play.api.libs.json.{Json, OFormat}
 
+case class EtmpObligationDetails(
+                                  status: EtmpObligationsFulfilmentStatus,
+                                  periodKey: String
+                                )
 
-case class AuthorisedRequest[A](
-                                 request: Request[A],
-                                 userId: String,
-                                 vrn: Vrn,
-                                 iossNumber: String,
-                                 registration: EtmpRegistration
-                               ) extends WrappedRequest[A](request)
+object EtmpObligationDetails {
+
+  implicit val format: OFormat[EtmpObligationDetails] = Json.format[EtmpObligationDetails]
+}

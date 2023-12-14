@@ -47,7 +47,7 @@ class AuthActionImpl @Inject()(
 
       case Some(internalId) ~ enrolments =>
         (findVrnFromEnrolments(enrolments), findIossFromEnrolments(enrolments)) match {
-          case (Some(vrn), Some(iossNumber)) => block(AuthorisedRequest(request, internalId, vrn, iossNumber))
+          case (Some(vrn), Some(iossNumber)) => block(AuthorisedRequest(request, internalId, vrn, iossNumber, ???)) // TODO
           case _ =>
             logger.warn(s"Insufficient enrolments")
             throw InsufficientEnrolments("Insufficient enrolments")

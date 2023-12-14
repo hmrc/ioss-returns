@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.controllers.actions
+package uk.gov.hmrc.iossreturns.models.requests
 
 import play.api.mvc.{Request, WrappedRequest}
+import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.domain.Vrn
-import uk.gov.hmrc.iossreturns.models.EtmpRegistration
 
-
-case class AuthorisedRequest[A](
-                                 request: Request[A],
-                                 userId: String,
-                                 vrn: Vrn,
-                                 iossNumber: String,
-                                 registration: EtmpRegistration
-                               ) extends WrappedRequest[A](request)
+case class IdentifierRequest[A](
+                                  request: Request[A],
+                                  credentials: Credentials,
+                                  vrn: Vrn,
+                                  iossNumber: String
+                                ) extends WrappedRequest[A](request) {
+  val userId: String = credentials.providerId
+}

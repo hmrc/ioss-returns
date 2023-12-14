@@ -33,8 +33,7 @@ trait SpecBase
   val userAnswersId: String = "12345-credId"
   val testCredentials: Credentials = Credentials(userAnswersId, "GGW")
 
-  val arbitraryDate: LocalDate = datesBetween(LocalDate.of(2023, 3, 1), LocalDate.of(2025, 12, 31)).sample.value
-  val arbitraryInstant: Instant = arbitraryDate.atStartOfDay(ZoneId.systemDefault).toInstant
+  val arbitraryInstant: Instant = arbitraryDate.arbitrary.sample.value.atStartOfDay(ZoneId.systemDefault).toInstant
   val stubClockAtArbitraryDate: Clock = Clock.fixed(arbitraryInstant, ZoneId.systemDefault)
 
   val coreVatReturn: CoreVatReturn = CoreVatReturn(

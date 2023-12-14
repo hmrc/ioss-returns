@@ -185,4 +185,11 @@ class ReturnControllerSpec
     }
   }
 
+  ".getObligations" - {
+
+    "must respond with OK and return a valid response" in {
+
+
+    }
+  }
 }

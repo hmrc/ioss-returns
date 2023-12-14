@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.iossreturns.connectors
 
-import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.Logging
+import play.api.http.HeaderNames.AUTHORIZATION
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpException}
-import uk.gov.hmrc.iossreturns.config.{CoreVatReturnConfig, EtmpDisplayReturnConfig}
+import uk.gov.hmrc.iossreturns.config.{CoreVatReturnConfig, EtmpDisplayReturnConfig, EtmpListObligationsConfig}
 import uk.gov.hmrc.iossreturns.connectors.CoreVatReturnHttpParser.{CoreVatReturnReads, CoreVatReturnResponse}
-import uk.gov.hmrc.iossreturns.connectors.EtmpDisplayVatReturnHttpParser.{EtmpVatReturnReads, EtmpDisplayVatReturnResponse}
-import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, EisErrorResponse, Period}
-import uk.gov.hmrc.iossreturns.models.GatewayTimeout
+import uk.gov.hmrc.iossreturns.connectors.EtmpDisplayVatReturnHttpParser.{EtmpDisplayVatReturnResponse, EtmpVatReturnReads}
+import uk.gov.hmrc.iossreturns.connectors.EtmpListObligationsHttpParser.{EtmpListObligationsReads, EtmpListObligationsResponse}
+import uk.gov.hmrc.iossreturns.models._
 
 import java.time.Instant
 import java.util.UUID
@@ -33,7 +33,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class VatReturnConnector @Inject()(
                                     httpClient: HttpClient,
                                     coreVatReturnConfig: CoreVatReturnConfig,
-                                    etmpDisplayReturnConfig: EtmpDisplayReturnConfig
+                                    etmpDisplayReturnConfig: EtmpDisplayReturnConfig,
+                                    etmpListObligationsConfig: EtmpListObligationsConfig
                                   )(implicit ec: ExecutionContext) extends Logging {
 
   private implicit val emptyHc: HeaderCarrier = HeaderCarrier()
@@ -91,4 +92,16 @@ class VatReturnConnector @Inject()(
     }
   }
 
+  // TODO controller to get from and to dates -> From = reg start date, to = today???
+  def getObligations(idNumber: String, dateFrom: String, dateTo: String, status: String): Future[EtmpListObligationsResponse] = {
+
+    def url = s"${etmpListObligationsConfig.baseUrl}enterprise/obligation-data/${etmpListObligationsConfig.idType}/$idNumber/${etmpListObligationsConfig.regimeType}/$dateFrom/$dateTo/$status"
+
+    httpClient.GET[EtmpListObligationsResponse](url)
+      .recover {
+        case e: HttpException =>
+          logger.error(s"Unexpected error response from ETMP $url, received status ${e.responseCode}, body of response was: ${e.message}")
+          Left(GatewayTimeout)
+      }
+  }
 }
