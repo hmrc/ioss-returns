@@ -5,4 +5,4 @@ GET         /return/:period                              uk.gov.hmrc.iossreturns
 
 POST        /return                                      uk.gov.hmrc.iossreturns.controllers.ReturnController.submit
 
-GET         /obligations/:idNumber                       uk.gov.hmrc.iossreturns.controllers.ReturnController.getObligations(idNumber: String)
+GET         /obligations/:iossNumber                       uk.gov.hmrc.iossreturns.controllers.ReturnController.getObligations(iossNumber: String)

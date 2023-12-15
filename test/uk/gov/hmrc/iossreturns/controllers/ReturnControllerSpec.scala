@@ -189,13 +189,13 @@ class ReturnControllerSpec
   ".getObligations" - {
 
     val etmpObligations: EtmpObligations = arbitraryObligations.arbitrary.sample.value
-    val idNumber: String = arbitrary[String].sample.value
+    val iossNumber: String = arbitrary[String].sample.value
 
-    lazy val request = FakeRequest(GET, routes.ReturnController.getObligations(idNumber).url)
+    lazy val request = FakeRequest(GET, routes.ReturnController.getObligations(iossNumber).url)
 
     "must respond with OK and return a valid response" in {
 
-      when(mockCoreVatReturnConnector.getObligations(any(), any(), any(), any())) thenReturn Right(etmpObligations).toFuture
+      when(mockCoreVatReturnConnector.getObligations(any(), any())) thenReturn Right(etmpObligations).toFuture
 
       val app =
         applicationBuilder()
@@ -212,7 +212,7 @@ class ReturnControllerSpec
 
     "must respond with and error when the connector responds with an error" in {
 
-      when(mockCoreVatReturnConnector.getObligations(any(), any(), any(), any())) thenReturn Left(ServerError).toFuture
+      when(mockCoreVatReturnConnector.getObligations(any(), any())) thenReturn Left(ServerError).toFuture
 
       val app =
         applicationBuilder()

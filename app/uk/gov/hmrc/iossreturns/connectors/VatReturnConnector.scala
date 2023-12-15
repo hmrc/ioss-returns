@@ -24,6 +24,7 @@ import uk.gov.hmrc.iossreturns.connectors.CoreVatReturnHttpParser.{CoreVatReturn
 import uk.gov.hmrc.iossreturns.connectors.EtmpDisplayVatReturnHttpParser.{EtmpDisplayVatReturnResponse, EtmpVatReturnReads}
 import uk.gov.hmrc.iossreturns.connectors.EtmpListObligationsHttpParser.{EtmpListObligationsReads, EtmpListObligationsResponse}
 import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 
 import java.time.Instant
 import java.util.UUID
@@ -42,6 +43,8 @@ class VatReturnConnector @Inject()(
   private def submissionHeaders(correlationId: String): Seq[(String, String)] = coreVatReturnConfig.submissionHeaders(correlationId)
 
   private def displayHeaders(correlationId: String): Seq[(String, String)] = etmpDisplayReturnConfig.headers(correlationId)
+
+  private def obligationsHeaders(correlationId: String): Seq[(String, String)] = etmpListObligationsConfig.headers(correlationId)
 
 
   def submit(coreVatReturn: CoreVatReturn): Future[CoreVatReturnResponse] = {
@@ -92,21 +95,25 @@ class VatReturnConnector @Inject()(
     }
   }
 
-  def getObligations(idNumber: String, dateFrom: String, dateTo: String, status: String): Future[EtmpListObligationsResponse] = {
+  private def getObligationsUrl(iossNumber: String) =
+    s"${etmpListObligationsConfig.baseUrl}enterprise/obligation-data/${etmpListObligationsConfig.idType}/$iossNumber/${etmpListObligationsConfig.regimeType}"
+
+  def getObligations(idNumber: String, queryParameters: EtmpObligationsQueryParameters): Future[EtmpListObligationsResponse] = {
 
     val correlationId = UUID.randomUUID().toString
-    val headersWithCorrelationId = displayHeaders(correlationId)
+    val headersWithCorrelationId = obligationsHeaders(correlationId)
 
     val headersWithoutAuth = headersWithCorrelationId.filterNot {
       case (key, _) => key.matches(AUTHORIZATION)
     }
 
-    def url = s"${etmpListObligationsConfig.baseUrl}enterprise/obligation-data/${etmpListObligationsConfig.idType}/$idNumber/${etmpListObligationsConfig.regimeType}/$dateFrom/$dateTo/$status"
+    val url = getObligationsUrl(idNumber)
 
     logger.info(s"Sending getObligations request to ETMP with headers $headersWithoutAuth")
 
     httpClient.GET[EtmpListObligationsResponse](
       url,
+      queryParameters.toSeqQueryParams,
       headers = headersWithCorrelationId
     ).recover {
       case e: HttpException =>

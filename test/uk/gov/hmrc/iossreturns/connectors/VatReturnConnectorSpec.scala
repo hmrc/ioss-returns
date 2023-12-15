@@ -1,16 +1,17 @@
 package uk.gov.hmrc.iossreturns.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.matching.EqualToPattern
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
 import play.api.Application
-import play.api.http.Status.OK
+import play.api.http.Status.{GATEWAY_TIMEOUT, NOT_FOUND, OK}
 import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, EisErrorResponse, EtmpDisplayReturnError, GatewayTimeout, Period, ServerError}
-import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpObligationsFulfilmentStatus, EtmpVatReturn}
+import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpObligationsQueryParameters, EtmpVatReturn}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 
 import java.time.{Instant, LocalDate, Month}
@@ -33,6 +34,7 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
         "microservice.services.etmp-list-obligations.port" -> server.port,
         "microservice.services.etmp-list-obligations.authorizationToken" -> "auth-token",
         "microservice.services.etmp-list-obligations.environment" -> "test-environment",
+        "microservice.services.etmp-list-obligations.idType" -> "IOSS",
         "microservice.services.etmp-list-obligations.regimeType" -> "IOSS"
       )
       .build()
@@ -296,12 +298,14 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
   "getObligations" - {
 
     val idType = "IOSS"
-    val idNumber = "IM9001234567"
+    val iossNumber = "IM9001234567"
     val regimeType = "IOSS"
     val dateFrom = LocalDate.now(stubClockAtArbitraryDate).format(etmpDateFormatter)
     val dateTo = LocalDate.now(stubClockAtArbitraryDate).format(etmpDateFormatter)
-    val status = EtmpObligationsFulfilmentStatus.values.head.toString
-    val url = s"/ioss-returns-stub/enterprise/obligation-data/$idType/$idNumber/$regimeType/$dateFrom/$dateTo/$status"
+    val status = "A"
+
+    val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(fromDate = dateFrom, toDate = dateTo, status = status)
+    val obligationsUrl = s"/ioss-returns-stub/enterprise/obligation-data/$idType/$iossNumber/$regimeType"
 
     "must return OK when server return OK and a recognised payload" in {
 
@@ -311,7 +315,11 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
       val app = application
 
       server.stubFor(
-        get(urlEqualTo(url))
+        get(urlEqualTo(s"${obligationsUrl}?dateFrom=${queryParameters.fromDate}&dateTo=${queryParameters.toDate}&status=${queryParameters.status}"))
+          .withQueryParam("dateFrom", new EqualToPattern(dateFrom))
+          .withQueryParam("dateTo", new EqualToPattern(dateTo))
+          .withQueryParam("status", new EqualToPattern(status))
+          .withHeader("Authorization", equalTo("Bearer auth-token"))
           .willReturn(
             aResponse()
               .withStatus(OK)
@@ -321,9 +329,90 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
 
       running(app) {
         val connector = app.injector.instanceOf[VatReturnConnector]
-        val result = connector.getObligations(idNumber, dateFrom, dateTo, status).futureValue
+        val result = connector.getObligations(iossNumber, queryParameters).futureValue
 
         result mustBe Right(obligations)
+      }
+    }
+
+    "when the server returns an error" - {
+
+      "Http Exception must result in GatewayTimeout" in {
+
+        val app = application
+
+        server.stubFor(
+          get(urlEqualTo(s"${obligationsUrl}?dateFrom=${queryParameters.fromDate}&dateTo=${queryParameters.toDate}&status=${queryParameters.status}"))
+            .withQueryParam("dateFrom", new EqualToPattern(dateFrom))
+            .withQueryParam("dateTo", new EqualToPattern(dateTo))
+            .withQueryParam("status", new EqualToPattern(status))
+            .withHeader("Authorization", equalTo("Bearer auth-token"))
+            .willReturn(aResponse()
+              .withStatus(GATEWAY_TIMEOUT)
+              .withFixedDelay(21000)
+            )
+        )
+
+        running(app) {
+          val connector = app.injector.instanceOf[VatReturnConnector]
+          whenReady(connector.getObligations(iossNumber, queryParameters), Timeout(Span(30, Seconds))) { exp =>
+            exp.isLeft mustBe true
+            exp.left.toOption.get mustBe GatewayTimeout
+          }
+        }
+      }
+
+      "it's handled and returned" in {
+
+        val app = application
+
+        val errorResponseJson = """{}"""
+
+        server.stubFor(
+          get(urlEqualTo(s"${obligationsUrl}?dateFrom=${queryParameters.fromDate}&dateTo=${queryParameters.toDate}&status=${queryParameters.status}"))
+            .withQueryParam("dateFrom", new EqualToPattern(dateFrom))
+            .withQueryParam("dateTo", new EqualToPattern(dateTo))
+            .withQueryParam("status", new EqualToPattern(status))
+            .withHeader("Authorization", equalTo("Bearer auth-token"))
+            .willReturn(aResponse()
+              .withStatus(NOT_FOUND)
+              .withBody(errorResponseJson)
+            )
+        )
+
+        running(app) {
+          val connector = app.injector.instanceOf[VatReturnConnector]
+          val result = connector.getObligations(iossNumber, queryParameters).futureValue
+
+          val expectedResponse = EtmpListObligationsError("404", errorResponseJson)
+
+          result mustBe Left(expectedResponse)
+        }
+      }
+
+      "the response has no json body" in {
+
+        val app = application
+
+        server.stubFor(
+          get(urlEqualTo(s"${obligationsUrl}?dateFrom=${queryParameters.fromDate}&dateTo=${queryParameters.toDate}&status=${queryParameters.status}"))
+            .withQueryParam("dateFrom", new EqualToPattern(dateFrom))
+            .withQueryParam("dateTo", new EqualToPattern(dateTo))
+            .withQueryParam("status", new EqualToPattern(status))
+            .withHeader("Authorization", equalTo("Bearer auth-token"))
+            .willReturn(aResponse()
+              .withStatus(NOT_FOUND)
+            )
+        )
+
+        running(app) {
+          val connector = app.injector.instanceOf[VatReturnConnector]
+          val result = connector.getObligations(iossNumber, queryParameters).futureValue
+
+          val expectedResponse = EtmpListObligationsError("UNEXPECTED_404", "The response body was empty")
+
+          result mustBe Left(expectedResponse)
+        }
       }
     }
   }
