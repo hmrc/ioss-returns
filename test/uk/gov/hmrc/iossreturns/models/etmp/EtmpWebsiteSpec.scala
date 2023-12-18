@@ -14,17 +14,26 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.controllers.actions
+package uk.gov.hmrc.iossreturns.models.etmp
 
-import play.api.mvc.{Request, WrappedRequest}
-import uk.gov.hmrc.domain.Vrn
-import uk.gov.hmrc.iossreturns.models.EtmpRegistration
+import org.scalacheck.Arbitrary.arbitrary
+import play.api.libs.json.{JsSuccess, Json}
+import uk.gov.hmrc.iossreturns.base.SpecBase
 
+class EtmpWebsiteSpec extends SpecBase {
 
-case class AuthorisedRequest[A](
-                                 request: Request[A],
-                                 userId: String,
-                                 vrn: Vrn,
-                                 iossNumber: String,
-                                 registration: EtmpRegistration
-                               ) extends WrappedRequest[A](request)
+  "EtmpWebsite" - {
+
+    "must serialise/deserialise to and from EtmpWebsite" in {
+
+      val website = arbitrary[EtmpWebsite].sample.value
+
+      val expectedJson = Json.obj(
+        "websiteAddress" -> s"${website.websiteAddress}"
+      )
+
+      Json.toJson(website) mustBe expectedJson
+      expectedJson.validate[EtmpWebsite] mustBe JsSuccess(website)
+    }
+  }
+}

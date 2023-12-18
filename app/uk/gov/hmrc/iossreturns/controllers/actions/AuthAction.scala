@@ -25,6 +25,7 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.iossreturns.config.AppConfig
+import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.Inject
@@ -35,19 +36,23 @@ trait AuthAction extends ActionBuilder[AuthorisedRequest, AnyContent] with Actio
 class AuthActionImpl @Inject()(
                                 override val authConnector: AuthConnector,
                                 val parser: BodyParsers.Default,
-                                config: AppConfig
+                                config: AppConfig,
+                                registrationConnector: RegistrationConnector
                               )(implicit val executionContext: ExecutionContext)
   extends AuthAction with AuthorisedFunctions with Logging {
 
   override def invokeBlock[A](request: Request[A], block: AuthorisedRequest[A] => Future[Result]): Future[Result] = {
 
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
     authorised().retrieve(Retrievals.internalId and Retrievals.allEnrolments) {
 
       case Some(internalId) ~ enrolments =>
         (findVrnFromEnrolments(enrolments), findIossFromEnrolments(enrolments)) match {
-          case (Some(vrn), Some(iossNumber)) => block(AuthorisedRequest(request, internalId, vrn, iossNumber))
+          case (Some(vrn), Some(iossNumber)) =>
+            registrationConnector.getRegistration().flatMap { registration =>
+              block(AuthorisedRequest(request, internalId, vrn, iossNumber, registration))
+            }
           case _ =>
             logger.warn(s"Insufficient enrolments")
             throw InsufficientEnrolments("Insufficient enrolments")

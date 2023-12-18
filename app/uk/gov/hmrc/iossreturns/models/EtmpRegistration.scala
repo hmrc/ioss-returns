@@ -16,26 +16,18 @@
 
 package uk.gov.hmrc.iossreturns.models
 
-sealed trait ErrorResponse {
-  val body: String
+import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.iossreturns.models.etmp.{EtmpAdminUse, EtmpBankDetails, EtmpExclusion, EtmpSchemeDetails, EtmpTradingName}
+
+case class EtmpRegistration(
+                             tradingNames: Seq[EtmpTradingName],
+                             schemeDetails: EtmpSchemeDetails,
+                             bankDetails: EtmpBankDetails,
+                             exclusions: Seq[EtmpExclusion],
+                             adminUse: EtmpAdminUse
+                           )
+
+object EtmpRegistration {
+
+  implicit val format: OFormat[EtmpRegistration] = Json.format[EtmpRegistration]
 }
-
-case object NotFound extends ErrorResponse {
-  override val body = "Not found"
-}
-
-case object ServerError extends ErrorResponse {
-  override val body = "Internal server error"
-}
-
-case object ServiceUnavailable extends ErrorResponse {
-  override val body: String = "Service unavailable"
-}
-
-case object GatewayTimeout extends ErrorResponse {
-  override val body: String = "Gateway timeout"
-}
-
-case class EtmpDisplayReturnError(code: String, body: String) extends ErrorResponse
-
-case class EtmpListObligationsError(code: String, body: String) extends ErrorResponse

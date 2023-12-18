@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.iossreturns.connectors
 
-import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.Logging
+import play.api.http.HeaderNames.AUTHORIZATION
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpException}
-import uk.gov.hmrc.iossreturns.config.{CoreVatReturnConfig, EtmpDisplayReturnConfig}
+import uk.gov.hmrc.iossreturns.config.{CoreVatReturnConfig, EtmpDisplayReturnConfig, EtmpListObligationsConfig}
 import uk.gov.hmrc.iossreturns.connectors.CoreVatReturnHttpParser.{CoreVatReturnReads, CoreVatReturnResponse}
-import uk.gov.hmrc.iossreturns.connectors.EtmpDisplayVatReturnHttpParser.{EtmpVatReturnReads, EtmpDisplayVatReturnResponse}
-import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, EisErrorResponse, Period}
-import uk.gov.hmrc.iossreturns.models.GatewayTimeout
+import uk.gov.hmrc.iossreturns.connectors.EtmpDisplayVatReturnHttpParser.{EtmpDisplayVatReturnResponse, EtmpVatReturnReads}
+import uk.gov.hmrc.iossreturns.connectors.EtmpListObligationsHttpParser.{EtmpListObligationsReads, EtmpListObligationsResponse}
+import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 
 import java.time.Instant
 import java.util.UUID
@@ -33,7 +34,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class VatReturnConnector @Inject()(
                                     httpClient: HttpClient,
                                     coreVatReturnConfig: CoreVatReturnConfig,
-                                    etmpDisplayReturnConfig: EtmpDisplayReturnConfig
+                                    etmpDisplayReturnConfig: EtmpDisplayReturnConfig,
+                                    etmpListObligationsConfig: EtmpListObligationsConfig
                                   )(implicit ec: ExecutionContext) extends Logging {
 
   private implicit val emptyHc: HeaderCarrier = HeaderCarrier()
@@ -41,6 +43,8 @@ class VatReturnConnector @Inject()(
   private def submissionHeaders(correlationId: String): Seq[(String, String)] = coreVatReturnConfig.submissionHeaders(correlationId)
 
   private def displayHeaders(correlationId: String): Seq[(String, String)] = etmpDisplayReturnConfig.headers(correlationId)
+
+  private def obligationsHeaders(correlationId: String): Seq[(String, String)] = etmpListObligationsConfig.headers(correlationId)
 
 
   def submit(coreVatReturn: CoreVatReturn): Future[CoreVatReturnResponse] = {
@@ -91,4 +95,30 @@ class VatReturnConnector @Inject()(
     }
   }
 
+  private def getObligationsUrl(iossNumber: String) =
+    s"${etmpListObligationsConfig.baseUrl}enterprise/obligation-data/${etmpListObligationsConfig.idType}/$iossNumber/${etmpListObligationsConfig.regimeType}"
+
+  def getObligations(idNumber: String, queryParameters: EtmpObligationsQueryParameters): Future[EtmpListObligationsResponse] = {
+
+    val correlationId = UUID.randomUUID().toString
+    val headersWithCorrelationId = obligationsHeaders(correlationId)
+
+    val headersWithoutAuth = headersWithCorrelationId.filterNot {
+      case (key, _) => key.matches(AUTHORIZATION)
+    }
+
+    val url = getObligationsUrl(idNumber)
+
+    logger.info(s"Sending getObligations request to ETMP with headers $headersWithoutAuth")
+
+    httpClient.GET[EtmpListObligationsResponse](
+      url,
+      queryParameters.toSeqQueryParams,
+      headers = headersWithCorrelationId
+    ).recover {
+      case e: HttpException =>
+        logger.error(s"Unexpected error response from ETMP $url, received status ${e.responseCode}, body of response was: ${e.message}")
+        Left(GatewayTimeout)
+    }
+  }
 }

@@ -7,9 +7,9 @@ import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTra
 
 import java.time.ZonedDateTime
 
-class FinancialDataSpec extends SpecBase with FinancialDataConnectorFixture {
+  class FinancialDataSpec extends SpecBase with FinancialDataConnectorFixture {
 
-  private val zonedDateTimeNow = ZonedDateTime.now()
+  private val zonedDateTimeNow = ZonedDateTime.now(stubClockAtArbitraryDate).plusSeconds(1)
 
   private val financialDataJson =
     s"""{

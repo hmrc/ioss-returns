@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.controllers.actions
+package uk.gov.hmrc.iossreturns.models.etmp
 
-import play.api.mvc.{Request, WrappedRequest}
-import uk.gov.hmrc.domain.Vrn
-import uk.gov.hmrc.iossreturns.models.EtmpRegistration
+import uk.gov.hmrc.iossreturns.models.{Enumerable, WithName}
 
+sealed trait EtmpObligationsFulfilmentStatus
 
-case class AuthorisedRequest[A](
-                                 request: Request[A],
-                                 userId: String,
-                                 vrn: Vrn,
-                                 iossNumber: String,
-                                 registration: EtmpRegistration
-                               ) extends WrappedRequest[A](request)
+object EtmpObligationsFulfilmentStatus extends Enumerable.Implicits {
+
+  case object All extends WithName("A") with EtmpObligationsFulfilmentStatus
+
+  val values: Seq[EtmpObligationsFulfilmentStatus] = Seq(
+    All
+  )
+
+  implicit val enumerable: Enumerable[EtmpObligationsFulfilmentStatus] =
+    Enumerable(values.map(v => v.toString -> v): _*)
+}
