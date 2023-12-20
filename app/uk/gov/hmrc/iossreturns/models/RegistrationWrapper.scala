@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.etmp
+package uk.gov.hmrc.iossreturns.models
 
-import uk.gov.hmrc.iossreturns.models.{Enumerable, WithName}
+import play.api.libs.json.{Json, OFormat}
 
-sealed trait EtmpObligationsFulfilmentStatus
+case class RegistrationWrapper(registration: EtmpRegistration)
 
-object EtmpObligationsFulfilmentStatus extends Enumerable.Implicits {
-
-  case object Open extends WithName("O") with EtmpObligationsFulfilmentStatus
-
-  case object Fulfilled extends WithName("F") with EtmpObligationsFulfilmentStatus
-
-  val values: Seq[EtmpObligationsFulfilmentStatus] = Seq(
-    Open,
-    Fulfilled
-  )
-
-  implicit val enumerable: Enumerable[EtmpObligationsFulfilmentStatus] =
-    Enumerable(values.map(v => v.toString -> v): _*)
+object RegistrationWrapper {
+  implicit val format: OFormat[RegistrationWrapper] = Json.format[RegistrationWrapper]
 }
