@@ -43,7 +43,9 @@ class AuthActionImpl @Inject()(
 
   override def invokeBlock[A](request: Request[A], block: AuthorisedRequest[A] => Future[Result]): Future[Result] = {
 
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+
+    println(s"request.session ${request.session}")
 
     authorised().retrieve(Retrievals.internalId and Retrievals.allEnrolments) {
 
@@ -62,8 +64,8 @@ class AuthActionImpl @Inject()(
         logger.warn("Unable to retrieve authorisation data")
         throw new UnauthorizedException("Unable to retrieve authorisation data")
     } recover {
-      case _: AuthorisationException =>
-        logger.warn(s"Unauthorised given")
+      case a: AuthorisationException =>
+        logger.warn(s"Unauthorised given", a)
         Unauthorized
     }
   }
