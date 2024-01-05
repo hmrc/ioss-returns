@@ -63,7 +63,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
               .thenReturn(Future.successful(Some("id") ~ vatAndIossEnrolment))
-            when(mockRegistrationConnector.getRegistration()(any())) thenReturn etmpRegistration.toFuture
+            when(mockRegistrationConnector.getRegistration()(any())) thenReturn ??? ///etmpRegistration.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
             val controller = new Harness(action)
@@ -91,7 +91,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
               .thenReturn(Future.successful(Some("id") ~ Enrolments(Set.empty)))
-            when(mockRegistrationConnector.getRegistration()(any())) thenReturn etmpRegistration.toFuture
+            when(mockRegistrationConnector.getRegistration()(any())) thenReturn ??? // etmpRegistration.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
             val controller = new Harness(action)
@@ -119,7 +119,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
               .thenReturn(Future.successful(Some("id") ~ iossEnrolment))
-            when(mockRegistrationConnector.getRegistration()(any())) thenReturn etmpRegistration.toFuture
+            when(mockRegistrationConnector.getRegistration()(any())) thenReturn ??? // etmpRegistration.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
             val controller = new Harness(action)
@@ -147,7 +147,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
               .thenReturn(Future.successful(Some("id") ~ vatEnrolment))
-            when(mockRegistrationConnector.getRegistration()(any())) thenReturn etmpRegistration.toFuture
+            when(mockRegistrationConnector.getRegistration()(any())) thenReturn ??? // etmpRegistration.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
             val controller = new Harness(action)
@@ -173,7 +173,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
           running(application) {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
-            when(mockRegistrationConnector.getRegistration()(any())) thenReturn etmpRegistration.toFuture
+            when(mockRegistrationConnector.getRegistration()(any())) thenReturn ??? // etmpRegistration.toFuture
 
             val authAction = new AuthActionImpl(new FakeFailingAuthConnector(new MissingBearerToken), bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
             val controller = new Harness(authAction)

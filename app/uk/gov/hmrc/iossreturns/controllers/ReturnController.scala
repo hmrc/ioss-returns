@@ -56,7 +56,7 @@ class ReturnController @Inject()(
   def getObligations(iossNumber: String): Action[AnyContent] = cc.auth().async {
     implicit request =>
 
-      val fromDate: String = request.registration.schemeDetails.commencementDate.format(etmpDateFormatter)
+      val fromDate: String = request.registration.registration.schemeDetails.commencementDate.format(etmpDateFormatter)
       val toDate = LocalDate.now(clock).format(etmpDateFormatter)
 
       val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(

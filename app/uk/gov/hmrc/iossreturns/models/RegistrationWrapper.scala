@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.controllers.actions
+package uk.gov.hmrc.iossreturns.models
 
-import play.api.mvc.{Request, WrappedRequest}
-import uk.gov.hmrc.domain.Vrn
-import uk.gov.hmrc.iossreturns.models.{EtmpRegistration, RegistrationWrapper}
+import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.iossreturns.models.des.VatCustomerInfo
+import uk.gov.hmrc.iossreturns.models.etmp.EtmpDisplayRegistration
 
+case class RegistrationWrapper(vatInfo: VatCustomerInfo, registration: EtmpDisplayRegistration)
 
-case class AuthorisedRequest[A](
-                                 request: Request[A],
-                                 userId: String,
-                                 vrn: Vrn,
-                                 iossNumber: String,
-                                 registration: RegistrationWrapper
-                               ) extends WrappedRequest[A](request)
+object RegistrationWrapper {
+  implicit val format: OFormat[RegistrationWrapper] = Json.format[RegistrationWrapper]
+}

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.iossreturns.models.etmp
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Json, OFormat, Reads, __}
 
 case class EtmpSchemeDetails(
                               commencementDate: String,
@@ -34,4 +34,41 @@ object EtmpSchemeDetails {
 
   implicit val format: OFormat[EtmpSchemeDetails] =
     Json.format[EtmpSchemeDetails]
+
+//  import play.api.libs.functional.syntax._
+//  val displayReads: Reads[EtmpSchemeDetails] =
+//    (
+//      (__ \ "commencementDate").read[String] and
+//        (__ \ "euRegistrationDetails").readNullable[Seq[EtmpEuRegistrationDetails]] and
+//        (__ \ "previousEURegistrationDetails").readNullable[Seq[EtmpPreviousEuRegistrationDetails]] and
+//        (__ \ "websites").read[Seq[EtmpWebsite]] and
+//        (__ \ "contactDetails" \ "contactNameOrBusinessAddress").read[String] and
+//        (__ \ "contactDetails" \ "businessTelephoneNumber").read[String] and
+//        (__ \ "contactDetails" \ "businessEmailAddress").read[String] and
+//        (__ \ "nonCompliantReturns").readNullable[String] and
+//        (__ \ "nonCompliantPayments").readNullable[String]
+//      )(fromDisplayRegistrationPayload _)
+//
+//  private def fromDisplayRegistrationPayload(
+//                                              commencementDate: String,
+//                                              euRegistrationDetails: Option[Seq[EtmpEuRegistrationDetails]],
+//                                              previousEURegistrationDetails: Option[Seq[EtmpPreviousEuRegistrationDetails]],
+//                                              websites: Seq[EtmpWebsite],
+//                                              contactNameOrBusinessAddress: String,
+//                                              businessTelephoneNumber: String,
+//                                              businessEmailAddress: String,
+//                                              nonCompliantReturns: Option[String],
+//                                              nonCompliantPayments: Option[String]
+//                                            ): EtmpSchemeDetails =
+//    EtmpSchemeDetails(
+//      commencementDate = commencementDate,
+//      euRegistrationDetails = euRegistrationDetails.fold(Seq.empty[EtmpEuRegistrationDetails])(a => a),
+//      previousEURegistrationDetails = previousEURegistrationDetails.fold(Seq.empty[EtmpPreviousEuRegistrationDetails])(a => a),
+//      websites = websites,
+//      contactName = contactNameOrBusinessAddress,
+//      businessTelephoneNumber = businessTelephoneNumber,
+//      businessEmailId = businessEmailAddress,
+//      nonCompliantReturns = nonCompliantReturns,
+//      nonCompliantPayments = nonCompliantPayments
+//    )
 }
