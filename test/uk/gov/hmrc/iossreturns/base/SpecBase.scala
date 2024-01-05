@@ -1,5 +1,7 @@
 package uk.gov.hmrc.iossreturns.base
 
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.{OptionValues, TryValues}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
@@ -9,9 +11,13 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.domain.Vrn
+import uk.gov.hmrc.iossreturns.config.Constants.maxTradingNames
 import uk.gov.hmrc.iossreturns.controllers.actions.{AuthAction, FakeAuthAction}
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.des.VatCustomerInfo
+import uk.gov.hmrc.iossreturns.models.etmp.{EtmpDisplayRegistration, EtmpExclusion}
+import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.{etmpAdminUse, etmpSchemeDetails, genBankDetails}
 
 import java.time.{Clock, Instant, LocalDate, LocalDateTime, Month, ZoneId}
 
@@ -86,4 +92,7 @@ trait SpecBase
         bind[AuthAction].to[FakeAuthAction]
       )
   }
+
+
+
 }

@@ -20,8 +20,9 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.config.Constants.maxTradingNames
+import uk.gov.hmrc.iossreturns.models.des.VatCustomerInfo
 import uk.gov.hmrc.iossreturns.models.etmp._
-import uk.gov.hmrc.iossreturns.models.{Bic, Country, EtmpRegistration, Iban}
+import uk.gov.hmrc.iossreturns.models.{Bic, Country, EtmpRegistration, Iban, RegistrationWrapper}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 
 import java.time.{LocalDate, LocalDateTime}
@@ -75,5 +76,27 @@ object RegistrationData extends SpecBase {
     exclusions = Gen.listOfN(3, arbitrary[EtmpExclusion]).sample.value,
     adminUse = etmpAdminUse
   )
+
+  val etmpDisplayRegistration: EtmpDisplayRegistration = EtmpDisplayRegistration(
+    tradingNames = Gen.listOfN(maxTradingNames, arbitraryEtmpTradingName.arbitrary).sample.value,
+    schemeDetails = etmpSchemeDetails,
+    bankDetails = genBankDetails,
+    exclusions = Gen.listOfN(3, arbitrary[EtmpExclusion]).sample.value,
+    adminUse = etmpAdminUse
+  )
+
+  val vatCustomerInfo: VatCustomerInfo =
+    VatCustomerInfo(
+      desAddress = arbitraryDesAddress.arbitrary.sample.value,
+      registrationDate = Some(LocalDate.now(stubClockAtArbitraryDate)),
+      partOfVatGroup = false,
+      organisationName = Some("Company name"),
+      individualName = None,
+      singleMarketIndicator = true,
+      deregistrationDecisionDate = None,
+      overseasIndicator = false
+    )
+
+  val registrationWrapper: RegistrationWrapper = RegistrationWrapper(vatCustomerInfo, etmpDisplayRegistration)
 }
 

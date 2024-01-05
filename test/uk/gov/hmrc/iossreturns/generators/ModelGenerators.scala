@@ -18,17 +18,20 @@ package uk.gov.hmrc.iossreturns.generators
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen.option
+import org.scalacheck.Gen.{choose, listOfN, option}
 import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 
 import java.time.{Instant, LocalDate, LocalDateTime, Month, ZoneId, ZonedDateTime}
 import java.time.temporal.ChronoUnit
+import scala.annotation.tailrec
 import scala.math.BigDecimal.RoundingMode
 
 trait ModelGenerators {
   self: Generators =>
+
+  private val maxFieldLength: Int = 35
 
   implicit val arbitraryPeriod: Arbitrary[Period] =
     Arbitrary {
@@ -512,4 +515,62 @@ trait ModelGenerators {
       adminUse
     )
   }
+
+  implicit lazy val arbitraryDesAddress: Arbitrary[DesAddress] =
+    Arbitrary {
+      for {
+        line1 <- commonFieldString(maxFieldLength)
+        line2 <- Gen.option(commonFieldString(maxFieldLength))
+        line3 <- Gen.option(commonFieldString(maxFieldLength))
+        line4 <- Gen.option(commonFieldString(maxFieldLength))
+        line5 <- Gen.option(commonFieldString(maxFieldLength))
+        postCode <- Gen.option(arbitrary[String])
+        country <- Gen.oneOf(Country.internationalCountries.map(_.code))
+      } yield DesAddress(
+        normaliseSpaces(line1),
+        normaliseSpaces(line2),
+        normaliseSpaces(line3),
+        normaliseSpaces(line4),
+        normaliseSpaces(line5),
+        normaliseSpaces(postCode),
+        country
+      )
+    }
+
+  private def commonFieldString(maxLength: Int): Gen[String] = (for {
+    length <- choose(1, maxLength)
+    chars <- listOfN(length, commonFieldSafeInputs)
+  } yield chars.mkString).retryUntil(_.trim.nonEmpty)
+
+  private def normaliseSpaces(string: String): String = {
+
+    @tailrec
+    def removeDoubleSpaces(string: String): String = {
+      if(!string.contains("  ")) {
+        string
+      } else {
+        removeDoubleSpaces(string.replaceAll("[ ]{2}", " "))
+      }
+    }
+
+    removeDoubleSpaces(string.trim)
+  }
+
+  private def normaliseSpaces(string: Option[String]): Option[String] = string.map(normaliseSpaces)
+
+  private def commonFieldSafeInputs: Gen[Char] = Gen.oneOf(
+    Gen.alphaNumChar,
+    Gen.oneOf('À' to 'ÿ'),
+    Gen.const('.'),
+    Gen.const(','),
+    Gen.const('/'),
+    Gen.const('’'),
+    Gen.const('\''),
+    Gen.const('"'),
+    Gen.const('_'),
+    Gen.const('&'),
+    Gen.const(' '),
+    Gen.const('\'')
+  )
+
 }

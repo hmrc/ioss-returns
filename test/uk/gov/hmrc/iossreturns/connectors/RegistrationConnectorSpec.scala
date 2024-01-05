@@ -7,10 +7,9 @@ import play.api.test.Helpers.running
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.EtmpRegistration
+import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.registrationWrapper
 
 class RegistrationConnectorSpec extends SpecBase with WireMockHelper {
-
-  private val etmpRegistration: EtmpRegistration = arbitraryEtmpRegistration.arbitrary.sample.value
 
   implicit private lazy val hc: HeaderCarrier = HeaderCarrier()
 
@@ -26,16 +25,15 @@ class RegistrationConnectorSpec extends SpecBase with WireMockHelper {
     "must return an ETMP registration when the backend successfully returns one" in {
 
       running(application) {
-
         val connector: RegistrationConnector = application.injector.instanceOf[RegistrationConnector]
 
-        val responseBody = Json.toJson(etmpRegistration).toString()
+        val responseBody = Json.toJson(registrationWrapper).toString()
 
         server.stubFor(get(urlEqualTo(url)).willReturn(ok().withBody(responseBody)))
 
         val result = connector.getRegistration().futureValue
 
-        result mustBe etmpRegistration
+        result mustBe registrationWrapper
       }
     }
   }

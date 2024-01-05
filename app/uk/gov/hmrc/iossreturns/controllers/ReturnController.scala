@@ -38,6 +38,9 @@ class ReturnController @Inject()(
 
   def submit(): Action[CoreVatReturn] = cc.auth()(parse.json[CoreVatReturn]).async {
     implicit request =>
+
+      println(request.body.changeDate)
+
       coreVatReturnConnector.submit(request.body).map {
         case Right(_) => Created
         case Left(errorResponse) if (errorResponse.errorDetail.errorCode == CoreErrorResponse.REGISTRATION_NOT_FOUND) => NotFound(Json.toJson(errorResponse.errorDetail))

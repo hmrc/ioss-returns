@@ -60,6 +60,8 @@ class ReturnControllerSpec
 
     "must save a VAT return and respond with Created" in {
 
+      println(vatReturn.changeDate)
+
       when(mockCoreVatReturnConnector.submit(any()))
         .thenReturn(Future.successful(Right(())))
 
@@ -73,7 +75,7 @@ class ReturnControllerSpec
         val result = route(app, request).value
 
         status(result) mustEqual CREATED
-        verify(mockCoreVatReturnConnector, times(1)).submit(eqTo(vatReturn))
+        verify(mockCoreVatReturnConnector, times(1)).submit(vatReturn)
       }
     }
 
