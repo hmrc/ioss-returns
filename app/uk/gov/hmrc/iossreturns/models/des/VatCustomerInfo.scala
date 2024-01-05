@@ -16,10 +16,8 @@
 
 package uk.gov.hmrc.iossreturns.models.des
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json.{Json, OWrites, Reads, __}
+import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.iossreturns.models.DesAddress
-import uk.gov.hmrc.iossreturns.models.des.PartyType.VatGroup
 
 import java.time.LocalDate
 
@@ -36,61 +34,7 @@ case class VatCustomerInfo(
 
 object VatCustomerInfo {
 
-  private def fromDesPayload(
-                              address: DesAddress,
-                              registrationDate: Option[LocalDate],
-                              partyType: Option[PartyType],
-                              organisationName: Option[String],
-                              individualFirstName: Option[String],
-                              individualMiddleName: Option[String],
-                              individualLastName: Option[String],
-                              singleMarketIndicator: Boolean,
-                              deregistrationDecisionDate: Option[LocalDate],
-                              overseasIndicator: Boolean
-                            ): VatCustomerInfo = {
-
-    val firstName = individualFirstName.fold("")(fn => s"$fn ")
-    val middleName = individualMiddleName.fold("")(mn => s"$mn ")
-    val lastName = individualLastName.fold("")(ln => s"$ln")
-
-    VatCustomerInfo(
-      desAddress = address,
-      registrationDate = registrationDate,
-      partOfVatGroup = partyType match {
-        case Some(VatGroup) => true
-        case _ => false
-      },
-      organisationName = organisationName,
-      individualName = if(individualFirstName.isEmpty && individualMiddleName.isEmpty && individualLastName.isEmpty) {
-        None
-      } else {
-        Some(s"$firstName$middleName$lastName")
-      },
-      singleMarketIndicator = singleMarketIndicator,
-      deregistrationDecisionDate = deregistrationDecisionDate,
-      overseasIndicator = overseasIndicator
-    )
-  }
-//
-//  implicit val desReads: Reads[VatCustomerInfo] =
-//    (
-//      (__ \ "approvedInformation" \ "PPOB" \ "address").read[DesAddress] and
-//        (__ \ "approvedInformation" \ "customerDetails" \ "effectiveRegistrationDate").readNullable[LocalDate] and
-//        (__ \ "approvedInformation" \ "customerDetails" \ "partyType").readNullable[PartyType] and
-//        (__ \ "approvedInformation" \ "customerDetails" \ "organisationName").readNullable[String] and
-//        (__ \ "approvedInformation" \ "customerDetails" \ "individual" \ "firstName").readNullable[String] and
-//        (__ \ "approvedInformation" \ "customerDetails" \ "individual" \ "middleName").readNullable[String] and
-//        (__ \ "approvedInformation" \ "customerDetails" \ "individual" \ "lastName").readNullable[String] and
-//        (__ \ "approvedInformation" \ "customerDetails" \ "singleMarketIndicator").read[Boolean] and
-//        (__ \ "approvedInformation" \ "deregistration" \ "effectDateOfCancellation").readNullable[LocalDate] and
-//        (__ \ "approvedInformation" \ "customerDetails" \ "overseasIndicator").read[Boolean]
-//      ) (VatCustomerInfo.fromDesPayload _)
-
-  implicit val writes: OWrites[VatCustomerInfo] =
-    Json.writes[VatCustomerInfo]
-
-  implicit val reads: Reads[VatCustomerInfo] =
-    Json.reads[VatCustomerInfo]
-
+  implicit val format: OFormat[VatCustomerInfo] =
+    Json.format[VatCustomerInfo]
 
 }

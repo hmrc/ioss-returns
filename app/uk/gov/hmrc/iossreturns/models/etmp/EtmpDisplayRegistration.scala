@@ -27,9 +27,7 @@ case class EtmpDisplayRegistration(
                                   )
 
 object EtmpDisplayRegistration {
- // import EtmpSchemeDetails.displayReads
- // implicit private val etmpDetailsReads: Reads[EtmpSchemeDetails] = displayReads
-
   implicit val reads: Reads[EtmpDisplayRegistration] = Json.reads[EtmpDisplayRegistration]
   implicit val writes: Writes[EtmpDisplayRegistration] = Json.writes[EtmpDisplayRegistration]
+
 }
