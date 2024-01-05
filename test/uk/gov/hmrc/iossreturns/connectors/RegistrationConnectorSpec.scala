@@ -27,7 +27,6 @@ class RegistrationConnectorSpec extends SpecBase with WireMockHelper {
     "must return an ETMP registration when the backend successfully returns one" in {
 
       running(application) {
-
         val connector: RegistrationConnector = application.injector.instanceOf[RegistrationConnector]
 
         val responseBody = Json.toJson(registrationWrapper).toString()

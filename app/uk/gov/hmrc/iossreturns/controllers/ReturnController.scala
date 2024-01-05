@@ -38,6 +38,9 @@ class ReturnController @Inject()(
 
   def submit(): Action[CoreVatReturn] = cc.auth()(parse.json[CoreVatReturn]).async {
     implicit request =>
+
+      println(request.body.changeDate)
+
       coreVatReturnConnector.submit(request.body).map {
         case Right(_) => Created
         case Left(errorResponse) if (errorResponse.errorDetail.errorCode == CoreErrorResponse.REGISTRATION_NOT_FOUND) => NotFound(Json.toJson(errorResponse.errorDetail))
@@ -56,7 +59,7 @@ class ReturnController @Inject()(
   def getObligations(iossNumber: String): Action[AnyContent] = cc.auth().async {
     implicit request =>
 
-      val fromDate: String = request.registration.schemeDetails.commencementDate.format(etmpDateFormatter)
+      val fromDate: String = request.registration.registration.schemeDetails.commencementDate.format(etmpDateFormatter)
       val toDate = LocalDate.now(clock).format(etmpDateFormatter)
 
       val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(

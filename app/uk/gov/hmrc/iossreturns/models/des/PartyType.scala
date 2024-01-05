@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.controllers.actions
+package uk.gov.hmrc.iossreturns.models.des
 
-import play.api.mvc.{Request, WrappedRequest}
-import uk.gov.hmrc.domain.Vrn
-import uk.gov.hmrc.iossreturns.models.{EtmpRegistration, RegistrationWrapper}
+import play.api.libs.json.{JsResult, JsString, JsSuccess, JsValue, Reads}
 
+sealed trait PartyType
 
-case class AuthorisedRequest[A](
-                                 request: Request[A],
-                                 userId: String,
-                                 vrn: Vrn,
-                                 iossNumber: String,
-                                 registration: RegistrationWrapper
-                               ) extends WrappedRequest[A](request)
+object PartyType {
+
+  case object VatGroup extends PartyType
+  case object OtherPartyType extends PartyType
+
+  implicit val reads: Reads[PartyType] = new Reads[PartyType] {
+
+    override def reads(json: JsValue): JsResult[PartyType] =
+      json match {
+        case JsString("Z2") => JsSuccess(VatGroup)
+        case _              => JsSuccess(OtherPartyType)
+      }
+  }
+}

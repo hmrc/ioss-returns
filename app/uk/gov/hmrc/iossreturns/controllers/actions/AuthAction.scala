@@ -26,6 +26,7 @@ import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
+import uk.gov.hmrc.iossreturns.models.RegistrationWrapper
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.Inject

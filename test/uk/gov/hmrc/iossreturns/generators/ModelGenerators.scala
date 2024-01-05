@@ -18,17 +18,20 @@ package uk.gov.hmrc.iossreturns.generators
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen.option
+import org.scalacheck.Gen.{choose, listOfN, option}
 import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 
 import java.time.{Instant, LocalDate, LocalDateTime, Month, ZoneId, ZonedDateTime}
 import java.time.temporal.ChronoUnit
+import scala.annotation.tailrec
 import scala.math.BigDecimal.RoundingMode
 
 trait ModelGenerators {
   self: Generators =>
+
+  private val maxFieldLength: Int = 35
 
   implicit val arbitraryPeriod: Arbitrary[Period] =
     Arbitrary {
