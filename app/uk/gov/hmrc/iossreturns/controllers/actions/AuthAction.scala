@@ -53,7 +53,7 @@ class AuthActionImpl @Inject()(
       case Some(internalId) ~ enrolments =>
         (findVrnFromEnrolments(enrolments), findIossFromEnrolments(enrolments)) match {
           case (Some(vrn), Some(iossNumber)) =>
-            registrationConnector.getRegistration().flatMap { registration: RegistrationWrapper =>
+            registrationConnector.getRegistration().flatMap { registration =>
               block(AuthorisedRequest(request, internalId, vrn, iossNumber, registration))
             }
           case _ =>
