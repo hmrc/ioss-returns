@@ -512,4 +512,13 @@ trait ModelGenerators {
       adminUse
     )
   }
+
+  implicit val arbitraryRegistrationWrapper: Arbitrary[RegistrationWrapper] = Arbitrary {
+    for {
+      etmpRegistration <- arbitrary[EtmpRegistration]
+    } yield RegistrationWrapper(
+      etmpRegistration
+    )
+  }
+
 }

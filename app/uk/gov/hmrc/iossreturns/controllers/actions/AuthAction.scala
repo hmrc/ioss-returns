@@ -43,15 +43,17 @@ class AuthActionImpl @Inject()(
 
   override def invokeBlock[A](request: Request[A], block: AuthorisedRequest[A] => Future[Result]): Future[Result] = {
 
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-    authorised().retrieve(Retrievals.internalId and Retrievals.allEnrolments) {
+    authorised(AuthProviders(AuthProvider.GovernmentGateway) and
+      (AffinityGroup.Individual or AffinityGroup.Organisation) and
+      CredentialStrength(CredentialStrength.strong)).retrieve(Retrievals.internalId and Retrievals.allEnrolments) {
 
       case Some(internalId) ~ enrolments =>
         (findVrnFromEnrolments(enrolments), findIossFromEnrolments(enrolments)) match {
           case (Some(vrn), Some(iossNumber)) =>
-            registrationConnector.getRegistration().flatMap { registration =>
-              block(AuthorisedRequest(request, internalId, vrn, iossNumber, registration))
+            registrationConnector.getRegistration().flatMap { registrationWrapper =>
+              block(AuthorisedRequest(request, internalId, vrn, iossNumber, registrationWrapper.registration))
             }
           case _ =>
             logger.warn(s"Insufficient enrolments")
@@ -62,8 +64,8 @@ class AuthActionImpl @Inject()(
         logger.warn("Unable to retrieve authorisation data")
         throw new UnauthorizedException("Unable to retrieve authorisation data")
     } recover {
-      case _: AuthorisationException =>
-        logger.warn(s"Unauthorised given")
+      case  a: AuthorisationException =>
+        logger.warn(s"Unauthorised given $a")
         Unauthorized
     }
   }

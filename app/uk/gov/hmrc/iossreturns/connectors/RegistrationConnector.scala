@@ -19,7 +19,7 @@ package uk.gov.hmrc.iossreturns.connectors
 import play.api.Configuration
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpErrorFunctions}
 import uk.gov.hmrc.iossreturns.config.Service
-import uk.gov.hmrc.iossreturns.models.EtmpRegistration
+import uk.gov.hmrc.iossreturns.models.RegistrationWrapper
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,6 +29,6 @@ class RegistrationConnector @Inject()(config: Configuration, httpClient: HttpCli
 
   private val baseUrl = config.get[Service]("microservice.services.ioss-registration")
 
-  def getRegistration()(implicit hc: HeaderCarrier): Future[EtmpRegistration] =
-    httpClient.GET[EtmpRegistration](s"$baseUrl/registration")
+  def getRegistration()(implicit hc: HeaderCarrier): Future[RegistrationWrapper] =
+    httpClient.GET[RegistrationWrapper](s"$baseUrl/registration")
 }
