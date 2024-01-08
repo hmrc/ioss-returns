@@ -40,7 +40,7 @@ trait SpecBase
     vatReturnReferenceNumber = "XI/XI063407423/M11.2086",
     version = Instant.ofEpochSecond(1630670836),
     traderId = CoreTraderId(vrn.vrn, "XI"),
-    period = CorePeriod(2021, 3),
+    period = CorePeriod(2021, "03"),
     startDate = LocalDate.now(stubClockAtArbitraryDate),
     endDate = LocalDate.now(stubClockAtArbitraryDate),
     submissionDateTime = Instant.now(stubClockAtArbitraryDate),
@@ -70,7 +70,7 @@ trait SpecBase
         ))
       )),
       List(CoreCorrection(
-        CorePeriod(2021, 2),
+        CorePeriod(2021, "02"),
         BigDecimal(-10)
       ))
     )),

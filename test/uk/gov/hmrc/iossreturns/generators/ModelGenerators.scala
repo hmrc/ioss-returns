@@ -51,7 +51,7 @@ trait ModelGenerators {
       for {
         year <- arbitrary[Int]
         month <- arbitrary[Int]
-      } yield CorePeriod(year, month)
+      } yield CorePeriod(year, month.toString)
     }
 
   implicit val arbitraryBigDecimal: Arbitrary[BigDecimal] =
