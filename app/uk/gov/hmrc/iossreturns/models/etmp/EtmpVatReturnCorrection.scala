@@ -22,7 +22,9 @@ case class EtmpVatReturnCorrection(
                                     periodKey: String,
                                     periodFrom: String,
                                     periodTo: String,
-                                    msOfConsumption: String
+                                    msOfConsumption: String,
+                                    totalVATAmountCorrectionGBP: BigDecimal,
+                                    totalVATAmountCorrectionEUR: BigDecimal
                                   )
 
 object EtmpVatReturnCorrection {

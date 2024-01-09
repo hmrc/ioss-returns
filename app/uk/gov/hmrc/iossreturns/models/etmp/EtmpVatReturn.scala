@@ -32,7 +32,7 @@ case class EtmpVatReturn(
                           correctionPreviousVATReturn: Seq[EtmpVatReturnCorrection],
                           totalVATAmountFromCorrectionGBP: BigDecimal,
                           balanceOfVATDueForMS: Seq[EtmpVatReturnBalanceOfVatDue],
-                          totalVATAmountDueForAllMSEUR: BigDecimal,
+                          totalVATAmountDueForAllMSGBP: BigDecimal,
                           paymentReference: String
                         )
 
