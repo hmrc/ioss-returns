@@ -215,11 +215,15 @@ trait ModelGenerators {
         periodFrom <- arbitrary[String]
         periodTo <- arbitrary[String]
         msOfConsumption <- arbitrary[String]
+        totalVATAmountCorrectionGBP <- arbitrary[BigDecimal]
+        totalVATAmountCorrectionEUR <- arbitrary[BigDecimal]
       } yield EtmpVatReturnCorrection(
         periodKey = periodKey,
         periodFrom = periodFrom,
         periodTo = periodTo,
-        msOfConsumption = msOfConsumption
+        msOfConsumption = msOfConsumption,
+        totalVATAmountCorrectionGBP = totalVATAmountCorrectionGBP,
+        totalVATAmountCorrectionEUR = totalVATAmountCorrectionEUR
       )
     }
 
@@ -253,7 +257,7 @@ trait ModelGenerators {
         totalVATAmountFromCorrectionGBP <- arbitrary[BigDecimal]
         amountOfBalanceOfVATDueForMS <- Gen.oneOf(List(1, 2, 3))
         balanceOfVATDueForMS <- Gen.listOfN(amountOfBalanceOfVATDueForMS, arbitrary[EtmpVatReturnBalanceOfVatDue])
-        totalVATAmountDueForAllMSEUR <- arbitrary[BigDecimal]
+        totalVATAmountDueForAllMSGBP <- arbitrary[BigDecimal]
         paymentReference <- arbitrary[String]
       } yield EtmpVatReturn(
         returnReference = returnReference,
@@ -267,7 +271,7 @@ trait ModelGenerators {
         correctionPreviousVATReturn = correctionPreviousVATReturn,
         totalVATAmountFromCorrectionGBP = totalVATAmountFromCorrectionGBP,
         balanceOfVATDueForMS = balanceOfVATDueForMS,
-        totalVATAmountDueForAllMSEUR = totalVATAmountDueForAllMSEUR,
+        totalVATAmountDueForAllMSGBP = totalVATAmountDueForAllMSGBP,
         paymentReference = paymentReference
       )
     }
