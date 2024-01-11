@@ -26,5 +26,6 @@ case class EtmpVatReturnGoodsSupplied(
                                      )
 
 object EtmpVatReturnGoodsSupplied {
+
   implicit val format: Format[EtmpVatReturnGoodsSupplied] = Json.format[EtmpVatReturnGoodsSupplied]
 }

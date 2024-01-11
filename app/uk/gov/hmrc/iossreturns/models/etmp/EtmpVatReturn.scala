@@ -18,10 +18,11 @@ package uk.gov.hmrc.iossreturns.models.etmp
 
 import play.api.libs.json.{Format, Json}
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 
 case class EtmpVatReturn(
                           returnReference: String,
+                          returnVersion: LocalDateTime,
                           periodKey: String,
                           returnPeriodFrom: LocalDate,
                           returnPeriodTo: LocalDate,
@@ -37,6 +38,7 @@ case class EtmpVatReturn(
                         )
 
 object EtmpVatReturn {
+
   implicit val format: Format[EtmpVatReturn] = Json.format[EtmpVatReturn]
 
   implicit class VatAmountCalculations(vatReturn: EtmpVatReturn) {

@@ -245,6 +245,7 @@ trait ModelGenerators {
     Arbitrary {
       for {
         returnReference <- arbitrary[String]
+        returnVersion <- arbitrary[LocalDateTime]
         periodKey <- arbitrary[String]
         returnPeriodFrom <- arbitrary[LocalDate]
         returnPeriodTo <- arbitrary[LocalDate]
@@ -262,6 +263,7 @@ trait ModelGenerators {
         paymentReference <- arbitrary[String]
       } yield EtmpVatReturn(
         returnReference = returnReference,
+        returnVersion = returnVersion,
         periodKey = periodKey,
         returnPeriodFrom = returnPeriodFrom,
         returnPeriodTo = returnPeriodTo,

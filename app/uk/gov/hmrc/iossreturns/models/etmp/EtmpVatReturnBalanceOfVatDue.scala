@@ -25,5 +25,6 @@ case class EtmpVatReturnBalanceOfVatDue(
                                        )
 
 object EtmpVatReturnBalanceOfVatDue {
+
   implicit val format: Format[EtmpVatReturnBalanceOfVatDue] = Json.format[EtmpVatReturnBalanceOfVatDue]
 }
