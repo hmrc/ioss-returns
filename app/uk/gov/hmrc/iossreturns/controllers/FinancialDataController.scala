@@ -20,7 +20,8 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData._
-import uk.gov.hmrc.iossreturns.services.FinancialDataService
+import uk.gov.hmrc.iossreturns.models.payments.PrepareData
+import uk.gov.hmrc.iossreturns.services.{FinancialDataService, PaymentsService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.{Clock, LocalDate}
@@ -30,6 +31,7 @@ import scala.concurrent.ExecutionContext
 class FinancialDataController @Inject()(
                                          cc: DefaultAuthenticatedControllerComponents,
                                          service: FinancialDataService,
+                                         paymentsService: PaymentsService,
                                          clock: Clock
                                        )(implicit ec: ExecutionContext) extends BackendController(cc) {
   def get(commencementDate: LocalDate): Action[AnyContent] = cc.auth().async {
@@ -38,6 +40,26 @@ class FinancialDataController @Inject()(
         .map(data =>
           Ok(Json.toJson(data))
         )
+    }
+  }
+
+  def prepareFinancialData(): Action[AnyContent] = cc.auth().async {
+    implicit request => {
+      val now = LocalDate.now()
+
+      val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber)
+      unpaidPayments.map { up =>
+        val totalAmountOwed = up.map(_.amountOwed).sum
+        val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
+        val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now()))
+        Ok(Json.toJson(PrepareData(
+          duePayments,
+          overduePayments,
+          totalAmountOwed,
+          totalAmountOverdue,
+          iossNumber = request.iossNumber
+        )))
+      }
     }
   }
 }

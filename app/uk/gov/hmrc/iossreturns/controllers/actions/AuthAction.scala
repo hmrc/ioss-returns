@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.iossreturns.controllers.actions
 
+import play.api.Logging
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
-import play.api.Logging
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
-import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.iossreturns.config.AppConfig

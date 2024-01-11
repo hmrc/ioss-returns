@@ -38,4 +38,21 @@ case class EtmpVatReturn(
 
 object EtmpVatReturn {
   implicit val format: Format[EtmpVatReturn] = Json.format[EtmpVatReturn]
+
+  implicit class VatAmountCalculations(vatReturn: EtmpVatReturn) {
+    def getTotalVatOnSalesAfterCorrection(): BigDecimal = {
+
+      val runningTotal = getTotalVatAmountBeforeCorrection() + vatReturn.totalVATAmountFromCorrectionGBP
+
+      if (runningTotal < 0) {
+        BigDecimal(0)
+      } else {
+        runningTotal
+      }
+    }
+
+    private def getTotalVatAmountBeforeCorrection(): BigDecimal = {
+      vatReturn.goodsSupplied.map(_.vatAmountGBP).sum
+    }
+  }
 }

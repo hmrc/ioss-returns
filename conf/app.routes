@@ -5,4 +5,6 @@ GET         /return/:period                              uk.gov.hmrc.iossreturns
 
 POST        /return                                      uk.gov.hmrc.iossreturns.controllers.ReturnController.submit
 
+GET         /financial-data/prepare                        uk.gov.hmrc.iossreturns.controllers.FinancialDataController.prepareFinancialData()
+
 GET         /obligations/:iossNumber                     uk.gov.hmrc.iossreturns.controllers.ReturnController.getObligations(iossNumber: String)

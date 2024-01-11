@@ -10,9 +10,10 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.running
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser.FinancialDataResponse
+import uk.gov.hmrc.iossreturns.models.{ErrorResponse, UnexpectedResponseStatus}
 import uk.gov.hmrc.iossreturns.models.financialdata._
 
-import java.time.{LocalDate, ZonedDateTime, ZoneOffset}
+import java.time.{LocalDate, ZoneOffset, ZonedDateTime}
 
 class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with FinancialDataConnectorFixture {
   def application: Application =
@@ -92,7 +93,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
           val connector = application.injector.instanceOf[FinancialDataConnector]
           whenReady(connector.getFinancialData(iossNumber, queryParameters), Timeout(Span(30, Seconds))) { exp =>
             exp.isLeft mustBe true
-            exp.left.toOption.get mustBe a[FinancialDataErrorResponse]
+            exp.left.toOption.get mustBe a[ErrorResponse]
           }
 
         }

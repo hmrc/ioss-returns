@@ -19,7 +19,7 @@ package uk.gov.hmrc.iossreturns.models
 import play.api.libs.json._
 import play.api.mvc.{PathBindable, QueryStringBindable}
 
-import java.time.Month
+import java.time.{LocalDate, Month}
 import java.time.Month._
 import java.time.format.TextStyle
 import java.util.Locale
@@ -27,6 +27,13 @@ import scala.util.matching.Regex
 import scala.util.Try
 
 case class Period(year: Int, month: Month) {
+  val firstDay: LocalDate = LocalDate.of(year, month, 1)
+
+  val lastDay: LocalDate = firstDay.plusMonths(1).minusDays(1)
+
+  val paymentDeadline: LocalDate =
+    firstDay.plusMonths(2).minusDays(1)
+
   def displayText: String =
     s"${month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)} ${year}"
 
@@ -73,6 +80,29 @@ object Period {
       case _ =>
         None
     }
+
+  def fromKey(key: String): Period = {
+    val yearLast2 = key.take(2)
+    val month = key.drop(2)
+    Period(s"20$yearLast2".toInt, fromEtmpMonthString(month))
+  }
+
+  private def fromEtmpMonthString(keyMonth: String): Month = {
+    keyMonth match {
+      case "AA" => Month.JANUARY
+      case "AB" => Month.FEBRUARY
+      case "AC" => Month.MARCH
+      case "AD" => Month.APRIL
+      case "AE" => Month.MAY
+      case "AF" => Month.JUNE
+      case "AG" => Month.JULY
+      case "AH" => Month.AUGUST
+      case "AI" => Month.SEPTEMBER
+      case "AJ" => Month.OCTOBER
+      case "AK" => Month.NOVEMBER
+      case "AL" => Month.DECEMBER
+    }
+  }
 
   implicit val monthReads: Reads[Month] = {
     Reads.at[Int](__ \ "month")

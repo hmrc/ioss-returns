@@ -17,6 +17,8 @@
 package uk.gov.hmrc.iossreturns.models.financialdata
 
 import play.api.libs.json.{Format, Json}
+import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.payments.Charge
 
 import java.time.ZonedDateTime
 
@@ -30,4 +32,30 @@ final case class FinancialData(
 
 object FinancialData {
   implicit val format: Format[FinancialData] = Json.format[FinancialData]
+
+
+  implicit class FromFinancialDataToCharge(financialData: FinancialData) {
+    def getChargeForPeriod(period: Period): Option[Charge] = {
+      for {
+        financialTransactions <- financialData.financialTransactions
+        transactionsForPeriod <- transactionsForPeriod(financialTransactions, period)
+      } yield
+        Charge(
+          period,
+          originalAmount = transactionsForPeriod.map(_.originalAmount.getOrElse(BigDecimal(0))).sum,
+          outstandingAmount = transactionsForPeriod.map(_.outstandingAmount.getOrElse(BigDecimal(0))).sum,
+          clearedAmount = transactionsForPeriod.map(_.clearedAmount.getOrElse(BigDecimal(0))).sum
+        )
+    }
+
+    private def transactionsForPeriod(financialTransactions: Seq[FinancialTransaction], period: Period): Option[Seq[FinancialTransaction]] = {
+      val transactions = financialTransactions.filter(t => t.taxPeriodFrom.contains(period.firstDay))
+      if (transactions.isEmpty) {
+        None
+      }
+      else {
+        Some(transactions)
+      }
+    }
+  }
 }

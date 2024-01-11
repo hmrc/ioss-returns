@@ -17,6 +17,8 @@
 package uk.gov.hmrc.iossreturns.models.etmp
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.Period._
 
 case class EtmpObligations(
                             referenceNumber: String,
@@ -27,4 +29,14 @@ case class EtmpObligations(
 object EtmpObligations {
 
   implicit val format: OFormat[EtmpObligations] = Json.format[EtmpObligations]
+
+
+  implicit class FromEtmpObligationsToPeriods(etmpObligations: EtmpObligations) {
+    def getPeriods(): List[Period] = {
+      etmpObligations.obligationDetails
+        .filter(_.status == EtmpObligationsFulfilmentStatus.Open)
+        .map(p => Period.fromKey(p.periodKey))
+        .toList
+    }
+  }
 }

@@ -20,11 +20,12 @@ import play.api.http.Status._
 import play.api.libs.json.{JsError, JsSuccess}
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialDataErrorResponse, FinancialData, InvalidJson, UnexpectedResponseStatus}
+import uk.gov.hmrc.iossreturns.models.{ErrorResponse, InvalidJson, UnexpectedResponseStatus}
+import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData}
 
 object FinancialDataHttpParser extends Logging {
 
-  type FinancialDataResponse = Either[FinancialDataErrorResponse, Option[FinancialData]]
+  type FinancialDataResponse = Either[ErrorResponse, Option[FinancialData]]
 
   implicit object FinancialDataReads extends HttpReads[FinancialDataResponse] {
     override def read(method: String, url: String, response: HttpResponse): FinancialDataResponse =

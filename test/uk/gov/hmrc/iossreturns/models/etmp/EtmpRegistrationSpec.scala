@@ -19,6 +19,7 @@ package uk.gov.hmrc.iossreturns.models.etmp
 import play.api.libs.json.{JsSuccess, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.EtmpRegistration
+import uk.gov.hmrc.iossreturns.models.EtmpRegistration._
 import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.etmpRegistration
 
 class EtmpRegistrationSpec extends SpecBase {

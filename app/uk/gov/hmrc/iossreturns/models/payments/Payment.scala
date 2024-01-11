@@ -14,6 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.financialdata
+package uk.gov.hmrc.iossreturns.models.payments
 
-final case class FinancialDataException(message: String) extends Exception(message)
+import play.api.libs.json.{Format, Json}
+import uk.gov.hmrc.iossreturns.models.Period
+
+import java.time.LocalDate
+
+final case class Payment(period: Period,
+                   amountOwed: BigDecimal,
+                   dateDue: LocalDate,
+                   paymentStatus: PaymentStatus
+                  )
+
+object Payment {
+  implicit val formatPayment: Format[Payment] = Json.format[Payment]
+}
