@@ -24,7 +24,6 @@ import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-
 import java.time.{Clock, LocalDate}
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext

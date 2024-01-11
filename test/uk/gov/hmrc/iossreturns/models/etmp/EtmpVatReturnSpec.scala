@@ -20,7 +20,16 @@ import play.api.libs.json.{JsSuccess, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.testUtils.EtmpVatReturnData.etmpVatReturn
 
+import java.time.LocalDate
+
 class EtmpVatReturnSpec extends SpecBase {
+  val goodSupplied1 = EtmpVatReturnGoodsSupplied("IE", EtmpVatRateType.ReducedVatRate, BigDecimal(100), BigDecimal(15))
+  val goodSupplied2 = EtmpVatReturnGoodsSupplied("IT", EtmpVatRateType.StandardVatRate, BigDecimal(200), BigDecimal(20))
+
+  val etmpVatReturnWithoutCorrection = EtmpVatReturn("", "", LocalDate.now(), LocalDate.now(), List(goodSupplied1, goodSupplied2), BigDecimal(0), BigDecimal(0),
+    BigDecimal(0), Nil, BigDecimal(0), Nil, BigDecimal(0), "")
+
+  val etmpVatReturnWithCorrection = etmpVatReturnWithoutCorrection.copy(totalVATAmountFromCorrectionGBP = BigDecimal(2.5))
 
   private val genEtmpVatReturn: EtmpVatReturn = etmpVatReturn
 
@@ -63,5 +72,13 @@ class EtmpVatReturnSpec extends SpecBase {
       Json.toJson(expectedResult) mustBe json
       json.validate[EtmpVatReturn] mustBe JsSuccess(expectedResult)
     }
+
+    "should getTotalVatOnSalesAfterCorrection correctly when there is no correction" in {
+      etmpVatReturnWithoutCorrection.getTotalVatOnSalesAfterCorrection() mustBe BigDecimal(35)
+    }
+    "should getTotalVatOnSalesAfterCorrection correctly when there is correction" in {
+      etmpVatReturnWithCorrection.getTotalVatOnSalesAfterCorrection() mustBe BigDecimal(37.5)
+    }
   }
+
 }

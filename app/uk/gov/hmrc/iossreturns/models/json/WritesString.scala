@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.financialdata
+package uk.gov.hmrc.iossreturns.models.json
 
-final case class FinancialDataException(message: String) extends Exception(message)
+import play.api.libs.json.{JsString, Writes}
+
+object WritesString {
+  def apply[T](f: T => String): Writes[T] = {
+    Writes(f.andThen(JsString(_)))
+  }
+}

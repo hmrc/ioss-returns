@@ -20,7 +20,8 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpException}
 import uk.gov.hmrc.iossreturns.config.FinancialDataConfig
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser._
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialDataQueryParameters, UnexpectedResponseStatus}
+import uk.gov.hmrc.iossreturns.models.UnexpectedResponseStatus
+import uk.gov.hmrc.iossreturns.models.financialdata.FinancialDataQueryParameters
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

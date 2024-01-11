@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.financialdata
+package uk.gov.hmrc.iossreturns.models.payments
 
-final case class FinancialDataException(message: String) extends Exception(message)
+import play.api.libs.json.Json
+
+final case class PrepareData(
+                              duePayments: List[Payment],
+                              overduePayments: List[Payment],
+                              totalAmountOwed: BigDecimal,
+                              totalAmountOverdue: BigDecimal,
+                              iossNumber: String
+                            )
+
+object PrepareData {
+  implicit val format = Json.format[PrepareData]
+}

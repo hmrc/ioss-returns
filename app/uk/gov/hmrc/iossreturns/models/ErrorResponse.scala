@@ -36,6 +36,12 @@ case object GatewayTimeout extends ErrorResponse {
   override val body: String = "Gateway timeout"
 }
 
+case object InvalidJson extends ErrorResponse {
+  override val body: String = "Invalid Response"
+}
+
+final case class UnexpectedResponseStatus(status: Int, body: String) extends ErrorResponse
+
 case class EtmpDisplayReturnError(code: String, body: String) extends ErrorResponse
 
 case class EtmpListObligationsError(code: String, body: String) extends ErrorResponse
