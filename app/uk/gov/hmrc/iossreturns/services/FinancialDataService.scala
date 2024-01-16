@@ -18,7 +18,9 @@ package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataConnector
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser.FinancialDataResponse
+import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataException, FinancialDataQueryParameters}
+import uk.gov.hmrc.iossreturns.models.payments.Charge
 
 import java.time.LocalDate
 import javax.inject.Inject
@@ -31,6 +33,13 @@ class FinancialDataService @Inject()(financialDataConnector: FinancialDataConnec
     result.flatMap {
       case Left(errorResponse) => Future.failed(FinancialDataException(errorResponse.body))
       case Right(r) => Future.successful(r)
+    }
+  }
+
+  // TODO -> TEST
+  def getCharge(iossNumber: String, period: Period): Future[Option[Charge]] = {
+    getFinancialData(iossNumber, Some(period.firstDay), Some(period.lastDay)).map { maybeFinancialData =>
+      maybeFinancialData.flatMap(_.getChargeForPeriod(period))
     }
   }
 }
