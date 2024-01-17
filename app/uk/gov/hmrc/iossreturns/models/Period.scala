@@ -19,12 +19,12 @@ package uk.gov.hmrc.iossreturns.models
 import play.api.libs.json._
 import play.api.mvc.{PathBindable, QueryStringBindable}
 
-import java.time.{LocalDate, Month}
 import java.time.Month._
 import java.time.format.TextStyle
+import java.time.{LocalDate, Month, YearMonth}
 import java.util.Locale
-import scala.util.matching.Regex
 import scala.util.Try
+import scala.util.matching.Regex
 
 case class Period(year: Int, month: Month) {
   val firstDay: LocalDate = LocalDate.of(year, month, 1)
@@ -62,6 +62,27 @@ case class Period(year: Int, month: Month) {
       case DECEMBER => "AL"
     }
   }
+
+  def getNext(): Period = {
+    if (this.month == Month.DECEMBER)
+      Period(this.year + 1, Month.JANUARY)
+    else
+      Period(this.year, this.month.plus(1))
+  }
+
+  def getPrevious(): Period = {
+    if (this.month == Month.JANUARY)
+      Period(this.year - 1, Month.DECEMBER)
+    else
+      Period(this.year, this.month.minus(1))
+  }
+
+  def isBefore(other: Period): Boolean = {
+    val yearMonth: YearMonth = YearMonth.of(year, month)
+    val yearMonthOther: YearMonth = YearMonth.of(other.year, other.month)
+
+    yearMonth.isBefore(yearMonthOther)
+  }
 }
 
 object Period {
@@ -80,6 +101,9 @@ object Period {
       case _ =>
         None
     }
+
+  def getRunningPeriod(date: LocalDate): Period =
+    Period(date.getYear, date.getMonth)
 
   def fromKey(key: String): Period = {
     val yearLast2 = key.take(2)
@@ -127,6 +151,9 @@ object Period {
     override def unbind(key: String, value: Period): String =
       value.toString
   }
+
+  implicit def orderingByPeriod[A <: Period]: Ordering[A] =
+    Ordering.by(e => YearMonth.of(e.year, e.month))
 
   implicit val queryBindable: QueryStringBindable[Period] = new QueryStringBindable[Period] {
     override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, Period]] = {
