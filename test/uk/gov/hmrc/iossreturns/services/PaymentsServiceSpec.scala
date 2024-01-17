@@ -36,7 +36,7 @@ import scala.concurrent.Future
 
 class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfterEach with PaymentsServiceSpecFixture with ScalaCheckPropertyChecks {
   implicit val hc = HeaderCarrier()
-
+  val someCommencementDate = LocalDate.now().minusYears(3)
   "PaymentsService" - {
 
     "must return payments when there are due payments and overdue payments - from FinancialData, vatReturn to be ignored" in {
@@ -88,7 +88,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
 
       val service = new PaymentsService(financialDataConnector, vatReturnConnector)
 
-      val result = service.getUnpaidPayments(iossNumber)
+      val result = service.getUnpaidPayments(iossNumber, someCommencementDate)
 
       whenReady(result) { r =>
         val paymentOverdue = service.calculatePayment(vatReturnOverdue, Some(inputFinancialData))
@@ -135,7 +135,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
 
       val payment = service.calculatePayment(vatReturn1, Some(inputFinancialData))
 
-      val result: Future[List[Payment]] = service.getUnpaidPayments(iossNumber)
+      val result: Future[List[Payment]] = service.getUnpaidPayments(iossNumber, someCommencementDate)
 
       whenReady(result) { r =>
         r mustBe List(payment)
@@ -188,7 +188,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
 
       val service = new PaymentsService(financialDataConnector, vatReturnConnector)
 
-      val result = service.getUnpaidPayments(iossNumber)
+      val result = service.getUnpaidPayments(iossNumber, someCommencementDate)
 
       val payment1 = service.calculatePayment(vatReturn1, Some(inputFinancialData))
       val payment2 = service.calculatePayment(vatReturn2, Some(inputFinancialData))
@@ -236,7 +236,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
       forAll(scenarios) { (inputFinancialData, title) => {
         when(financialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Right(Some(inputFinancialData))))
 
-        val result = service.getUnpaidPayments(iossNumber)
+        val result = service.getUnpaidPayments(iossNumber, someCommencementDate)
 
         val payment1 = service.calculatePayment(vatReturn1, Some(inputFinancialData))
         val payment2 = service.calculatePayment(vatReturn2, Some(inputFinancialData))

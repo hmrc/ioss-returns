@@ -37,8 +37,8 @@ class PaymentsService @Inject()(
                                  vatReturnConnector: VatReturnConnector
                                ) {
 
-  def getUnpaidPayments(iossNumber: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[List[Payment]] = {
-    withFinancialDataAndVatReturns(iossNumber) {
+  def getUnpaidPayments(iossNumber: String, startTime: LocalDate)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[List[Payment]] = {
+    withFinancialDataAndVatReturns(iossNumber, startTime) {
       (financialDataMaybe, vatReturns) => {
         val vatReturnsForPeriodsWithOutstandingAmounts = filterIfPaymentOutstanding(financialDataMaybe, vatReturns)
 
@@ -54,12 +54,11 @@ class PaymentsService @Inject()(
     }
   }
 
-  private def withFinancialDataAndVatReturns[T](iossNumber: String)
+  private def withFinancialDataAndVatReturns[T](iossNumber: String, startTime: LocalDate)
                                                (block: (Option[FinancialData], List[EtmpVatReturn]) => T)(implicit ec: ExecutionContext, hc: HeaderCarrier) = {
-    val yearsBeforeBeginningOfTime = 1000
-    val beginningOfTime = LocalDate.now().minusYears(yearsBeforeBeginningOfTime)
+
     val now = LocalDate.now()
-    val fromDate: String = beginningOfTime.format(etmpDateFormatter)
+    val fromDate: String = startTime.format(etmpDateFormatter)
     val toDate = now.format(etmpDateFormatter)
 
     val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(
@@ -69,7 +68,7 @@ class PaymentsService @Inject()(
     )
 
     val financialDataQueryParameters: FinancialDataQueryParameters = FinancialDataQueryParameters(
-      fromDate = Some(beginningOfTime),
+      fromDate = Some(startTime),
       toDate = Some(now)
     )
 
