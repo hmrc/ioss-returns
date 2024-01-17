@@ -22,6 +22,7 @@ import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControlle
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData._
 import uk.gov.hmrc.iossreturns.models.payments.PrepareData
 import uk.gov.hmrc.iossreturns.services.{FinancialDataService, PaymentsService}
+import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.{Clock, LocalDate}
@@ -46,8 +47,8 @@ class FinancialDataController @Inject()(
   def prepareFinancialData(): Action[AnyContent] = cc.auth().async {
     implicit request => {
       val now = LocalDate.now()
-
-      val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber)
+      val startTime = LocalDate.parse(request.registration.schemeDetails.commencementDate, etmpDateFormatter)
+      val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber, startTime)
       unpaidPayments.map { up =>
         val totalAmountOwed = up.map(_.amountOwed).sum
         val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
