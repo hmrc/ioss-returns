@@ -35,8 +35,8 @@ final case class EtmpObligationsQueryParameters(
 
 object EtmpObligationsQueryParameters {
 
-  val dateFromKey: String = "dateFrom"
-  val dateToKey: String = "dateTo"
+  val dateFromKey: String = "from"
+  val dateToKey: String = "to"
   val statusKey: String = "status"
 
   implicit val format: OFormat[EtmpObligationsQueryParameters] = Json.format[EtmpObligationsQueryParameters]
