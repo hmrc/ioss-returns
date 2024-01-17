@@ -31,8 +31,9 @@ import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataException}
-import uk.gov.hmrc.iossreturns.models.payments.{Payment, PaymentStatus, PrepareData}
+import uk.gov.hmrc.iossreturns.models.payments.{Charge, Payment, PaymentStatus, PrepareData}
 import uk.gov.hmrc.iossreturns.services.{FinancialDataService, PaymentsService}
+import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
 import java.time.{LocalDate, Month}
 import scala.concurrent.Future
@@ -143,12 +144,67 @@ class FinancialDataControllerSpec
               paymentDue2,
               paymentOverdue1,
               paymentOverdue2
-              ).map(_.amountOwed).sum,
+            ).map(_.amountOwed).sum,
             List(paymentOverdue1, paymentOverdue2).map(_.amountOwed).sum,
             iossNumber)
         )
 
 
+      }
+    }
+  }
+
+  ".getCharge" - {
+
+    lazy val request = FakeRequest(GET, routes.FinancialDataController.getCharge(period).url)
+
+    "must return charge data when service responds with valid charge data" in {
+
+      val charge: Charge = arbitraryCharge.arbitrary.sample.value
+
+      val application = applicationBuilder()
+        .overrides(bind[FinancialDataService].toInstance(mockFinancialDataService))
+        .build()
+
+      when(mockFinancialDataService.getCharge(any(), any())) thenReturn Some(charge).toFuture
+
+      running(application) {
+
+        val result = route(application, request).value
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.toJson(charge)
+      }
+    }
+
+    "must throw an Exception if the API call fails" in {
+
+      val application = applicationBuilder()
+        .overrides(bind[FinancialDataService].toInstance(mockFinancialDataService))
+        .build()
+
+      when(mockFinancialDataService.getCharge(any(), any())) thenReturn
+        Future.failed(FinancialDataException("Some exception"))
+
+      running(application) {
+
+        val result = route(application, request).value
+
+        whenReady(result.failed) { exp => exp mustBe a[Exception] }
+      }
+    }
+
+    "must respond with Unauthorized when the user is not authorised" in {
+
+      val application = new GuiceApplicationBuilder()
+        .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
+        .build()
+
+      running(application) {
+
+        val result = route(application, request).value
+
+        status(result) mustBe UNAUTHORIZED
       }
     }
   }

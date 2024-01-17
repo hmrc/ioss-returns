@@ -20,7 +20,7 @@ import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.payments.Charge
 
-import java.time.{LocalDate, ZonedDateTime}
+import java.time.ZonedDateTime
 
 final case class FinancialData(
                                 idType: Option[String],

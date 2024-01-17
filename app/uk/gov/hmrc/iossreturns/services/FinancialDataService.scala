@@ -36,7 +36,6 @@ class FinancialDataService @Inject()(financialDataConnector: FinancialDataConnec
     }
   }
 
-  // TODO -> TEST
   def getCharge(iossNumber: String, period: Period): Future[Option[Charge]] = {
     getFinancialData(iossNumber, Some(period.firstDay), Some(period.lastDay)).map { maybeFinancialData =>
       maybeFinancialData.flatMap(_.getChargeForPeriod(period))
