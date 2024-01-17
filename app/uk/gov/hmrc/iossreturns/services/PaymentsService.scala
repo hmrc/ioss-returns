@@ -20,6 +20,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpObligationsQueryParameters, EtmpVatReturn}
+import uk.gov.hmrc.iossreturns.connectors.PaymentHttpParser.ReturnPaymentResponse
+import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, PaymentConnector, VatReturnConnector}
+import uk.gov.hmrc.iossreturns.models.{EtmpDisplayReturnError, Period}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligations._
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpVatReturn._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataQueryParameters}
@@ -98,7 +101,7 @@ class PaymentsService @Inject()(
       obligations.getPeriods().map { period =>
         vatReturnConnector.get(iossNumber, period).map {
           case Right(vatReturn) => List(vatReturn)
-          case Left(e) if e.body startsWith "UNEXPECTED_404" => Nil
+          case Left(EtmpDisplayReturnError(code, _)) if code startsWith "UNEXPECTED_404" => Nil
         }
       }
     ).map(_.flatten)

@@ -24,6 +24,8 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.mvc.{PathBindable, QueryStringBindable}
 import uk.gov.hmrc.iossreturns.generators.Generators
 
+import java.time.Month
+
 class PeriodSpec
   extends AnyFreeSpec
     with Matchers
@@ -71,6 +73,39 @@ class PeriodSpec
       }
     }
 
+    "getNext" - {
+      "when current period is January" in {
+        val year = 2021
+        val current = Period(year, Month.JANUARY)
+        val expected = Period(year, Month.FEBRUARY)
+
+        current.getNext() mustBe expected
+      }
+
+      "when current period is February" in {
+        val year = 2021
+        val current = Period(year, Month.FEBRUARY)
+        val expected = Period(year, Month.MARCH)
+
+        current.getNext() mustBe expected
+      }
+
+      "when current period is July" in {
+        val year = 2021
+        val current = Period(year, Month.JULY)
+        val expected = Period(year, Month.AUGUST)
+
+        current.getNext() mustBe expected
+      }
+
+      "when current month is December" in {
+        val year = 2021
+        val current = Period(year, Month.DECEMBER)
+        val expected = Period(year + 1, Month.JANUARY)
+
+        current.getNext() mustBe expected
+      }
+    }
   }
 
 }
