@@ -315,9 +315,9 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
       val app = application
 
       server.stubFor(
-        get(urlEqualTo(s"${obligationsUrl}?dateFrom=${queryParameters.fromDate}&dateTo=${queryParameters.toDate}&status=${queryParameters.status}"))
-          .withQueryParam("dateFrom", new EqualToPattern(dateFrom))
-          .withQueryParam("dateTo", new EqualToPattern(dateTo))
+        get(urlEqualTo(s"${obligationsUrl}?from=${queryParameters.fromDate}&to=${queryParameters.toDate}&status=${queryParameters.status}"))
+          .withQueryParam("from", new EqualToPattern(dateFrom))
+          .withQueryParam("to", new EqualToPattern(dateTo))
           .withQueryParam("status", new EqualToPattern(status))
           .withHeader("Authorization", equalTo("Bearer auth-token"))
           .willReturn(
@@ -342,9 +342,9 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
         val app = application
 
         server.stubFor(
-          get(urlEqualTo(s"${obligationsUrl}?dateFrom=${queryParameters.fromDate}&dateTo=${queryParameters.toDate}&status=${queryParameters.status}"))
-            .withQueryParam("dateFrom", new EqualToPattern(dateFrom))
-            .withQueryParam("dateTo", new EqualToPattern(dateTo))
+          get(urlEqualTo(s"${obligationsUrl}?from=${queryParameters.fromDate}&to=${queryParameters.toDate}&status=${queryParameters.status}"))
+            .withQueryParam("from", new EqualToPattern(dateFrom))
+            .withQueryParam("to", new EqualToPattern(dateTo))
             .withQueryParam("status", new EqualToPattern(status))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
             .willReturn(aResponse()
@@ -369,9 +369,9 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
         val errorResponseJson = """{}"""
 
         server.stubFor(
-          get(urlEqualTo(s"${obligationsUrl}?dateFrom=${queryParameters.fromDate}&dateTo=${queryParameters.toDate}&status=${queryParameters.status}"))
-            .withQueryParam("dateFrom", new EqualToPattern(dateFrom))
-            .withQueryParam("dateTo", new EqualToPattern(dateTo))
+          get(urlEqualTo(s"${obligationsUrl}?from=${queryParameters.fromDate}&to=${queryParameters.toDate}&status=${queryParameters.status}"))
+            .withQueryParam("from", new EqualToPattern(dateFrom))
+            .withQueryParam("to", new EqualToPattern(dateTo))
             .withQueryParam("status", new EqualToPattern(status))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
             .willReturn(aResponse()
@@ -395,9 +395,9 @@ class VatReturnConnectorSpec extends SpecBase with WireMockHelper {
         val app = application
 
         server.stubFor(
-          get(urlEqualTo(s"${obligationsUrl}?dateFrom=${queryParameters.fromDate}&dateTo=${queryParameters.toDate}&status=${queryParameters.status}"))
-            .withQueryParam("dateFrom", new EqualToPattern(dateFrom))
-            .withQueryParam("dateTo", new EqualToPattern(dateTo))
+          get(urlEqualTo(s"${obligationsUrl}?from=${queryParameters.fromDate}&to=${queryParameters.toDate}&status=${queryParameters.status}"))
+            .withQueryParam("from", new EqualToPattern(dateFrom))
+            .withQueryParam("to", new EqualToPattern(dateTo))
             .withQueryParam("status", new EqualToPattern(status))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
             .willReturn(aResponse()
