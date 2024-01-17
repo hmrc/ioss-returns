@@ -20,16 +20,16 @@ import play.api.libs.json.{JsSuccess, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.testUtils.EtmpVatReturnData.etmpVatReturn
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 
 class EtmpVatReturnSpec extends SpecBase {
-  val goodSupplied1 = EtmpVatReturnGoodsSupplied("IE", EtmpVatRateType.ReducedVatRate, BigDecimal(100), BigDecimal(15))
-  val goodSupplied2 = EtmpVatReturnGoodsSupplied("IT", EtmpVatRateType.StandardVatRate, BigDecimal(200), BigDecimal(20))
+  val goodSupplied1: EtmpVatReturnGoodsSupplied = EtmpVatReturnGoodsSupplied("IE", EtmpVatRateType.ReducedVatRate, BigDecimal(100), BigDecimal(15))
+  val goodSupplied2: EtmpVatReturnGoodsSupplied = EtmpVatReturnGoodsSupplied("IT", EtmpVatRateType.StandardVatRate, BigDecimal(200), BigDecimal(20))
 
-  val etmpVatReturnWithoutCorrection = EtmpVatReturn("", "", LocalDate.now(), LocalDate.now(), List(goodSupplied1, goodSupplied2), BigDecimal(0), BigDecimal(0),
+  val etmpVatReturnWithoutCorrection: EtmpVatReturn = EtmpVatReturn("", LocalDateTime.now(), "", LocalDate.now(), LocalDate.now(), List(goodSupplied1, goodSupplied2), BigDecimal(0), BigDecimal(0),
     BigDecimal(0), Nil, BigDecimal(0), Nil, BigDecimal(0), "")
 
-  val etmpVatReturnWithCorrection = etmpVatReturnWithoutCorrection.copy(totalVATAmountFromCorrectionGBP = BigDecimal(2.5))
+  val etmpVatReturnWithCorrection: EtmpVatReturn = etmpVatReturnWithoutCorrection.copy(totalVATAmountFromCorrectionGBP = BigDecimal(2.5))
 
   private val genEtmpVatReturn: EtmpVatReturn = etmpVatReturn
 
@@ -82,5 +82,4 @@ class EtmpVatReturnSpec extends SpecBase {
       etmpVatReturnWithCorrection.getTotalVatOnSalesAfterCorrection() mustBe BigDecimal(37.5)
     }
   }
-
 }

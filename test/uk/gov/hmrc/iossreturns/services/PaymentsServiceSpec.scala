@@ -345,8 +345,9 @@ trait PaymentsServiceSpecFixture {
   protected val financialTransaction = FinancialTransaction(
     Some("G Ret AT EU-OMS"), None, Some(dateFrom), Some(dateTo), Some(1000), Some(500), Some(500), Some(Seq(item)))
 
-  protected val vatReturn = EtmpVatReturn(
+  protected val vatReturn: EtmpVatReturn = EtmpVatReturn(
     returnReference = "XI/IM9001234567/2023.M11",
+    returnVersion = LocalDateTime.of(2023, 1, 1, 0, 0),
     periodKey = "23AK",
     returnPeriodFrom = LocalDate.of(2023, 1, 1),
     returnPeriodTo = LocalDate.of(2023, 1, 31),
@@ -381,7 +382,6 @@ trait PaymentsServiceSpecFixture {
     ),
     totalVATAmountDueForAllMSGBP = BigDecimal(2569.13),
     paymentReference = "XI/IM9001234567/2023.M11"
-
   )
 
   protected val obligationsResponse = EtmpObligations(obligations = Seq(EtmpObligation(
