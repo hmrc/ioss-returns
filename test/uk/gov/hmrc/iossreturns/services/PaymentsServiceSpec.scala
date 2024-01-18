@@ -79,12 +79,14 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
       when(financialDataConnector.getFinancialData(any(), any()))
         .thenReturn(Future.successful[FinancialDataResponse](Right(Some(inputFinancialData))))
 
-      val obligationsDetails = obligationsResponse.obligationDetails
+      val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodOverdueKey)
       val obligationsDetail2: EtmpObligationDetails = obligationsDetails(1).copy(periodKey = periodDueKey)
 
+      val etmpObligation = obligationsResponse.obligations.head.copy(obligationDetails = List(obligationsDetail1, obligationsDetail2))
+
       when(vatReturnConnector.getObligations(any(), any()))
-        .thenReturn(Future.successful(Right(obligationsResponse.copy(obligationDetails = List(obligationsDetail1, obligationsDetail2)))))
+        .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
       val service = new PaymentsService(financialDataConnector, vatReturnConnector)
 
@@ -125,11 +127,13 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
 
       when(financialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Right(Some(inputFinancialData))))
 
-      val obligationsDetails = obligationsResponse.obligationDetails
+      val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodKey1)
 
+      val etmpObligation = obligationsResponse.obligations.head.copy(obligationDetails = List(obligationsDetail1))
+
       when(vatReturnConnector.getObligations(any(), any()))
-        .thenReturn(Future.successful(Right(obligationsResponse.copy(obligationDetails = List(obligationsDetail1)))))
+        .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
       val service = new PaymentsService(financialDataConnector, vatReturnConnector)
 
@@ -179,12 +183,14 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
         .thenReturn(Future.successful(Right(vatReturn2)))
       when(financialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful[FinancialDataResponse](Right(Some(inputFinancialData))))
 
-      val obligationsDetails = obligationsResponse.obligationDetails
+      val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodKey1)
       val obligationsDetail2: EtmpObligationDetails = obligationsDetails(1).copy(periodKey = periodKey2)
 
+      val etmpObligation = obligationsResponse.obligations.head.copy(obligationDetails = List(obligationsDetail1, obligationsDetail2))
+
       when(vatReturnConnector.getObligations(any(), any()))
-        .thenReturn(Future.successful(Right(obligationsResponse.copy(obligationDetails = List(obligationsDetail1, obligationsDetail2)))))
+        .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
       val service = new PaymentsService(financialDataConnector, vatReturnConnector)
 
@@ -216,12 +222,14 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
       when(vatReturnConnector.get(iossNumber, Period.fromKey(periodKey2)))
         .thenReturn(Future.successful(Right(vatReturn2)))
 
-      val obligationsDetails = obligationsResponse.obligationDetails
+      val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodKey1)
       val obligationsDetail2: EtmpObligationDetails = obligationsDetails(1).copy(periodKey = periodKey2)
 
+      val etmpObligation = obligationsResponse.obligations.head.copy(obligationDetails = List(obligationsDetail1, obligationsDetail2))
+
       when(vatReturnConnector.getObligations(any(), any()))
-        .thenReturn(Future.successful(Right(obligationsResponse.copy(obligationDetails = List(obligationsDetail1, obligationsDetail2)))))
+        .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
       val service = new PaymentsService(financialDataConnector, vatReturnConnector)
 
@@ -376,7 +384,7 @@ trait PaymentsServiceSpecFixture {
 
   )
 
-  protected val obligationsResponse = EtmpObligations(
+  protected val obligationsResponse = EtmpObligations(obligations = Seq(EtmpObligation(
     referenceNumber = "idNumber",
     referenceType = "regimeType",
     obligationDetails = Seq(
@@ -389,7 +397,7 @@ trait PaymentsServiceSpecFixture {
         periodKey = "23AK"
       )
     )
-  )
+  )))
 
   protected val financialData = FinancialData(Some("IOSS"), Some("123456789"), Some("ECOM"), zonedDateTimeNow, Some(Seq(financialTransaction)))
 }

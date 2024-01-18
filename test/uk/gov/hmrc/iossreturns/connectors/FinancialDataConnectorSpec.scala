@@ -102,7 +102,6 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
       Seq(BAD_REQUEST, SERVICE_UNAVAILABLE, IM_A_TEAPOT).foreach {
         status =>
           s"when server returns status $status" in {
-            println("---" + s"${financialDataUrl}?dateFrom=${dateFrom.toString}&dateTo=${queryParameters.toDate.get.toString}")
             server.stubFor(
               get(urlEqualTo(s"${financialDataUrl}?dateFrom=${dateFrom.toString}&dateTo=${queryParameters.toDate.get.toString}"))
                 .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
