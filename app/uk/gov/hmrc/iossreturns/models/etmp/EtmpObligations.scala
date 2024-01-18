@@ -36,8 +36,6 @@ object EtmpObligations {
 }
 
 case class EtmpObligation(
-                           referenceNumber: String,
-                           referenceType: String,
                            obligationDetails: Seq[EtmpObligationDetails]
                          )
 
