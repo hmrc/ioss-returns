@@ -18,10 +18,7 @@ package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
-import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpObligationsQueryParameters, EtmpVatReturn}
-import uk.gov.hmrc.iossreturns.connectors.PaymentHttpParser.ReturnPaymentResponse
-import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, PaymentConnector, VatReturnConnector}
 import uk.gov.hmrc.iossreturns.models.{EtmpDisplayReturnError, Period}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligations._
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpVatReturn._
@@ -65,7 +62,7 @@ class PaymentsService @Inject()(
     val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(
       fromDate = fromDate,
       toDate = toDate,
-      status = "A"
+      None
     )
 
     val financialDataQueryParameters: FinancialDataQueryParameters = FinancialDataQueryParameters(

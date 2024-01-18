@@ -21,16 +21,21 @@ import play.api.libs.json.{Json, OFormat}
 final case class EtmpObligationsQueryParameters(
                                                  fromDate: String,
                                                  toDate: String,
-                                                 status: String
+                                                 status: Option[String]
                                                ) {
 
   import EtmpObligationsQueryParameters._
 
+  private val statusQueryParam: Seq[(String, String)] = status match {
+    case Some(s) => Seq(statusKey -> s)
+    case _ => Seq.empty
+  }
+
   val toSeqQueryParams: Seq[(String, String)] = Seq(
     dateFromKey -> fromDate,
-    dateToKey -> toDate,
-    statusKey -> status
-  )
+    dateToKey -> toDate
+  ) ++
+    statusQueryParam
 }
 
 object EtmpObligationsQueryParameters {

@@ -23,8 +23,8 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser.FinancialDataResponse
-import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, PaymentConnector, VatReturnConnector}
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
