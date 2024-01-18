@@ -5,9 +5,9 @@ import uk.gov.hmrc.iossreturns.base.SpecBase
 
 class EtmpObligationsSpec extends SpecBase {
 
-  private val referenceNumber: String = arbitraryObligations.arbitrary.sample.value.referenceNumber
-  private val referenceType: String = arbitraryObligations.arbitrary.sample.value.referenceType
-  private val obligationDetails: Seq[EtmpObligationDetails] = arbitraryObligations.arbitrary.sample.value.obligationDetails
+  private val referenceNumber: String = arbitraryObligations.arbitrary.sample.value.obligations.head.referenceNumber
+  private val referenceType: String = arbitraryObligations.arbitrary.sample.value.obligations.head.referenceType
+  private val obligationDetails: Seq[EtmpObligationDetails] = arbitraryObligations.arbitrary.sample.value.obligations.head.obligationDetails
 
 
   "EtmpObligations" - {
@@ -25,11 +25,11 @@ class EtmpObligationsSpec extends SpecBase {
         }
       )
 
-      val expectedResult = EtmpObligations(
+      val expectedResult = EtmpObligations(obligations = Seq(EtmpObligation(
         referenceNumber = referenceNumber,
         referenceType = referenceType,
         obligationDetails = obligationDetails
-      )
+      )))
 
       json mustBe Json.toJson(expectedResult)
       json.validate[EtmpObligations] mustBe JsSuccess(expectedResult)

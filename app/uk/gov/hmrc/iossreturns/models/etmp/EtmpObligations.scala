@@ -20,23 +20,30 @@ import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.Period._
 
-case class EtmpObligations(
-                            referenceNumber: String,
-                            referenceType: String,
-                            obligationDetails: Seq[EtmpObligationDetails]
-                          )
+case class EtmpObligations(obligations: Seq[EtmpObligation])
 
 object EtmpObligations {
-
   implicit val format: OFormat[EtmpObligations] = Json.format[EtmpObligations]
-
 
   implicit class FromEtmpObligationsToPeriods(etmpObligations: EtmpObligations) {
     def getPeriods(): List[Period] = {
-      etmpObligations.obligationDetails
+      etmpObligations.obligations.flatMap(_.obligationDetails)
         .filter(_.status == EtmpObligationsFulfilmentStatus.Open)
         .map(p => Period.fromKey(p.periodKey))
         .toList
     }
   }
+}
+
+case class EtmpObligation(
+                           referenceNumber: String,
+                           referenceType: String,
+                           obligationDetails: Seq[EtmpObligationDetails]
+                         )
+
+object EtmpObligation {
+
+  implicit val format: OFormat[EtmpObligation] = Json.format[EtmpObligation]
+
+
 }
