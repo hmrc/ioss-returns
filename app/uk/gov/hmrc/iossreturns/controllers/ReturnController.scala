@@ -61,7 +61,7 @@ class ReturnController @Inject()(
       val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(
         fromDate = fromDate,
         toDate = toDate,
-        status = "A"
+        None
       )
 
       coreVatReturnConnector
