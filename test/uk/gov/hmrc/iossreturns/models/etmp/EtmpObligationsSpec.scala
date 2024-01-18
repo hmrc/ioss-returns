@@ -15,14 +15,18 @@ class EtmpObligationsSpec extends SpecBase {
     "must deserialise/serialise to and from EtmpObligations" in {
 
       val json = Json.obj(
-        "referenceNumber" -> referenceNumber,
-        "referenceType" -> referenceType,
-        "obligationDetails" -> obligationDetails.map { obligationDetail =>
+        "obligations" -> Json.arr(
           Json.obj(
-            "status" -> obligationDetail.status,
-            "periodKey" -> obligationDetail.periodKey
+            "referenceNumber" -> referenceNumber,
+            "referenceType" -> referenceType,
+            "obligationDetails" -> obligationDetails.map { obligationDetail =>
+              Json.obj(
+                "status" -> obligationDetail.status,
+                "periodKey" -> obligationDetail.periodKey
+              )
+            }
           )
-        }
+        )
       )
 
       val expectedResult = EtmpObligations(obligations = Seq(EtmpObligation(
