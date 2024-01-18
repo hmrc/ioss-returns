@@ -385,8 +385,6 @@ trait PaymentsServiceSpecFixture {
   )
 
   protected val obligationsResponse = EtmpObligations(obligations = Seq(EtmpObligation(
-    referenceNumber = "idNumber",
-    referenceType = "regimeType",
     obligationDetails = Seq(
       EtmpObligationDetails(
         status = EtmpObligationsFulfilmentStatus.Open,

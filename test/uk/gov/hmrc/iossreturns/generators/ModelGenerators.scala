@@ -294,8 +294,6 @@ trait ModelGenerators {
         obligationDetails <- Gen.listOfN(3, arbitrary[EtmpObligationDetails])
       } yield {
         EtmpObligations(obligations = Seq(EtmpObligation(
-          referenceNumber = referenceNumber,
-          referenceType = "IOSS",
           obligationDetails = obligationDetails
         )))
       }
