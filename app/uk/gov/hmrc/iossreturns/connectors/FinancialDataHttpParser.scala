@@ -40,6 +40,9 @@ object FinancialDataHttpParser extends Logging {
         case NOT_FOUND =>
           logger.warn(s"Got not found from financial data $url")
           Right(None)
+        case UNPROCESSABLE_ENTITY =>
+          logger.warn(s"Got Unprocessable Entity from financial data $url")
+          Right(None)
         case status =>
           logger.error(s"Unexpected response from Financial Data $url, received status $status, body of response was: ${response.body}")
           Left(UnexpectedResponseStatus(status, s"Unexpected response from Financial Data, received status $status"))
