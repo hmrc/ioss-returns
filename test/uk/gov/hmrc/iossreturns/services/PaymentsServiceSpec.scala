@@ -387,12 +387,16 @@ trait PaymentsServiceSpecFixture {
   protected val obligationsResponse = EtmpObligations(obligations = Seq(EtmpObligation(
     obligationDetails = Seq(
       EtmpObligationDetails(
-        status = EtmpObligationsFulfilmentStatus.Open,
+        status = EtmpObligationsFulfilmentStatus.Fulfilled,
         periodKey = "23AL"
       ),
       EtmpObligationDetails(
-        status = EtmpObligationsFulfilmentStatus.Open,
+        status = EtmpObligationsFulfilmentStatus.Fulfilled,
         periodKey = "23AK"
+      ),
+      EtmpObligationDetails(
+        status = EtmpObligationsFulfilmentStatus.Open, //To Be Ignored, this tests the filtering
+        periodKey = "23AJ"
       )
     )
   )))
