@@ -17,8 +17,9 @@
 package uk.gov.hmrc.iossreturns.models
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpDisplayRegistration
 
-case class RegistrationWrapper(registration: EtmpRegistration)
+case class RegistrationWrapper(registration: EtmpDisplayRegistration)
 
 object RegistrationWrapper {
   implicit val format: OFormat[RegistrationWrapper] = Json.format[RegistrationWrapper]

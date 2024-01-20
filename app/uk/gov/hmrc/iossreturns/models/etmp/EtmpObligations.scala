@@ -18,7 +18,6 @@ package uk.gov.hmrc.iossreturns.models.etmp
 
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.iossreturns.models.Period
-import uk.gov.hmrc.iossreturns.models.Period._
 
 case class EtmpObligations(obligations: Seq[EtmpObligation])
 

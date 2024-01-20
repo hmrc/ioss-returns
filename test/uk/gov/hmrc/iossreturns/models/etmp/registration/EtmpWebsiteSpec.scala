@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.etmp
+package uk.gov.hmrc.iossreturns.models.etmp.registration
 
-import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.iossreturns.models.{Bic, Iban}
+import org.scalacheck.Arbitrary.arbitrary
+import play.api.libs.json.{Json, JsSuccess}
+import uk.gov.hmrc.iossreturns.base.SpecBase
 
-case class EtmpBankDetails(accountName: String, bic: Option[Bic], iban: Iban)
+class EtmpWebsiteSpec extends SpecBase {
 
-object EtmpBankDetails {
+  "EtmpWebsite" - {
 
-  implicit val format: OFormat[EtmpBankDetails] = Json.format[EtmpBankDetails]
+    "must serialise/deserialise to and from EtmpWebsite" in {
+
+      val website = arbitrary[EtmpWebsite].sample.value
+
+      val expectedJson = Json.obj(
+        "websiteAddress" -> s"${website.websiteAddress}"
+      )
+
+      Json.toJson(website) mustBe expectedJson
+      expectedJson.validate[EtmpWebsite] mustBe JsSuccess(website)
+    }
+  }
 }

@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.etmp
+package uk.gov.hmrc.iossreturns.models.etmp.registration
 
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.{Json, JsSuccess}
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.genBankDetails
+import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.etmpBankDetails
 
 class EtmpBankDetailsSpec extends SpecBase {
 
-  private val accountName = genBankDetails.accountName
-  private val bic = genBankDetails.bic
-  private val iban = genBankDetails.iban
+  private val accountName = etmpBankDetails.accountName
+  private val bic = etmpBankDetails.bic
+  private val iban = etmpBankDetails.iban
 
   "must deserialise/serialise to and from EtmpBankDetails" - {
 

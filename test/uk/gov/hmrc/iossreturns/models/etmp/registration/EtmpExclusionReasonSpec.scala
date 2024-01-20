@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.etmp
+package uk.gov.hmrc.iossreturns.models.etmp.registration
 
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsError, JsString, Json}
+import play.api.libs.json.{JsError, Json, JsString}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 
 class EtmpExclusionReasonSpec extends SpecBase with ScalaCheckPropertyChecks {

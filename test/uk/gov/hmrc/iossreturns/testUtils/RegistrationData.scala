@@ -20,33 +20,18 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.config.Constants.maxTradingNames
-import uk.gov.hmrc.iossreturns.models.etmp._
-import uk.gov.hmrc.iossreturns.models.{Bic, Country, EtmpRegistration, Iban}
+import uk.gov.hmrc.iossreturns.models.etmp.registration._
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 
 import java.time.{LocalDate, LocalDateTime}
 
 object RegistrationData extends SpecBase {
 
-  val etmpEuRegistrationDetails: EtmpEuRegistrationDetails = EtmpEuRegistrationDetails(
-    countryOfRegistration = arbitrary[Country].sample.value.code,
-    traderId = arbitraryVatNumberTraderId.arbitrary.sample.value,
-    tradingName = arbitraryEtmpTradingName.arbitrary.sample.value.tradingName,
-    fixedEstablishmentAddressLine1 = arbitrary[String].sample.value,
-    fixedEstablishmentAddressLine2 = Some(arbitrary[String].sample.value),
-    townOrCity = arbitrary[String].sample.value,
-    regionOrState = Some(arbitrary[String].sample.value),
-    postcode = Some(arbitrary[String].sample.value)
-  )
+  val etmpEuRegistrationDetails: EtmpDisplayEuRegistrationDetails = arbitrary[EtmpDisplayEuRegistrationDetails].sample.value
 
-  val etmpEuPreviousRegistrationDetails: EtmpPreviousEuRegistrationDetails = EtmpPreviousEuRegistrationDetails(
-    issuedBy = arbitrary[Country].sample.value.code,
-    registrationNumber = arbitrary[String].sample.value,
-    schemeType = arbitrary[SchemeType].sample.value,
-    intermediaryNumber = Some(arbitrary[String].sample.value)
-  )
+  val etmpEuPreviousRegistrationDetails: EtmpPreviousEuRegistrationDetails = arbitrary[EtmpPreviousEuRegistrationDetails].sample.value
 
-  val etmpSchemeDetails: EtmpSchemeDetails = EtmpSchemeDetails(
+  val etmpSchemeDetails: EtmpDisplaySchemeDetails = EtmpDisplaySchemeDetails(
     commencementDate = LocalDate.now.format(etmpDateFormatter),
     euRegistrationDetails = Seq(etmpEuRegistrationDetails),
     previousEURegistrationDetails = Seq(etmpEuPreviousRegistrationDetails),
@@ -54,24 +39,21 @@ object RegistrationData extends SpecBase {
     contactName = arbitrary[String].sample.value,
     businessTelephoneNumber = arbitrary[String].sample.value,
     businessEmailId = arbitrary[String].sample.value,
+    unusableStatus = false,
     nonCompliantReturns = Some(arbitraryNonCompliantDetails.arbitrary.sample.value.nonCompliantReturns.toString),
     nonCompliantPayments = Some(arbitraryNonCompliantDetails.arbitrary.sample.value.nonCompliantPayments.toString)
   )
 
-  val genBankDetails: EtmpBankDetails = EtmpBankDetails(
-    accountName = arbitrary[String].sample.value,
-    bic = Some(arbitrary[Bic].sample.value),
-    iban = arbitrary[Iban].sample.value
-  )
+  val etmpBankDetails: EtmpBankDetails = arbitrary[EtmpBankDetails].sample.value
 
   val etmpAdminUse: EtmpAdminUse = EtmpAdminUse(
     changeDate = Some(LocalDateTime.now())
   )
 
-  val etmpRegistration: EtmpRegistration = EtmpRegistration(
+  val etmpRegistration: EtmpDisplayRegistration = EtmpDisplayRegistration(
     tradingNames = Gen.listOfN(maxTradingNames, arbitraryEtmpTradingName.arbitrary).sample.value,
     schemeDetails = etmpSchemeDetails,
-    bankDetails = genBankDetails,
+    bankDetails = etmpBankDetails,
     exclusions = Gen.listOfN(3, arbitrary[EtmpExclusion]).sample.value,
     adminUse = etmpAdminUse
   )

@@ -18,7 +18,6 @@ package uk.gov.hmrc.iossreturns.controllers
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
-import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -30,9 +29,9 @@ import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.controllers.actions.{AuthAction, FakeAuthAction, FakeFailingAuthConnector}
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.Period
-import uk.gov.hmrc.iossreturns.models.etmp.{EtmpExclusion, EtmpExclusionReason}
-import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
+import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return}
+import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
 import uk.gov.hmrc.iossreturns.services.ReturnsService
 
 import java.time.{Clock, LocalDate, Month, ZoneId}

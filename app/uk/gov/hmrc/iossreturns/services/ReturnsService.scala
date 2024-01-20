@@ -18,8 +18,9 @@ package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.models.{EtmpDisplayReturnError, Period}
-import uk.gov.hmrc.iossreturns.models.etmp.EtmpExclusionReason.Reversal
-import uk.gov.hmrc.iossreturns.models.etmp.{EtmpExclusion, EtmpVatReturn}
+import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusionReason.Reversal
+import uk.gov.hmrc.iossreturns.models.etmp.EtmpVatReturn
+import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
 import uk.gov.hmrc.iossreturns.models.youraccount.{PeriodWithStatus, SubmissionStatus}
 
 import java.time.{Clock, LocalDate}

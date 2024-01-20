@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.etmp
+package uk.gov.hmrc.iossreturns.models.etmp.registration
 
 import org.scalacheck.Arbitrary.arbitrary
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.{Json, JsSuccess}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 
 class EtmpTradingNameSpec extends SpecBase {

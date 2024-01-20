@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.etmp
+package uk.gov.hmrc.iossreturns.models.etmp.registration
 
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.{Json, JsSuccess}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 
 import java.time.LocalDate
