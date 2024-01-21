@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.models.external
 
-import play.api.Configuration
+import play.api.libs.json.{Format, Json}
 
-import javax.inject.{Inject, Singleton}
+case class ExternalRequest(origin: String, returnUrl: String)
 
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
-
-  val iossEnrolment: String = config.get[String]("features.enrolment.ioss-enrolment-key")
-
-  val externalEntryTtlDays: Int = config.get[Int]("features.externalEntry.ttlInDays")
+object ExternalRequest {
+  implicit val format:Format[ExternalRequest] = Json.format[ExternalRequest]
 }

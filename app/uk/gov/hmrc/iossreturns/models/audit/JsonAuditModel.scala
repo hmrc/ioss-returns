@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.models.audit
 
-import play.api.Configuration
+import play.api.libs.json.JsValue
 
-import javax.inject.{Inject, Singleton}
-
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
-
-  val iossEnrolment: String = config.get[String]("features.enrolment.ioss-enrolment-key")
-
-  val externalEntryTtlDays: Int = config.get[Int]("features.externalEntry.ttlInDays")
+trait JsonAuditModel {
+  val auditType: String
+  val transactionName: String
+  val detail: JsValue
 }
