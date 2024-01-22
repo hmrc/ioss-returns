@@ -5,7 +5,7 @@ import org.scalacheck.Gen
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.etmp._
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 
 object EtmpVatReturnData extends SpecBase {
 
@@ -37,6 +37,7 @@ object EtmpVatReturnData extends SpecBase {
 
   val etmpVatReturn: EtmpVatReturn = EtmpVatReturn(
     returnReference = arbitrary[String].sample.value,
+    returnVersion = arbitrary[LocalDateTime].sample.value,
     periodKey = arbitrary[String].sample.value,
     returnPeriodFrom = arbitrary[LocalDate].sample.value,
     returnPeriodTo = arbitrary[LocalDate].sample.value,

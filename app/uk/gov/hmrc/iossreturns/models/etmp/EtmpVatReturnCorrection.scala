@@ -28,5 +28,6 @@ case class EtmpVatReturnCorrection(
                                   )
 
 object EtmpVatReturnCorrection {
+
   implicit val format: Format[EtmpVatReturnCorrection] = Json.format[EtmpVatReturnCorrection]
 }
