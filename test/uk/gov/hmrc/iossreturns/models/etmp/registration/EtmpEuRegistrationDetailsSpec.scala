@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.etmp
+package uk.gov.hmrc.iossreturns.models.etmp.registration
 
 import org.scalacheck.Arbitrary.arbitrary
-import play.api.libs.json.{JsSuccess, Json}
+import org.scalacheck.Gen
+import play.api.libs.json.{Json, JsSuccess}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.etmpEuRegistrationDetails
 
 class EtmpEuRegistrationDetailsSpec extends SpecBase {
 
-  private val countryOfRegistration = etmpEuRegistrationDetails.countryOfRegistration
-  private val traderId = etmpEuRegistrationDetails.traderId
-  private val tradingName = etmpEuRegistrationDetails.tradingName
+  private val issuedBy = etmpEuRegistrationDetails.issuedBy
+  private val vatNumber = etmpEuRegistrationDetails.vatNumber
+  private val taxIdentificationNumber = Gen.alphaNumStr.sample.value
+  private val tradingName = etmpEuRegistrationDetails.fixedEstablishmentTradingName
   private val fixedEstablishmentAddressLine1 = etmpEuRegistrationDetails.fixedEstablishmentAddressLine1
   private val fixedEstablishmentAddressLine2 = arbitrary[String].sample.value
   private val townOrCity = etmpEuRegistrationDetails.townOrCity
@@ -39,9 +41,10 @@ class EtmpEuRegistrationDetailsSpec extends SpecBase {
       "when all optional values are present" in {
 
         val json = Json.obj(
-          "countryOfRegistration" -> countryOfRegistration,
-          "traderId" -> traderId,
-          "tradingName" -> tradingName,
+          "issuedBy" -> issuedBy,
+          "vatNumber" -> vatNumber.get,
+          "taxIdentificationNumber" -> taxIdentificationNumber,
+          "fixedEstablishmentTradingName" -> tradingName,
           "fixedEstablishmentAddressLine1" -> fixedEstablishmentAddressLine1,
           "fixedEstablishmentAddressLine2" -> fixedEstablishmentAddressLine2,
           "townOrCity" -> townOrCity,
@@ -49,10 +52,11 @@ class EtmpEuRegistrationDetailsSpec extends SpecBase {
           "postcode" -> postcode
         )
 
-        val expectedResult = EtmpEuRegistrationDetails(
-          countryOfRegistration = countryOfRegistration,
-          traderId = traderId,
-          tradingName = tradingName,
+        val expectedResult = EtmpDisplayEuRegistrationDetails(
+          issuedBy = issuedBy,
+          vatNumber = vatNumber,
+          taxIdentificationNumber = Some(taxIdentificationNumber),
+          fixedEstablishmentTradingName = tradingName,
           fixedEstablishmentAddressLine1 = fixedEstablishmentAddressLine1,
           fixedEstablishmentAddressLine2 = Some(fixedEstablishmentAddressLine2),
           townOrCity = townOrCity,
@@ -61,23 +65,24 @@ class EtmpEuRegistrationDetailsSpec extends SpecBase {
         )
 
         Json.toJson(expectedResult) mustBe json
-        json.validate[EtmpEuRegistrationDetails] mustBe JsSuccess(expectedResult)
+        json.validate[EtmpDisplayEuRegistrationDetails] mustBe JsSuccess(expectedResult)
       }
 
       "when all optional values are absent" in {
 
         val json = Json.obj(
-          "countryOfRegistration" -> countryOfRegistration,
-          "traderId" -> traderId,
-          "tradingName" -> tradingName,
+          "issuedBy" -> issuedBy,
+          "vatNumber" -> vatNumber,
+          "fixedEstablishmentTradingName" -> tradingName,
           "fixedEstablishmentAddressLine1" -> fixedEstablishmentAddressLine1,
           "townOrCity" -> townOrCity
         )
 
-        val expectedResult = EtmpEuRegistrationDetails(
-          countryOfRegistration = countryOfRegistration,
-          traderId = traderId,
-          tradingName = tradingName,
+        val expectedResult = EtmpDisplayEuRegistrationDetails(
+          issuedBy = issuedBy,
+          vatNumber = vatNumber,
+          taxIdentificationNumber = None,
+          fixedEstablishmentTradingName = tradingName,
           fixedEstablishmentAddressLine1 = fixedEstablishmentAddressLine1,
           fixedEstablishmentAddressLine2 = None,
           townOrCity = townOrCity,
@@ -86,7 +91,7 @@ class EtmpEuRegistrationDetailsSpec extends SpecBase {
         )
 
         Json.toJson(expectedResult) mustBe json
-        json.validate[EtmpEuRegistrationDetails] mustBe JsSuccess(expectedResult)
+        json.validate[EtmpDisplayEuRegistrationDetails] mustBe JsSuccess(expectedResult)
       }
     }
   }

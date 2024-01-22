@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.etmp
+package uk.gov.hmrc.iossreturns.models.etmp.registration
 
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.{Json, JsSuccess}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.etmpSchemeDetails
 
@@ -46,11 +46,12 @@ class EtmpSchemeDetailsSpec extends SpecBase {
           "contactName" -> contactName,
           "businessTelephoneNumber" -> businessTelephoneNumber,
           "businessEmailId" -> businessEmailId,
+          "unusableStatus" -> false,
           "nonCompliantReturns" -> nonCompliantReturns,
           "nonCompliantPayments" -> nonCompliantPayments
         )
 
-        val expectedResult = EtmpSchemeDetails(
+        val expectedResult = EtmpDisplaySchemeDetails(
           commencementDate = commencementDate,
           euRegistrationDetails = euRegistrationDetails,
           previousEURegistrationDetails = previousEURegistrationDetails,
@@ -58,12 +59,13 @@ class EtmpSchemeDetailsSpec extends SpecBase {
           contactName = contactName,
           businessTelephoneNumber = businessTelephoneNumber,
           businessEmailId = businessEmailId,
+          unusableStatus = false,
           nonCompliantReturns = nonCompliantReturns,
           nonCompliantPayments = nonCompliantPayments
         )
 
         Json.toJson(expectedResult) mustBe json
-        json.validate[EtmpSchemeDetails] mustBe JsSuccess(expectedResult)
+        json.validate[EtmpDisplaySchemeDetails] mustBe JsSuccess(expectedResult)
       }
 
       "when all optional values are absent" in {
@@ -76,9 +78,10 @@ class EtmpSchemeDetailsSpec extends SpecBase {
           "contactName" -> contactName,
           "businessTelephoneNumber" -> businessTelephoneNumber,
           "businessEmailId" -> businessEmailId,
+          "unusableStatus" -> false
         )
 
-        val expectedResult = EtmpSchemeDetails(
+        val expectedResult = EtmpDisplaySchemeDetails(
           commencementDate = commencementDate,
           euRegistrationDetails = euRegistrationDetails,
           previousEURegistrationDetails = previousEURegistrationDetails,
@@ -86,12 +89,13 @@ class EtmpSchemeDetailsSpec extends SpecBase {
           contactName = contactName,
           businessTelephoneNumber = businessTelephoneNumber,
           businessEmailId = businessEmailId,
+          unusableStatus = false,
           nonCompliantReturns = None,
           nonCompliantPayments = None
         )
 
         Json.toJson(expectedResult) mustBe json
-        json.validate[EtmpSchemeDetails] mustBe JsSuccess(expectedResult)
+        json.validate[EtmpDisplaySchemeDetails] mustBe JsSuccess(expectedResult)
       }
     }
   }

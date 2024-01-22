@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models
+package uk.gov.hmrc.iossreturns.models.etmp.registration
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.iossreturns.models.etmp.{EtmpAdminUse, EtmpBankDetails, EtmpExclusion, EtmpSchemeDetails, EtmpTradingName}
 
-case class EtmpRegistration(
-                             tradingNames: Seq[EtmpTradingName],
-                             schemeDetails: EtmpSchemeDetails,
-                             bankDetails: EtmpBankDetails,
-                             exclusions: Seq[EtmpExclusion],
-                             adminUse: EtmpAdminUse
-                           )
+import java.time.LocalDateTime
 
-object EtmpRegistration {
+case class EtmpAdminUse(changeDate: Option[LocalDateTime])
 
-  implicit val format: OFormat[EtmpRegistration] = Json.format[EtmpRegistration]
+object EtmpAdminUse {
+
+  implicit val format: OFormat[EtmpAdminUse] = Json.format[EtmpAdminUse]
 }

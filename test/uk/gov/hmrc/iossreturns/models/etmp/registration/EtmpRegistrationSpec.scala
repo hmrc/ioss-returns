@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.etmp
+package uk.gov.hmrc.iossreturns.models.etmp.registration
 
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.{Json, JsSuccess}
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.models.EtmpRegistration
-import uk.gov.hmrc.iossreturns.models.EtmpRegistration._
+import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpDisplayRegistration._
 import uk.gov.hmrc.iossreturns.testUtils.RegistrationData.etmpRegistration
 
 class EtmpRegistrationSpec extends SpecBase {
 
   private val tradingNames: Seq[EtmpTradingName] = etmpRegistration.tradingNames
-  private val schemeDetails: EtmpSchemeDetails = etmpRegistration.schemeDetails
+  private val schemeDetails: EtmpDisplaySchemeDetails = etmpRegistration.schemeDetails
   private val bankDetails: EtmpBankDetails = etmpRegistration.bankDetails
   private val exclusions: Seq[EtmpExclusion] = etmpRegistration.exclusions
   private val adminUse: EtmpAdminUse = etmpRegistration.adminUse
@@ -42,7 +41,7 @@ class EtmpRegistrationSpec extends SpecBase {
           "adminUse" -> adminUse
       )
 
-      val expectedResult = EtmpRegistration(
+      val expectedResult = EtmpDisplayRegistration(
         tradingNames = tradingNames,
         schemeDetails = schemeDetails,
         bankDetails = bankDetails,
@@ -51,7 +50,7 @@ class EtmpRegistrationSpec extends SpecBase {
       )
 
       Json.toJson(expectedResult) mustBe json
-      json.validate[EtmpRegistration] mustBe JsSuccess(expectedResult)
+      json.validate[EtmpDisplayRegistration] mustBe JsSuccess(expectedResult)
     }
   }
 }

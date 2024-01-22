@@ -21,6 +21,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.option
 import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.etmp._
+import uk.gov.hmrc.iossreturns.models.etmp.registration._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 
 import java.time.{Instant, LocalDate, LocalDateTime, Month, ZoneId, ZonedDateTime}
@@ -322,20 +323,6 @@ trait ModelGenerators {
       } yield EtmpWebsite(websiteAddress)
     }
 
-  implicit lazy val arbitraryVatNumberTraderId: Arbitrary[VatNumberTraderId] =
-    Arbitrary {
-      for {
-        vatNumber <- Gen.alphaNumStr
-      } yield VatNumberTraderId(vatNumber)
-    }
-
-  implicit lazy val arbitraryTaxRefTraderID: Arbitrary[TaxRefTraderID] =
-    Arbitrary {
-      for {
-        taxReferenceNumber <- Gen.alphaNumStr
-      } yield TaxRefTraderID(taxReferenceNumber)
-    }
-
   implicit lazy val arbitrarySchemeType: Arbitrary[SchemeType] =
     Arbitrary {
       Gen.oneOf(SchemeType.values)
@@ -358,7 +345,7 @@ trait ModelGenerators {
         effectiveDate <- arbitraryDate.arbitrary
         decisionDateDate <- arbitraryDate.arbitrary
         quarantine <- arbitrary[Boolean]
-      } yield EtmpExclusion(
+      } yield registration.EtmpExclusion(
         exclusionReason = exclusionReason,
         effectiveDate = effectiveDate,
         decisionDate = decisionDateDate,
@@ -428,11 +415,11 @@ trait ModelGenerators {
       }
     }
 
-  implicit val arbitraryEtmpEuRegistrationDetails: Arbitrary[EtmpEuRegistrationDetails] = {
+  implicit val arbitraryEtmpEuRegistrationDetails: Arbitrary[EtmpDisplayEuRegistrationDetails] = {
     Arbitrary {
       for {
         countryOfRegistration <- Gen.listOfN(2, Gen.alphaChar).map(_.mkString.toUpperCase)
-        traderId <- arbitrary[VatNumberTraderId]
+        vatNumber <- Gen.alphaNumStr
         tradingName <- arbitrary[String]
         fixedEstablishmentAddressLine1 <- arbitrary[String]
         fixedEstablishmentAddressLine2 <- Gen.option(arbitrary[String])
@@ -440,9 +427,10 @@ trait ModelGenerators {
         regionOrState <- Gen.option(arbitrary[String])
         postcode <- Gen.option(arbitrary[String])
       } yield {
-        EtmpEuRegistrationDetails(
+        EtmpDisplayEuRegistrationDetails(
           countryOfRegistration,
-          traderId,
+          Some(vatNumber),
+          None,
           tradingName,
           fixedEstablishmentAddressLine1,
           fixedEstablishmentAddressLine2,
@@ -461,11 +449,11 @@ trait ModelGenerators {
         registrationNumber <- arbitrary[String]
         schemeType <- Gen.oneOf(SchemeType.values)
         intermediaryNumber <- Gen.option(arbitrary[String])
-      } yield EtmpPreviousEuRegistrationDetails(issuedBy, registrationNumber, schemeType, intermediaryNumber)
+      } yield registration.EtmpPreviousEuRegistrationDetails(issuedBy, registrationNumber, schemeType, intermediaryNumber)
     }
   }
 
-  implicit val arbitraryEtmpSchemeDetails: Arbitrary[EtmpSchemeDetails] = {
+  implicit val arbitraryEtmpSchemeDetails: Arbitrary[EtmpDisplaySchemeDetails] = {
     Arbitrary {
       for {
         commencementDate <- arbitrary[String]
@@ -478,7 +466,7 @@ trait ModelGenerators {
         nonCompliantReturns <- Gen.option(arbitrary[Int].toString)
         nonCompliantPayments <- Gen.option(arbitrary[Int].toString)
       } yield
-        EtmpSchemeDetails(
+        EtmpDisplaySchemeDetails(
           commencementDate,
           euRegistrationDetails,
           previousEURegistrationDetails,
@@ -486,6 +474,7 @@ trait ModelGenerators {
           contactName,
           businessTelephoneNumber,
           businessEmailId,
+          unusableStatus = false,
           nonCompliantReturns,
           nonCompliantPayments
         )
@@ -499,14 +488,14 @@ trait ModelGenerators {
       } yield EtmpAdminUse(Some(changeDate))
     }
 
-  implicit val arbitraryEtmpRegistration: Arbitrary[EtmpRegistration] = Arbitrary {
+  implicit val arbitraryEtmpRegistration: Arbitrary[EtmpDisplayRegistration] = Arbitrary {
     for {
       etmpTradingNames <- Gen.listOfN(2, arbitraryEtmpTradingName.arbitrary)
-      schemeDetails <- arbitrary[EtmpSchemeDetails]
+      schemeDetails <- arbitrary[EtmpDisplaySchemeDetails]
       bankDetails <- arbitrary[EtmpBankDetails]
       exclusions <- Gen.listOfN(1, arbitraryEtmpExclusion.arbitrary)
       adminUse <- arbitrary[EtmpAdminUse]
-    } yield EtmpRegistration(
+    } yield EtmpDisplayRegistration(
       etmpTradingNames,
       schemeDetails,
       bankDetails,
@@ -517,7 +506,7 @@ trait ModelGenerators {
 
   implicit val arbitraryRegistrationWrapper: Arbitrary[RegistrationWrapper] = Arbitrary {
     for {
-      etmpRegistration <- arbitrary[EtmpRegistration]
+      etmpRegistration <- arbitrary[EtmpDisplayRegistration]
     } yield RegistrationWrapper(
       etmpRegistration
     )
