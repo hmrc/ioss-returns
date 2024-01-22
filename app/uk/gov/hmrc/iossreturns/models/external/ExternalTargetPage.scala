@@ -20,7 +20,7 @@ import uk.gov.hmrc.iossreturns.models.Period
 import views.html.helper
 
 sealed trait ExternalTargetPage {
-  val prependUrl: String = "/pay-vat-on-goods-sold-to-eu/northern-ireland-returns-payments"
+  val prependUrl: String = "/pay-vat-on-goods-sold-to-eu/import-one-stop-shop-returns-payments"
   val name: String
 }
 
