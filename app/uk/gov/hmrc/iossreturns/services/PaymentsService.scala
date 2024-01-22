@@ -62,7 +62,7 @@ class PaymentsService @Inject()(
     val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(
       fromDate = fromDate,
       toDate = toDate,
-      None
+      status = Some("F")
     )
 
     val financialDataQueryParameters: FinancialDataQueryParameters = FinancialDataQueryParameters(

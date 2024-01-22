@@ -27,7 +27,7 @@ object EtmpObligations {
   implicit class FromEtmpObligationsToPeriods(etmpObligations: EtmpObligations) {
     def getPeriods(): List[Period] = {
       etmpObligations.obligations.flatMap(_.obligationDetails)
-        .filter(_.status == EtmpObligationsFulfilmentStatus.Open)
+        .filter(_.status == EtmpObligationsFulfilmentStatus.Fulfilled)
         .map(p => Period.fromKey(p.periodKey))
         .toList
     }
