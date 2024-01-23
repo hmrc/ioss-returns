@@ -99,7 +99,6 @@ trait ModelGenerators {
         msconCountryCode <- arbitrary[String]
         balanceOfVatDueGBP <- arbitrary[BigDecimal]
         grandTotalMsidGoodsGBP <- arbitrary[BigDecimal]
-        grandTotalMsestGoodsGBP <- arbitrary[BigDecimal]
         correctionsTotalGBP <- arbitrary[BigDecimal]
         amountOfMsidSupplies <- Gen.oneOf(List(1, 2, 3))
         msidSupplies <- Gen.listOfN(amountOfMsidSupplies, arbitrary[CoreSupply])
@@ -109,10 +108,8 @@ trait ModelGenerators {
         msconCountryCode = msconCountryCode,
         balanceOfVatDueGBP = balanceOfVatDueGBP,
         grandTotalMsidGoodsGBP = grandTotalMsidGoodsGBP,
-        grandTotalMsestGoodsGBP = grandTotalMsestGoodsGBP,
         correctionsTotalGBP = correctionsTotalGBP,
         msidSupplies = msidSupplies,
-        msestSupplies = List.empty,
         corrections = corrections
       )
     }
