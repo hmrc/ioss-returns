@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.iossreturns.models.etmp
 
-import play.api.libs.functional.syntax.unlift
-import play.api.libs.json.{__, Format, Json, Reads, Writes}
 import play.api.libs.functional.syntax._
+import play.api.libs.json.{__, Format, Reads, Writes}
 
 import java.time.{LocalDate, LocalDateTime}
 
