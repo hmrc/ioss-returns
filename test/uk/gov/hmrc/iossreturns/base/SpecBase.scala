@@ -49,7 +49,6 @@ trait SpecBase
       "DE",
       BigDecimal(10),
       BigDecimal(10),
-      BigDecimal(10),
       BigDecimal(-10),
       List(CoreSupply(
         "GOODS",
@@ -57,17 +56,6 @@ trait SpecBase
         "STANDARD",
         BigDecimal(10),
         BigDecimal(10)
-      )),
-      List(CoreMsestSupply(
-        Some("FR"),
-        None,
-        List(CoreSupply(
-          "GOODS",
-          BigDecimal(10),
-          "STANDARD",
-          BigDecimal(10),
-          BigDecimal(10)
-        ))
       )),
       List(CoreCorrection(
         CorePeriod(2021, "02"),
