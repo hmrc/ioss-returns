@@ -74,17 +74,6 @@ object CoreEuTraderTaxId {
   implicit val format: OFormat[CoreEuTraderTaxId] = Json.format[CoreEuTraderTaxId]
 }
 
-case class CoreMsestSupply(
-                            countryCode: Option[String],
-                            euTraderId: Option[CoreEuTraderId],
-                            supplies: List[CoreSupply]
-                          )
-
-object CoreMsestSupply {
-  implicit val format: OFormat[CoreMsestSupply] = Json.format[CoreMsestSupply]
-}
-
-
 case class CoreCorrection(
                            period: CorePeriod,
                            totalVatAmountCorrectionGBP: BigDecimal

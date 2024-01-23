@@ -75,6 +75,42 @@ class EtmpVatReturnSpec extends SpecBase {
       json.validate[EtmpVatReturn] mustBe JsSuccess(expectedResult)
     }
 
+    "must deserialise to EtmpVatReturn with missing sequences as empty" in {
+
+      val json = Json.obj(
+        "returnReference" -> genEtmpVatReturn.returnReference,
+        "returnVersion" -> genEtmpVatReturn.returnVersion,
+        "periodKey" -> genEtmpVatReturn.periodKey,
+        "returnPeriodFrom" -> genEtmpVatReturn.returnPeriodFrom,
+        "returnPeriodTo" -> genEtmpVatReturn.returnPeriodTo,
+        "totalVATGoodsSuppliedGBP" -> genEtmpVatReturn.totalVATGoodsSuppliedGBP,
+        "totalVATAmountPayable" -> genEtmpVatReturn.totalVATAmountPayable,
+        "totalVATAmountPayableAllSpplied" -> genEtmpVatReturn.totalVATAmountPayableAllSpplied,
+        "totalVATAmountFromCorrectionGBP" -> genEtmpVatReturn.totalVATAmountFromCorrectionGBP,
+        "totalVATAmountDueForAllMSGBP" -> genEtmpVatReturn.totalVATAmountDueForAllMSGBP,
+        "paymentReference" -> genEtmpVatReturn.paymentReference
+      )
+
+      val expectedResult = EtmpVatReturn(
+        returnReference = genEtmpVatReturn.returnReference,
+        returnVersion = genEtmpVatReturn.returnVersion,
+        periodKey = genEtmpVatReturn.periodKey,
+        returnPeriodFrom = genEtmpVatReturn.returnPeriodFrom,
+        returnPeriodTo = genEtmpVatReturn.returnPeriodTo,
+        goodsSupplied = Seq.empty,
+        totalVATGoodsSuppliedGBP = genEtmpVatReturn.totalVATGoodsSuppliedGBP,
+        totalVATAmountPayable = genEtmpVatReturn.totalVATAmountPayable,
+        totalVATAmountPayableAllSpplied = genEtmpVatReturn.totalVATAmountPayableAllSpplied,
+        correctionPreviousVATReturn = Seq.empty,
+        totalVATAmountFromCorrectionGBP = genEtmpVatReturn.totalVATAmountFromCorrectionGBP,
+        balanceOfVATDueForMS = Seq.empty,
+        totalVATAmountDueForAllMSGBP = genEtmpVatReturn.totalVATAmountDueForAllMSGBP,
+        paymentReference = genEtmpVatReturn.paymentReference
+      )
+
+      json.validate[EtmpVatReturn] mustBe JsSuccess(expectedResult)
+    }
+
     "should getTotalVatOnSalesAfterCorrection correctly when there is no correction" in {
       etmpVatReturnWithoutCorrection.getTotalVatOnSalesAfterCorrection() mustBe BigDecimal(35)
     }
