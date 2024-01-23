@@ -23,6 +23,7 @@ import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.etmp.registration._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
+import uk.gov.hmrc.iossreturns.models.payments.Charge
 
 import java.time.{Instant, LocalDate, LocalDateTime, Month, ZoneId, ZonedDateTime}
 import java.time.temporal.ChronoUnit
@@ -190,6 +191,21 @@ trait ModelGenerators {
       Some(List(item))
     )
   }
+
+  implicit val arbitraryCharge: Arbitrary[Charge] =
+    Arbitrary {
+      for {
+        period <- arbitrary[Period]
+        originalAmount <- arbitrary[BigDecimal]
+        outstandingAmount <- arbitrary[BigDecimal]
+        clearedAmount <- arbitrary[BigDecimal]
+      } yield Charge(
+        period = period,
+        originalAmount = originalAmount,
+        outstandingAmount = outstandingAmount,
+        clearedAmount = clearedAmount
+      )
+    }
 
   implicit val arbitraryEtmpVatReturnGoodsSupply: Arbitrary[EtmpVatReturnGoodsSupplied] =
     Arbitrary {
@@ -510,5 +526,4 @@ trait ModelGenerators {
       etmpRegistration
     )
   }
-
 }

@@ -19,6 +19,7 @@ package uk.gov.hmrc.iossreturns.controllers
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
+import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData._
 import uk.gov.hmrc.iossreturns.models.payments.PrepareData
 import uk.gov.hmrc.iossreturns.services.{FinancialDataService, PaymentsService}
@@ -31,13 +32,13 @@ import scala.concurrent.ExecutionContext
 
 class FinancialDataController @Inject()(
                                          cc: DefaultAuthenticatedControllerComponents,
-                                         service: FinancialDataService,
+                                         financialDataService: FinancialDataService,
                                          paymentsService: PaymentsService,
                                          clock: Clock
                                        )(implicit ec: ExecutionContext) extends BackendController(cc) {
   def get(commencementDate: LocalDate): Action[AnyContent] = cc.auth().async {
     implicit request => {
-      service.getFinancialData(request.iossNumber, Some(commencementDate), Some(LocalDate.now(clock)))
+      financialDataService.getFinancialData(request.iossNumber, Some(commencementDate), Some(LocalDate.now(clock)))
         .map(data =>
           Ok(Json.toJson(data))
         )
@@ -62,5 +63,12 @@ class FinancialDataController @Inject()(
         )))
       }
     }
+  }
+
+  def getCharge(period: Period): Action[AnyContent] = cc.auth().async {
+    implicit request =>
+      financialDataService.getCharge(request.iossNumber, period).map { chargeData =>
+        Ok(Json.toJson(chargeData))
+      }
   }
 }
