@@ -1,12 +1,15 @@
 # microservice specific routes
-GET         /financial-data/get/:commencementDate        uk.gov.hmrc.iossreturns.controllers.FinancialDataController.get(commencementDate: LocalDate)
+GET         /financial-data/get/:commencementDate           uk.gov.hmrc.iossreturns.controllers.FinancialDataController.get(commencementDate: LocalDate)
 
-GET         /return/:period                              uk.gov.hmrc.iossreturns.controllers.ReturnController.get(period: Period)
+GET         /return/:period                                 uk.gov.hmrc.iossreturns.controllers.ReturnController.get(period: Period)
 
-POST        /return                                      uk.gov.hmrc.iossreturns.controllers.ReturnController.submit
+POST        /return                                         uk.gov.hmrc.iossreturns.controllers.ReturnController.submit
 
-GET         /vat-returns/current-returns/:iossNumber     uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturns(iossNumber: String)
+GET         /vat-returns/current-returns/:iossNumber        uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturns(iossNumber: String)
 
-GET         /financial-data/prepare                        uk.gov.hmrc.iossreturns.controllers.FinancialDataController.prepareFinancialData()
+GET         /financial-data/prepare                         uk.gov.hmrc.iossreturns.controllers.FinancialDataController.prepareFinancialData()
 
-GET         /obligations/:iossNumber                     uk.gov.hmrc.iossreturns.controllers.ReturnController.getObligations(iossNumber: String)
+GET         /obligations/:iossNumber                        uk.gov.hmrc.iossreturns.controllers.ReturnController.getObligations(iossNumber: String)
+
+POST        /external-entry/:page                           uk.gov.hmrc.iossreturns.controllers.external.ExternalEntryController.onExternal(page: String, period: Option[Period] ?= None, lang: Option[String] ?= None)
+GET         /external-entry                                 uk.gov.hmrc.iossreturns.controllers.external.ExternalEntryController.getExternalEntry()

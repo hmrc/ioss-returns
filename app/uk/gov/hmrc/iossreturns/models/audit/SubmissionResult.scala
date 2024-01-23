@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.models.audit
 
-import play.api.Configuration
+import uk.gov.hmrc.iossreturns.models.{Enumerable, WithName}
 
-import javax.inject.{Inject, Singleton}
+sealed trait SubmissionResult
 
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
+object SubmissionResult extends Enumerable.Implicits {
 
-  val appName: String = config.get[String]("appName")
+  case object Success extends WithName("success") with SubmissionResult
 
-  val iossEnrolment: String = config.get[String]("features.enrolment.ioss-enrolment-key")
+  case object Failure extends WithName("failure") with SubmissionResult
 
-  val externalEntryTtlDays: Int = config.get[Int]("features.externalEntry.ttlInDays")
+  val values: Seq[SubmissionResult] = Seq(Success, Failure)
+
+  implicit val enumerable: Enumerable[SubmissionResult] =
+    Enumerable(values.map(v => v.toString -> v): _*)
 }
