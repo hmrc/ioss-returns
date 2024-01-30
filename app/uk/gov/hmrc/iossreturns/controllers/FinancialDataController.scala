@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.{Clock, LocalDate}
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class FinancialDataController @Inject()(
                                          cc: DefaultAuthenticatedControllerComponents,
@@ -45,23 +45,32 @@ class FinancialDataController @Inject()(
     }
   }
 
-  def prepareFinancialData(): Action[AnyContent] = cc.auth().async {
+  def prepareFinancialData(iossNumber: String): Action[AnyContent] = cc.auth().async {
     implicit request => {
-      val now = LocalDate.now()
-      val startTime = LocalDate.parse(request.registration.schemeDetails.commencementDate, etmpDateFormatter)
-      val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber, startTime)
-      unpaidPayments.map { up =>
-        val totalAmountOwed = up.map(_.amountOwed).sum
-        val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
-        val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now()))
-        Ok(Json.toJson(PrepareData(
-          duePayments,
-          overduePayments,
-          totalAmountOwed,
-          totalAmountOverdue,
-          iossNumber = request.iossNumber
-        )))
-      }
+      Future.successful(Ok(Json.toJson(
+        PrepareData(
+          List.empty,
+          List.empty,
+          BigDecimal(0),
+          BigDecimal(0),
+          "IM9001234567"
+        )
+      )))
+//      val now = LocalDate.now()
+//      val startTime = LocalDate.parse(request.registration.schemeDetails.commencementDate, etmpDateFormatter)
+//      val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber, startTime)
+//      unpaidPayments.map { up =>
+//        val totalAmountOwed = up.map(_.amountOwed).sum
+//        val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
+//        val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now()))
+//        Ok(Json.toJson(PrepareData(
+//          duePayments,
+//          overduePayments,
+//          totalAmountOwed,
+//          totalAmountOverdue,
+//          iossNumber = request.iossNumber
+//        )))
+//      }
     }
   }
 

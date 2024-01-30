@@ -7,7 +7,7 @@ POST        /return                                         uk.gov.hmrc.iossretu
 
 GET         /vat-returns/current-returns/:iossNumber        uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturns(iossNumber: String)
 
-GET         /financial-data/prepare                         uk.gov.hmrc.iossreturns.controllers.FinancialDataController.prepareFinancialData()
+GET         /financial-data/prepare/:iossNumber                         uk.gov.hmrc.iossreturns.controllers.FinancialDataController.prepareFinancialData(iossNumber: String)
 
 GET         /obligations/:iossNumber                        uk.gov.hmrc.iossreturns.controllers.ReturnController.getObligations(iossNumber: String)
 

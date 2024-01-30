@@ -64,7 +64,9 @@ class ReturnStatusController @Inject()(
           )
         )
 
-        Ok(Json.toJson(CurrentReturns(returns, isExcluded, finalReturnsCompleted)))
+        val test = CurrentReturns(returns, isExcluded, finalReturnsCompleted, iossNumber)
+        println("This is the test: " + Json.toJson(test))
+        Ok(Json.toJson(CurrentReturns(returns, isExcluded, finalReturnsCompleted, iossNumber)))
       }
   }
 
