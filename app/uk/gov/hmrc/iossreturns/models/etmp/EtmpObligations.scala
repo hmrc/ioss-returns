@@ -25,7 +25,7 @@ object EtmpObligations {
   implicit val format: OFormat[EtmpObligations] = Json.format[EtmpObligations]
 
   implicit class FromEtmpObligationsToPeriods(etmpObligations: EtmpObligations) {
-    def getPeriods(): List[Period] = {
+    def getFulfilledPeriods: List[Period] = {
       etmpObligations.obligations.flatMap(_.obligationDetails)
         .filter(_.status == EtmpObligationsFulfilmentStatus.Fulfilled)
         .map(p => Period.fromKey(p.periodKey))
