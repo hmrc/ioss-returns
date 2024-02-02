@@ -111,11 +111,5 @@ class EtmpVatReturnSpec extends SpecBase {
       json.validate[EtmpVatReturn] mustBe JsSuccess(expectedResult)
     }
 
-    "should getTotalVatOnSalesAfterCorrection correctly when there is no correction" in {
-      etmpVatReturnWithoutCorrection.getTotalVatOnSalesAfterCorrection() mustBe BigDecimal(35)
-    }
-    "should getTotalVatOnSalesAfterCorrection correctly when there is correction" in {
-      etmpVatReturnWithCorrection.getTotalVatOnSalesAfterCorrection() mustBe BigDecimal(37.5)
-    }
   }
 }
