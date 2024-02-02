@@ -88,7 +88,7 @@ class ReturnStatusControllerSpec
       "with no returns in progress, due or overdue if there are no returns due yet" in {
         val mockReturnService = mock[ReturnsService]
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(Seq.empty)
-        when(mockReturnService.hasSubmittedFinalReturn(any(), any())(any())) thenReturn Future.successful(false)
+        when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
@@ -111,7 +111,7 @@ class ReturnStatusControllerSpec
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
           periods.dropRight(1).map(PeriodWithStatus(_, Complete)).toList ::: List(PeriodWithStatus(lastPeriod, Next))
         )
-        when(mockReturnService.hasSubmittedFinalReturn(any(), any())(any())) thenReturn Future.successful(false)
+        when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
@@ -134,7 +134,7 @@ class ReturnStatusControllerSpec
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
           List(PeriodWithStatus(period2022SEPTEMBER, Due))
         )
-        when(mockReturnService.hasSubmittedFinalReturn(any(), any())(any())) thenReturn Future.successful(false)
+        when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
@@ -158,7 +158,7 @@ class ReturnStatusControllerSpec
 
         val mockReturnService = mock[ReturnsService]
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periods.map(PeriodWithStatus(_, Overdue)))
-        when(mockReturnService.hasSubmittedFinalReturn(any(), any())(any())) thenReturn Future.successful(false)
+        when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
@@ -189,7 +189,7 @@ class ReturnStatusControllerSpec
             :::
             List(PeriodWithStatus(lastPeriod, Due))
         )
-        when(mockReturnService.hasSubmittedFinalReturn(any(), any())(any())) thenReturn Future.successful(false)
+        when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
@@ -222,7 +222,7 @@ class ReturnStatusControllerSpec
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
           List(PeriodWithStatus(period2022AUGUST, Overdue), PeriodWithStatus(period2022SEPTEMBER, Excluded))
         )
-        when(mockReturnService.hasSubmittedFinalReturn(any(), any())(any())) thenReturn Future.successful(false)
+        when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
 
         val app = applicationBuilder
@@ -253,7 +253,7 @@ class ReturnStatusControllerSpec
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
           List(PeriodWithStatus(period2022AUGUST, Complete), PeriodWithStatus(period2022SEPTEMBER, Excluded))
         )
-        when(mockReturnService.hasSubmittedFinalReturn(any(), any())(any())) thenReturn Future.successful(true)
+        when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn true
         when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
 
         val app = applicationBuilder

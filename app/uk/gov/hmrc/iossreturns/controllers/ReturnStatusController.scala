@@ -17,15 +17,15 @@
 package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
-import play.api.mvc.Results.Ok
 import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.Results.Ok
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
-import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Excluded}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, Return}
+import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Excluded}
 import uk.gov.hmrc.iossreturns.services.ReturnsService
 
-import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, ZoneId}
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -34,7 +34,7 @@ class ReturnStatusController @Inject()(
                                         cc: DefaultAuthenticatedControllerComponents,
                                         returnsService: ReturnsService
                                       )(implicit ec: ExecutionContext) {
-  val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+  private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     .withLocale(Locale.UK)
     .withZone(ZoneId.systemDefault())
 
@@ -46,12 +46,12 @@ class ReturnStatusController @Inject()(
           LocalDate.parse(request.registration.schemeDetails.commencementDate, dateTimeFormatter),
           request.registration.exclusions.toList
         )
-        finalReturnsCompleted <- returnsService.hasSubmittedFinalReturn(iossNumber, request.registration.exclusions.toList)
       } yield {
 
         val incompletePeriods = availablePeriodsWithStatus.filterNot(pws => Seq(Complete, Excluded).contains(pws.status))
 
         val isExcluded = returnsService.getLastExclusionWithoutReversal(request.registration.exclusions.toList).isDefined
+        val finalReturnsCompleted = returnsService.hasSubmittedFinalReturn(request.registration.exclusions.toList, availablePeriodsWithStatus)
 
         val periodInProgress = None // ToDo: No saved answers, so set to None.
         val oldestPeriod = incompletePeriods.sortBy(_.period).headOption

@@ -18,12 +18,12 @@ package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
-import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligations._
-import uk.gov.hmrc.iossreturns.models.etmp.EtmpVatReturn._
+import uk.gov.hmrc.iossreturns.models.{EtmpDisplayReturnError, Period}
 import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpObligationsQueryParameters, EtmpVatReturn}
+import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligations._
+import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsFulfilmentStatus.Fulfilled
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataQueryParameters}
 import uk.gov.hmrc.iossreturns.models.payments.Payment
-import uk.gov.hmrc.iossreturns.models.{EtmpDisplayReturnError, Period}
 import uk.gov.hmrc.iossreturns.utils.Formatters._
 
 import java.time.LocalDate
@@ -43,7 +43,8 @@ class PaymentsService @Inject()(
         val payments = vatReturnsForPeriodsWithOutstandingAmounts.map(
           vatReturnDue => {
             calculatePayment(
-              vatReturnDue, financialDataMaybe)
+              vatReturnDue, financialDataMaybe
+            )
           }
         )
 
@@ -62,7 +63,7 @@ class PaymentsService @Inject()(
     val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(
       fromDate = fromDate,
       toDate = toDate,
-      status = Some("F")
+      status = Some(Fulfilled.toString)
     )
 
     val financialDataQueryParameters: FinancialDataQueryParameters = FinancialDataQueryParameters(
@@ -85,6 +86,7 @@ class PaymentsService @Inject()(
       case Left(e) => Future.failed(new Exception(e.body))
     }
   }
+
   def getObligations(iossNumber: String, queryParameters: EtmpObligationsQueryParameters)(implicit ec: ExecutionContext): Future[EtmpObligations] = {
     vatReturnConnector.getObligations(iossNumber, queryParameters).flatMap {
       case Right(obligations) => Future.successful(obligations)
@@ -95,7 +97,7 @@ class PaymentsService @Inject()(
   def getVatReturnsForObligations(iossNumber: String, obligations: EtmpObligations)
                                  (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[List[EtmpVatReturn]] =
     Future.sequence(
-      obligations.getPeriods().map { period =>
+      obligations.getFulfilledPeriods.map { period =>
         vatReturnConnector.get(iossNumber, period).map {
           case Right(vatReturn) => List(vatReturn)
           case Left(EtmpDisplayReturnError(code, _)) if code startsWith "UNEXPECTED_404" => Nil
@@ -110,7 +112,7 @@ class PaymentsService @Inject()(
       // If some payments "FOR THAT PERIOD" made with outstanding amount
       // or no payments made "FOR THAT PERIOD" but there is vat amount "FOR THAT PERIOD"
       val hasChargeWithOutstanding = charge.exists(_.outstandingAmount > 0)
-      val expectingCharge = charge.isEmpty && (vatReturn.getTotalVatOnSalesAfterCorrection() > 0)
+      val expectingCharge = charge.isEmpty && (vatReturn.totalVATAmountDueForAllMSGBP > 0)
 
       hasChargeWithOutstanding || expectingCharge
     })
@@ -126,7 +128,7 @@ class PaymentsService @Inject()(
     val paymentStatus = charge.getPaymentStatus()
 
     Payment(period,
-      charge.map(c => c.outstandingAmount).getOrElse(vatReturn.getTotalVatOnSalesAfterCorrection()),
+      charge.map(c => c.outstandingAmount).getOrElse(vatReturn.totalVATAmountDueForAllMSGBP),
       period.paymentDeadline,
       paymentStatus
     )

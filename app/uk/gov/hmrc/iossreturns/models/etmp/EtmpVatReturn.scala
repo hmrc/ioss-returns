@@ -80,20 +80,4 @@ object EtmpVatReturn {
 
   implicit val format: Format[EtmpVatReturn] = Format(reads, writes)
 
-  implicit class VatAmountCalculations(vatReturn: EtmpVatReturn) {
-    def getTotalVatOnSalesAfterCorrection(): BigDecimal = {
-
-      val runningTotal = getTotalVatAmountBeforeCorrection() + vatReturn.totalVATAmountFromCorrectionGBP
-
-      if (runningTotal < 0) {
-        BigDecimal(0)
-      } else {
-        runningTotal
-      }
-    }
-
-    private def getTotalVatAmountBeforeCorrection(): BigDecimal = {
-      vatReturn.goodsSupplied.map(_.vatAmountGBP).sum
-    }
-  }
 }

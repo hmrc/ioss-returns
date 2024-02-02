@@ -252,8 +252,8 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
         s"when $title" in {
           whenReady(result) { r =>
             r mustBe (List(payment1, payment2))
-            payment1.amountOwed mustBe vatReturn1.getTotalVatOnSalesAfterCorrection()
-            payment2.amountOwed mustBe vatReturn2.getTotalVatOnSalesAfterCorrection()
+            payment1.amountOwed mustBe vatReturn1.totalVATAmountDueForAllMSGBP
+            payment2.amountOwed mustBe vatReturn2.totalVATAmountDueForAllMSGBP
           }
         }
       }
@@ -271,15 +271,15 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
 
       val periodKey1 = "21AI"
 
-      val vatReturnWithNoGoodsSuppliedAndNoCorrection = vatReturn.copy(
-        periodKey = periodKey1, goodsSupplied = Nil, totalVATAmountFromCorrectionGBP = BigDecimal(0))
+      val nilVatReturn = vatReturn.copy(
+        periodKey = periodKey1, goodsSupplied = Nil, totalVATAmountDueForAllMSGBP = BigDecimal(0))
 
       val service = new PaymentsService(financialDataConnector, vatReturnConnector)
 
       val vatCorrectionAmount = 50
 
-      val vatReturnWithNoGoodsSuppliedAndSomeCorrection = vatReturnWithNoGoodsSuppliedAndNoCorrection
-        .copy(totalVATAmountFromCorrectionGBP = BigDecimal(vatCorrectionAmount))
+      val vatReturnWithNoGoodsSuppliedAndSomeCorrection = nilVatReturn
+        .copy(totalVATAmountDueForAllMSGBP = BigDecimal(vatCorrectionAmount))
 
       val transactionAmount1 = 250
 
@@ -296,7 +296,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
         ("FinancialData", "EtmpVatReturn", "Filtered EtmpVatReturn"),
         (
           Some(inputFinancialDataWithNoTransactions),
-          List(vatReturnWithNoGoodsSuppliedAndNoCorrection),
+          List(nilVatReturn),
           Nil
         ),
         (
@@ -306,13 +306,13 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
         ),
         (
           Some(inputFinancialDataWithSomeTransactionsButNotInPeriod),
-          List(vatReturnWithNoGoodsSuppliedAndNoCorrection),
+          List(nilVatReturn),
           Nil
         ),
         (
           Some(inputFinancialDataWithSomeTransactionsInPeriod),
-          List(vatReturnWithNoGoodsSuppliedAndNoCorrection),
-          List(vatReturnWithNoGoodsSuppliedAndNoCorrection)
+          List(nilVatReturn),
+          List(nilVatReturn)
         )
       )
 

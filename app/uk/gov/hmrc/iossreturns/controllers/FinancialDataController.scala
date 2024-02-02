@@ -47,13 +47,13 @@ class FinancialDataController @Inject()(
 
   def prepareFinancialData(): Action[AnyContent] = cc.auth().async {
     implicit request => {
-      val now = LocalDate.now()
+      val now = LocalDate.now(clock)
       val startTime = LocalDate.parse(request.registration.schemeDetails.commencementDate, etmpDateFormatter)
       val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber, startTime)
       unpaidPayments.map { up =>
         val totalAmountOwed = up.map(_.amountOwed).sum
         val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
-        val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now()))
+        val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now(clock)))
         Ok(Json.toJson(PrepareData(
           duePayments,
           overduePayments,

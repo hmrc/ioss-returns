@@ -28,7 +28,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.generators.Generators
-import uk.gov.hmrc.iossreturns.models.etmp.EtmpVatReturn
+import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligation, EtmpObligationDetails, EtmpObligations, EtmpObligationsFulfilmentStatus, EtmpVatReturn}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
 import uk.gov.hmrc.iossreturns.models.youraccount.{PeriodWithStatus, SubmissionStatus}
 import uk.gov.hmrc.iossreturns.models.{EtmpDisplayReturnError, Period}
@@ -134,17 +134,17 @@ class ReturnsServiceSpec
     val currentPeriod = Period.getRunningPeriod(stubbedNow)
     val periodOverdue = currentPeriod.getPrevious().getPrevious().getPrevious()
     val excludedPeriod = currentPeriod.getNext()
-    val scenarios = Table[Period, Option[EtmpVatReturn], List[EtmpExclusion], PeriodWithStatus, String](
+    val scenarios = Table[Period, List[Period], List[EtmpExclusion], PeriodWithStatus, String](
       ("period", "vat return", "exclusions", "expected result", "title"),
-      (excludedPeriod, Some(vatReturn), List(exclusion), PeriodWithStatus(excludedPeriod, SubmissionStatus.Excluded), "for a period where there is an exclusion with an effective date within previous period, mark is as excluded"),
-      (currentPeriod, Some(vatReturn), Nil, PeriodWithStatus(currentPeriod, SubmissionStatus.Complete), "for a period where there is no exclusion, AND there is a vat return, mark is as Complete"),
-      (currentPeriod, None, Nil, PeriodWithStatus(currentPeriod, SubmissionStatus.Due), "for a period where there is no exclusion, AND there is no vat return yet, mark is as Due, if the duedate has not passed"),
-      (periodOverdue, None, Nil, PeriodWithStatus(periodOverdue, SubmissionStatus.Overdue), "for a period where there is no exclusion, AND there is no vat return yet, mark is as Due, if the duedate has passed")
+      (excludedPeriod, List(excludedPeriod.getNext()), List(exclusion), PeriodWithStatus(excludedPeriod, SubmissionStatus.Excluded), "for a period where there is an exclusion with an effective date within previous period, mark is as excluded"),
+      (currentPeriod, List(currentPeriod), Nil, PeriodWithStatus(currentPeriod, SubmissionStatus.Complete), "for a period where there is no exclusion, AND there is a vat return, mark is as Complete"),
+      (currentPeriod, List.empty, Nil, PeriodWithStatus(currentPeriod, SubmissionStatus.Due), "for a period where there is no exclusion, AND there is no vat return yet, mark is as Due, if the duedate has not passed"),
+      (periodOverdue, List.empty, Nil, PeriodWithStatus(periodOverdue, SubmissionStatus.Overdue), "for a period where there is no exclusion, AND there is no vat return yet, mark is as Due, if the duedate has passed")
     )
 
-    forAll(scenarios) { (period: Period, vatReturn: Option[EtmpVatReturn], exclusions: List[EtmpExclusion], expected: PeriodWithStatus, title: String) => {
+    forAll(scenarios) { (period: Period, fulfilledPeriods: List[Period], exclusions: List[EtmpExclusion], expected: PeriodWithStatus, title: String) => {
       s"when $title" in {
-        service.decideStatus(period, vatReturn, exclusions) mustEqual expected
+        service.decideStatus(period, fulfilledPeriods, exclusions) mustEqual expected
       }
       }
     }
@@ -155,21 +155,22 @@ class ReturnsServiceSpec
     val exclusion = EtmpExclusion(EtmpExclusionReason.FailsToComply, period2022AUGUST.firstDay, period2022AUGUST.firstDay, false)
     val currentPeriod = Period.getRunningPeriod(stubbedNow)
 
-    val scenarios = Table[LocalDate, Option[EtmpVatReturn], List[EtmpExclusion], List[PeriodWithStatus], String](
+    val scenarios = Table[LocalDate, List[Period], List[EtmpExclusion], List[PeriodWithStatus], String](
       ("period", "vat return", "exclusions", "expected result", "title"),
-      (stubbedNow.minusMonths(2), Some(vatReturn), Nil, List(PeriodWithStatus(period2022SEPTEMBER, Complete), PeriodWithStatus(period2022AUGUST, Complete), PeriodWithStatus(currentPeriod, Next)), "aif all periods return vat returns(all complete) so add next for next period"),
-      (stubbedNow.minusMonths(2), Some(vatReturn), List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Complete)), "exclusion for next period after effective date"),
-      (stubbedNow.minusMonths(2), None, List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Overdue)), "Overdue, if vat return can not be found for period - with exclusion"),
-      (stubbedNow.minusMonths(2), None, Nil, List(PeriodWithStatus(period2022SEPTEMBER, Due), PeriodWithStatus(period2022AUGUST, Overdue)), "verdue, if vat return can not be found for period - without exclusion for last month, so last month due")
+      (stubbedNow.minusMonths(2), List(period2022SEPTEMBER, period2022AUGUST), Nil, List(PeriodWithStatus(period2022SEPTEMBER, Complete), PeriodWithStatus(period2022AUGUST, Complete), PeriodWithStatus(currentPeriod, Next)), "aif all periods return vat returns(all complete) so add next for next period"),
+      (stubbedNow.minusMonths(2), List(period2022AUGUST), List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Complete)), "exclusion for next period after effective date"),
+      (stubbedNow.minusMonths(2), List.empty, List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Overdue)), "Overdue, if vat return can not be found for period - with exclusion"),
+      (stubbedNow.minusMonths(2), List.empty, Nil, List(PeriodWithStatus(period2022SEPTEMBER, Due), PeriodWithStatus(period2022AUGUST, Overdue)), "verdue, if vat return can not be found for period - without exclusion for last month, so last month due")
     )
 
     forAll(scenarios) {
-      (commencementLocalDate: LocalDate, vatReturn: Option[EtmpVatReturn], exclusions: List[EtmpExclusion], expected: List[PeriodWithStatus], title: String) => {
+      (commencementLocalDate: LocalDate, fulfilledPeriods: List[Period], exclusions: List[EtmpExclusion], expected: List[PeriodWithStatus], title: String) => {
         s"when $title" in {
-          vatReturn match {
-            case Some(vr) => when(vatReturnConnector.get(any(), any())).thenReturn(Future.successful(Right(vr)))
-            case None => when(vatReturnConnector.get(any(), any())).thenReturn(Future.successful(Left(EtmpDisplayReturnError("UNEXPECTED_404", "UNEXPECTED_404"))))
-          }
+          val obligations = EtmpObligations(Seq(EtmpObligation(fulfilledPeriods.map { fulfilledPeriod =>
+            EtmpObligationDetails(EtmpObligationsFulfilmentStatus.Fulfilled, fulfilledPeriod.toEtmpPeriodString)
+          })))
+
+          when(vatReturnConnector.getObligations(any(), any())) thenReturn Future.successful(Right(obligations))
 
           whenReady(service.getStatuses("iossNumber", commencementLocalDate, exclusions), Timeout(Span(2, Seconds))) {
             result =>
