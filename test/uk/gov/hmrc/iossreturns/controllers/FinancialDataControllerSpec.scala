@@ -117,7 +117,7 @@ class FinancialDataControllerSpec
       FakeRequest(GET, routes.FinancialDataController.prepareFinancialData().url)
 
     "must return paymentData Json when there are due payments and overdue payments" in {
-      val now = LocalDate.now()
+      val now = LocalDate.now(stubClockAtArbitraryDate)
       val periodOverdue1 = Period(now.minusYears(1).getYear, Month.JANUARY)
       val periodOverdue2 = Period(now.minusYears(1).getYear, Month.FEBRUARY)
       val periodDue1 = Period(now.getYear, now.getMonth.plus(1))

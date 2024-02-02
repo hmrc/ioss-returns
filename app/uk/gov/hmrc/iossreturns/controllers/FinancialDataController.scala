@@ -53,7 +53,7 @@ class FinancialDataController @Inject()(
       unpaidPayments.map { up =>
         val totalAmountOwed = up.map(_.amountOwed).sum
         val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
-        val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now()))
+        val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now(clock)))
         Ok(Json.toJson(PrepareData(
           duePayments,
           overduePayments,
