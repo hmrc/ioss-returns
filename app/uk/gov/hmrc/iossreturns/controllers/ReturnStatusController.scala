@@ -48,6 +48,8 @@ class ReturnStatusController @Inject()(
         )
       } yield {
 
+        println(s"got status $availablePeriodsWithStatus")
+
         val incompletePeriods = availablePeriodsWithStatus.filterNot(pws => Seq(Complete, Excluded).contains(pws.status))
 
         val isExcluded = returnsService.getLastExclusionWithoutReversal(request.registration.exclusions.toList).isDefined

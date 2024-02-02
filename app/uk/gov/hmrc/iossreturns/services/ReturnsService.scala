@@ -17,6 +17,7 @@
 package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
+import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusionReason.Reversal
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
@@ -30,7 +31,7 @@ import javax.inject.Inject
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnector)(implicit executionContext: ExecutionContext) {
+class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnector)(implicit executionContext: ExecutionContext) extends Logging {
 
   def getStatuses(
                    iossNumber: String,
@@ -40,6 +41,7 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
     val today = LocalDate.now(clock)
 
     val periods = getAllPeriodsBetween(commencementLocalDate, today)
+    println(s"All periods between $periods $commencementLocalDate $today")
     val etmpObligationsQueryParameters = EtmpObligationsQueryParameters(
       fromDate = commencementLocalDate.format(etmpDateFormatter),
       toDate = today.format(etmpDateFormatter),
@@ -48,7 +50,9 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
     val futureFulfilledPeriods = vatReturnConnector
       .getObligations(iossNumber, etmpObligationsQueryParameters).map {
         case Right(obligations) => obligations.getFulfilledPeriods
-        case x => throw new Exception("Error getting obligations")
+        case x =>
+          logger.error(s"Error when getting obligations for return status' $x")
+          throw new Exception("Error getting obligations for status'")
       }
 
 
@@ -56,7 +60,9 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
       fulfilledPeriods <- futureFulfilledPeriods
     } yield {
       val allPeriodsAndReturns = periods.map { period =>
-        decideStatus(period, fulfilledPeriods, exclusions)
+        val decision = decideStatus(period, fulfilledPeriods, exclusions)
+        println(s"For period $period status was $decision")
+        decision
       }
       addNextIfAllCompleted(allPeriodsAndReturns, commencementLocalDate)
     }
@@ -112,13 +118,13 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
       PeriodWithStatus(period, SubmissionStatus.Excluded)
     else {
       if (fulfilledPeriods.contains(period)) {
+        PeriodWithStatus(period, SubmissionStatus.Complete)
+      } else {
         if (LocalDate.now(clock).isAfter(period.paymentDeadline)) {
           PeriodWithStatus(period, SubmissionStatus.Overdue)
         } else {
-          PeriodWithStatus(period, SubmissionStatus.Complete)
+          PeriodWithStatus(period, SubmissionStatus.Due)
         }
-      } else {
-        PeriodWithStatus(period, SubmissionStatus.Due)
       }
     }
   }

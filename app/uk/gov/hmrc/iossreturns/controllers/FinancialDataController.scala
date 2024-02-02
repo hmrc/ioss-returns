@@ -47,7 +47,7 @@ class FinancialDataController @Inject()(
 
   def prepareFinancialData(): Action[AnyContent] = cc.auth().async {
     implicit request => {
-      val now = LocalDate.now()
+      val now = LocalDate.now(clock)
       val startTime = LocalDate.parse(request.registration.schemeDetails.commencementDate, etmpDateFormatter)
       val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber, startTime)
       unpaidPayments.map { up =>
