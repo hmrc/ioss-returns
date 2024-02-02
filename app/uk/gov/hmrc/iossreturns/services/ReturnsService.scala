@@ -41,7 +41,6 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
     val today = LocalDate.now(clock)
 
     val periods = getAllPeriodsBetween(commencementLocalDate, today)
-    println(s"All periods between $periods $commencementLocalDate $today")
     val etmpObligationsQueryParameters = EtmpObligationsQueryParameters(
       fromDate = commencementLocalDate.format(etmpDateFormatter),
       toDate = today.format(etmpDateFormatter),
@@ -60,9 +59,7 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
       fulfilledPeriods <- futureFulfilledPeriods
     } yield {
       val allPeriodsAndReturns = periods.map { period =>
-        val decision = decideStatus(period, fulfilledPeriods, exclusions)
-        println(s"For period $period status was $decision")
-        decision
+        decideStatus(period, fulfilledPeriods, exclusions)
       }
       addNextIfAllCompleted(allPeriodsAndReturns, commencementLocalDate)
     }
