@@ -43,7 +43,7 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
     val periods = getAllPeriodsBetween(commencementLocalDate, today)
     val etmpObligationsQueryParameters = EtmpObligationsQueryParameters(
       fromDate = commencementLocalDate.format(etmpDateFormatter),
-      toDate = today.format(etmpDateFormatter),
+      toDate = today.plusMonths(1).minusDays(1).format(etmpDateFormatter),
       Some(Fulfilled.toString)
     )
     val futureFulfilledPeriods = vatReturnConnector
@@ -53,7 +53,6 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
           logger.error(s"Error when getting obligations for return status' $x")
           throw new Exception("Error getting obligations for status'")
       }
-
 
     for {
       fulfilledPeriods <- futureFulfilledPeriods
