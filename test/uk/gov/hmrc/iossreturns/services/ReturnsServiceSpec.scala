@@ -18,7 +18,7 @@ package uk.gov.hmrc.iossreturns.services
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
-import org.scalatest.OptionValues
+import org.scalatest.{OptionValues, PrivateMethodTester}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.matchers.must.Matchers
@@ -26,6 +26,7 @@ import org.scalatest.time.{Seconds, Span}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.config.Constants.excludedReturnAndPaymentExpiry
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.Period
@@ -45,7 +46,8 @@ class ReturnsServiceSpec
     with ScalaCheckPropertyChecks
     with Generators
     with OptionValues
-    with IntegrationPatience {
+    with IntegrationPatience
+    with PrivateMethodTester {
   val vatReturnConnector = mock[VatReturnConnector]
   when(vatReturnConnector.get(any(), any())).thenReturn(Future.successful(Right(arbitraryEtmpVatReturn.arbitrary.sample.get)))
 
@@ -130,7 +132,7 @@ class ReturnsServiceSpec
 
   "decideStatus" - {
     val service = new ReturnsService(stubClock, vatReturnConnector)
-    val exclusion = EtmpExclusion(EtmpExclusionReason.FailsToComply, stubbedNow, stubbedNow.minusMonths(1), false)
+    val exclusion = EtmpExclusion(EtmpExclusionReason.FailsToComply, stubbedNow, stubbedNow.minusMonths(1), quarantine = false)
     val currentPeriod = Period.getRunningPeriod(stubbedNow)
     val periodOverdue = currentPeriod.getPrevious().getPrevious().getPrevious()
     val excludedPeriod = currentPeriod.getNext()
@@ -250,5 +252,36 @@ class ReturnsServiceSpec
       }
     }
   }
+
+  ".hasActiveReturnWindowExpired" - {
+
+    val privateMethodCall = PrivateMethod[Boolean](Symbol("hasActiveReturnWindowExpired"))
+    val service = new ReturnsService(stubClock, vatReturnConnector)
+
+    "must return true if active return window has expired" in {
+
+      val dueDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(3).minusDays(1)
+      val result = service invokePrivate privateMethodCall(dueDate, stubClockAtArbitraryDate)
+
+      result mustBe true
+    }
+
+    "must return false if active return window is on the day of expiry" in {
+
+      val dueDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(3)
+      val result = service invokePrivate privateMethodCall(dueDate, stubClockAtArbitraryDate)
+
+      result mustBe false
+    }
+
+    "must return false if active return window has not expired" in {
+
+      val dueDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(2)
+      val result = service invokePrivate privateMethodCall(dueDate, stubClockAtArbitraryDate)
+
+      result mustBe false
+    }
+  }
+
 
 }

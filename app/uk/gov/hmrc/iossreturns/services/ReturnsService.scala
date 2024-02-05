@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.iossreturns.services
 
+import uk.gov.hmrc.iossreturns.config.Constants.excludedReturnAndPaymentExpiry
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.Period
-import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusionReason.Reversal
+import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsFulfilmentStatus.Fulfilled
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
+import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusionReason.Reversal
 import uk.gov.hmrc.iossreturns.models.youraccount.{PeriodWithStatus, SubmissionStatus}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 
@@ -132,7 +134,8 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
   def isPeriodExcluded(period: Period, exclusions: List[EtmpExclusion]): Boolean = {
     val excluded = getLastExclusionWithoutReversal(exclusions)
     excluded match {
-      case Some(excluded) if period.lastDay.isAfter(Period.getRunningPeriod(excluded.effectiveDate).getNext().firstDay) =>
+      case Some(excluded) if hasActiveReturnWindowExpired(period.paymentDeadline, clock) ||
+        period.lastDay.isAfter(Period.getRunningPeriod(excluded.effectiveDate).getNext().firstDay) =>
         true
       case _ => false
     }
@@ -148,5 +151,10 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
           )
       case _ => false
     }
+  }
+
+  private def hasActiveReturnWindowExpired(dueDate: LocalDate, clock: Clock): Boolean = {
+    val today = LocalDate.now(clock)
+    today.isAfter(dueDate.plusYears(excludedReturnAndPaymentExpiry))
   }
 }
