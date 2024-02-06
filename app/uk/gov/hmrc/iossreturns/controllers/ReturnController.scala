@@ -56,7 +56,7 @@ class ReturnController @Inject()(
     implicit request =>
 
       val fromDate: String = request.registration.schemeDetails.commencementDate.format(etmpDateFormatter)
-      val toDate = LocalDate.now(clock).format(etmpDateFormatter)
+      val toDate = LocalDate.now(clock).plusMonths(1).minusDays(1).format(etmpDateFormatter)
 
       val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(
         fromDate = fromDate,

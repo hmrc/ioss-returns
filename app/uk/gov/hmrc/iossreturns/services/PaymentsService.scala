@@ -58,7 +58,7 @@ class PaymentsService @Inject()(
 
     val now = LocalDate.now()
     val fromDate: String = startTime.format(etmpDateFormatter)
-    val toDate = now.format(etmpDateFormatter)
+    val toDate = now.plusMonths(1).minusDays(1).format(etmpDateFormatter)
 
     val queryParameters: EtmpObligationsQueryParameters = EtmpObligationsQueryParameters(
       fromDate = fromDate,
