@@ -6,6 +6,7 @@ GET         /return/:period                                 uk.gov.hmrc.iossretu
 POST        /return                                         uk.gov.hmrc.iossreturns.controllers.ReturnController.submit
 
 GET         /vat-returns/current-returns/:iossNumber        uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturns(iossNumber: String)
+GET         /vat-returns/current-returns                    uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturns
 
 GET         /financial-data/prepare                         uk.gov.hmrc.iossreturns.controllers.FinancialDataController.prepareFinancialData()
 
