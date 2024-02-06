@@ -17,9 +17,9 @@
 package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, Result}
 import play.api.mvc.Results.Ok
-import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
+import uk.gov.hmrc.iossreturns.controllers.actions.{AuthorisedRequest, DefaultAuthenticatedControllerComponents}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, Return}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Excluded}
 import uk.gov.hmrc.iossreturns.services.ReturnsService
@@ -28,7 +28,7 @@ import java.time.{LocalDate, ZoneId}
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ReturnStatusController @Inject()(
                                         cc: DefaultAuthenticatedControllerComponents,
@@ -38,35 +38,43 @@ class ReturnStatusController @Inject()(
     .withLocale(Locale.UK)
     .withZone(ZoneId.systemDefault())
 
-  def getCurrentReturns(iossNumber: String): Action[AnyContent] = cc.auth().async {
+  def getCurrentReturnsForIossNumber(iossNumber: String): Action[AnyContent] = cc.auth().async {
     implicit request =>
-      for {
-        availablePeriodsWithStatus <- returnsService.getStatuses(
-          iossNumber,
-          LocalDate.parse(request.registration.schemeDetails.commencementDate, dateTimeFormatter),
-          request.registration.exclusions.toList
-        )
-      } yield {
+      getResultForCurrentReturns(iossNumber)
+  }
 
-        val incompletePeriods = availablePeriodsWithStatus.filterNot(pws => Seq(Complete, Excluded).contains(pws.status))
-
-        val isExcluded = returnsService.getLastExclusionWithoutReversal(request.registration.exclusions.toList).isDefined
-        val finalReturnsCompleted = returnsService.hasSubmittedFinalReturn(request.registration.exclusions.toList, availablePeriodsWithStatus)
-
-        val periodInProgress = None // ToDo: No saved answers, so set to None.
-        val oldestPeriod = incompletePeriods.sortBy(_.period).headOption
-        val returns = incompletePeriods.sortBy(_.period).map(
-          periodWithStatus => Return.fromPeriod(
-            periodWithStatus.period,
-            periodWithStatus.status,
-            periodInProgress.contains(periodWithStatus.period),
-            oldestPeriod.contains(periodWithStatus)
-          )
-        )
-
-        Ok(Json.toJson(CurrentReturns(returns, isExcluded, finalReturnsCompleted)))
-      }
+  def getCurrentReturns: Action[AnyContent] = cc.auth().async {
+    implicit request =>
+      getResultForCurrentReturns(request.iossNumber)
   }
 
 
+  private def getResultForCurrentReturns(iossNumber: String)(implicit request: AuthorisedRequest[_]): Future[Result] = {
+    for {
+      availablePeriodsWithStatus <- returnsService.getStatuses(
+        iossNumber,
+        LocalDate.parse(request.registration.schemeDetails.commencementDate, dateTimeFormatter),
+        request.registration.exclusions.toList
+      )
+    } yield {
+
+      val incompletePeriods = availablePeriodsWithStatus.filterNot(pws => Seq(Complete, Excluded).contains(pws.status))
+
+      val isExcluded = returnsService.getLastExclusionWithoutReversal(request.registration.exclusions.toList).isDefined
+      val finalReturnsCompleted = returnsService.hasSubmittedFinalReturn(request.registration.exclusions.toList, availablePeriodsWithStatus)
+
+      val periodInProgress = None // ToDo: No saved answers, so set to None.
+      val oldestPeriod = incompletePeriods.sortBy(_.period).headOption
+      val returns = incompletePeriods.sortBy(_.period).map(
+        periodWithStatus => Return.fromPeriod(
+          periodWithStatus.period,
+          periodWithStatus.status,
+          periodInProgress.contains(periodWithStatus.period),
+          oldestPeriod.contains(periodWithStatus)
+        )
+      )
+
+      Ok(Json.toJson(CurrentReturns(returns, isExcluded, finalReturnsCompleted)))
+    }
+  }
 }

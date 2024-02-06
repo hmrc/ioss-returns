@@ -47,7 +47,7 @@ class ReturnStatusControllerSpec
         bind[AuthAction].to[FakeAuthAction]
       )
 
-  ".getCurrentReturns()" - {
+  ".getCurrentReturnsForIossNumber()" - {
     val stubClock: Clock = Clock.fixed(LocalDate.of(2022, 10, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
     val period2021APRIL = Period(2021, Month.APRIL)
     val period2021MAY = Period(2021, Month.MAY)
@@ -82,7 +82,7 @@ class ReturnStatusControllerSpec
       period2022SEPTEMBER
     )
 
-    lazy val request = FakeRequest(GET, routes.ReturnStatusController.getCurrentReturns(vrn.vrn).url)
+    lazy val request = FakeRequest(GET, routes.ReturnStatusController.getCurrentReturnsForIossNumber(vrn.vrn).url)
     "must respond with OK and the OpenReturns model" - {
 
       "with no returns in progress, due or overdue if there are no returns due yet" in {
