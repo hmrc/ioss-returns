@@ -22,7 +22,6 @@ import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusionReason.Reversal
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
-import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsFulfilmentStatus.Fulfilled
 import uk.gov.hmrc.iossreturns.models.youraccount.{PeriodWithStatus, SubmissionStatus}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 
@@ -43,8 +42,8 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
     val periods = getAllPeriodsBetween(commencementLocalDate, today)
     val etmpObligationsQueryParameters = EtmpObligationsQueryParameters(
       fromDate = commencementLocalDate.format(etmpDateFormatter),
-      toDate = today.plusMonths(1).minusDays(1).format(etmpDateFormatter),
-      Some(Fulfilled.toString)
+      toDate = today.plusMonths(1).withDayOfMonth(1).minusDays(1).format(etmpDateFormatter),
+      None
     )
     val futureFulfilledPeriods = vatReturnConnector
       .getObligations(iossNumber, etmpObligationsQueryParameters).map {
