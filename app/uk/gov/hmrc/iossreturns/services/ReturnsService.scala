@@ -43,7 +43,7 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
     val periods = getAllPeriodsBetween(commencementLocalDate, today)
     val etmpObligationsQueryParameters = EtmpObligationsQueryParameters(
       fromDate = commencementLocalDate.format(etmpDateFormatter),
-      toDate = today.plusMonths(1).minusDays(1).format(etmpDateFormatter),
+      toDate = today.plusMonths(1).withDayOfMonth(1).minusDays(1).format(etmpDateFormatter),
       Some(Fulfilled.toString)
     )
     val futureFulfilledPeriods = vatReturnConnector
