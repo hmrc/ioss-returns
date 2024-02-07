@@ -94,7 +94,7 @@ class ReturnControllerSpec
     }
 
     "must audit a failure event and respond with NotFound when registration is not in core" in {
-      val coreErrorResponse = CoreErrorResponse(Instant.now(), None, REGISTRATION_NOT_FOUND, "There was an error")
+      val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, REGISTRATION_NOT_FOUND, "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
       when(mockCoreVatReturnConnector.submit(any()))
@@ -124,7 +124,7 @@ class ReturnControllerSpec
     }
 
     "must audit a failure event and respond with ServiceUnavailable(coreError) when error received from core" in {
-      val coreErrorResponse = CoreErrorResponse(Instant.now(), None, "OSS_111", "There was an error")
+      val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, "OSS_111", "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
       when(mockCoreVatReturnConnector.submit(any()))

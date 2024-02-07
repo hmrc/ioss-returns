@@ -325,7 +325,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
   }
 }
 
-trait PaymentsServiceSpecFixture {
+trait PaymentsServiceSpecFixture { self: SpecBase =>
   protected val zonedNow: ZonedDateTime = ZonedDateTime.of(
     2023,
     2,
@@ -337,7 +337,7 @@ trait PaymentsServiceSpecFixture {
     ZoneOffset.UTC
   )
 
-  protected val zonedDateTimeNow = ZonedDateTime.now().plusSeconds(1)
+  protected val zonedDateTimeNow = ZonedDateTime.now(stubClockAtArbitraryDate).plusSeconds(1)
 
   protected val dateFrom: LocalDate = zonedNow.toLocalDate.minusMonths(1)
   protected val dateTo: LocalDate = zonedNow.toLocalDate

@@ -89,7 +89,7 @@ class FinancialDataControllerSpec
 
       running(app) {
 
-        val result = route(app, FakeRequest(GET, routes.FinancialDataController.get(LocalDate.now()).url)).value
+        val result = route(app, FakeRequest(GET, routes.FinancialDataController.get(LocalDate.now(stubClockAtArbitraryDate)).url)).value
 
         status(result) mustBe OK
         contentAsJson(result) mustBe Json.toJson(Some(financialData))
@@ -214,5 +214,5 @@ trait FinancialDataControllerFixture {
   self: SpecBase =>
 
   val financialData: FinancialData = arbitraryFinancialData.arbitrary.sample.value
-  val commencementDate: LocalDate = LocalDate.now()
+  val commencementDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate)
 }
