@@ -47,7 +47,7 @@ object RegistrationData extends SpecBase {
   val etmpBankDetails: EtmpBankDetails = arbitrary[EtmpBankDetails].sample.value
 
   val etmpAdminUse: EtmpAdminUse = EtmpAdminUse(
-    changeDate = Some(LocalDateTime.now())
+    changeDate = Some(LocalDateTime.now(stubClockAtArbitraryDate))
   )
 
   val etmpRegistration: EtmpDisplayRegistration = EtmpDisplayRegistration(

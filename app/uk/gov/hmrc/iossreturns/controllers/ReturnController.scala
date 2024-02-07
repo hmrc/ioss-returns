@@ -20,10 +20,13 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
+import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
+import uk.gov.hmrc.iossreturns.services.AuditService
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
 import java.time.{Clock, LocalDate}
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -31,6 +34,7 @@ import scala.concurrent.ExecutionContext
 class ReturnController @Inject()(
                                   cc: DefaultAuthenticatedControllerComponents,
                                   coreVatReturnConnector: VatReturnConnector,
+                                  auditService: AuditService,
                                   clock: Clock
                                 )(implicit ec: ExecutionContext)
   extends BackendController(cc) {
@@ -38,9 +42,15 @@ class ReturnController @Inject()(
   def submit(): Action[CoreVatReturn] = cc.auth()(parse.json[CoreVatReturn]).async {
     implicit request =>
       coreVatReturnConnector.submit(request.body).map {
-        case Right(_) => Created
-        case Left(errorResponse) if (errorResponse.errorDetail.errorCode == CoreErrorResponse.REGISTRATION_NOT_FOUND) => NotFound(Json.toJson(errorResponse.errorDetail))
-        case Left(errorResponse) => ServiceUnavailable(Json.toJson(errorResponse.errorDetail))
+        case Right(_) =>
+          auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
+          Created
+        case Left(errorResponse) if errorResponse.errorDetail.errorCode == CoreErrorResponse.REGISTRATION_NOT_FOUND =>
+          auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
+          NotFound(Json.toJson(errorResponse.errorDetail))
+        case Left(errorResponse) =>
+          auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
+          ServiceUnavailable(Json.toJson(errorResponse.errorDetail))
       }
   }
 

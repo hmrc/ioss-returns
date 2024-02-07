@@ -25,13 +25,14 @@ import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDat
 import uk.gov.hmrc.iossreturns.models.payments.Payment
 import uk.gov.hmrc.iossreturns.utils.Formatters._
 
-import java.time.LocalDate
+import java.time.{Clock, LocalDate}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class PaymentsService @Inject()(
                                  financialDataConnector: FinancialDataConnector,
-                                 vatReturnConnector: VatReturnConnector
+                                 vatReturnConnector: VatReturnConnector,
+                                 clock: Clock
                                ) {
 
   def getUnpaidPayments(iossNumber: String, startTime: LocalDate)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[List[Payment]] = {
@@ -55,7 +56,7 @@ class PaymentsService @Inject()(
   private def withFinancialDataAndVatReturns[T](iossNumber: String, startTime: LocalDate)
                                                (block: (Option[FinancialData], List[EtmpVatReturn]) => T)(implicit ec: ExecutionContext, hc: HeaderCarrier) = {
 
-    val now = LocalDate.now()
+    val now = LocalDate.now(clock)
     val fromDate: String = startTime.format(etmpDateFormatter)
     val toDate = now.plusMonths(1).withDayOfMonth(1).minusDays(1).format(etmpDateFormatter)
 
@@ -94,7 +95,7 @@ class PaymentsService @Inject()(
   }
 
   def getVatReturnsForObligations(iossNumber: String, obligations: EtmpObligations)
-                                 (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[List[EtmpVatReturn]] =
+                                 (implicit ec: ExecutionContext): Future[List[EtmpVatReturn]] =
     Future.sequence(
       obligations.getFulfilledPeriods.map { period =>
         vatReturnConnector.get(iossNumber, period).map {

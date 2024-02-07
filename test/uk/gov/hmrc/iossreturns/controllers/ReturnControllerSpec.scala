@@ -33,7 +33,9 @@ import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
 import uk.gov.hmrc.iossreturns.models.CoreErrorResponse.REGISTRATION_NOT_FOUND
 import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
 import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpVatReturn}
+import uk.gov.hmrc.iossreturns.services.AuditService
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
 import java.time.{Instant, Month}
@@ -45,75 +47,109 @@ class ReturnControllerSpec
     with BeforeAndAfterEach {
 
   private val mockCoreVatReturnConnector = mock[VatReturnConnector]
+  private val mockAuditService: AuditService = mock[AuditService]
 
   override def beforeEach(): Unit = {
     Mockito.reset(mockCoreVatReturnConnector)
+    Mockito.reset(mockAuditService)
   }
 
   ".submit" - {
 
     val vatReturn = arbitrary[CoreVatReturn].sample.value
+    val jsonVatReturn = Json.toJson(vatReturn)
+    val readVatReturn = jsonVatReturn.as[CoreVatReturn]
 
     lazy val request =
       FakeRequest(POST, routes.ReturnController.submit.url)
-        .withJsonBody(Json.toJson(vatReturn))
+        .withJsonBody(jsonVatReturn)
 
-    "must save a VAT return and respond with Created" in {
+    "must save a VAT return, audit a success event and respond with Created" in {
 
       when(mockCoreVatReturnConnector.submit(any()))
         .thenReturn(Future.successful(Right(())))
 
-      val app =
-        applicationBuilder()
-          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
-          .build()
+      val app = applicationBuilder().overrides(
+        bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
+        bind[AuditService].toInstance(mockAuditService)
+      ).build()
 
       running(app) {
 
         val result = route(app, request).value
+
+        val expectedAuditEvent = CoreVatReturnAuditModel(
+          "id",
+          "",
+          vrn.vrn,
+          readVatReturn,
+          SubmissionResult.Success,
+          None
+        )
 
         status(result) mustEqual CREATED
-        verify(mockCoreVatReturnConnector, times(1)).submit(eqTo(vatReturn))
+        verify(mockCoreVatReturnConnector, times(1)).submit(eqTo(readVatReturn))
+        verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
       }
     }
 
-    "must respond with NotFound when registration is not in core" in {
-      val coreErrorResponse = CoreErrorResponse(Instant.now(), None, REGISTRATION_NOT_FOUND, "There was an error")
+    "must audit a failure event and respond with NotFound when registration is not in core" in {
+      val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, REGISTRATION_NOT_FOUND, "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
       when(mockCoreVatReturnConnector.submit(any()))
         .thenReturn(Future.successful(Left(eisErrorResponse)))
 
-      val app =
-        applicationBuilder()
-          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
-          .build()
+      val app = applicationBuilder().overrides(
+        bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
+        bind[AuditService].toInstance(mockAuditService)
+      ).build()
 
       running(app) {
 
         val result = route(app, request).value
+
+        val expectedAuditEvent = CoreVatReturnAuditModel(
+          "id",
+          "",
+          vrn.vrn,
+          readVatReturn,
+          SubmissionResult.Failure,
+          Some(coreErrorResponse)
+        )
 
         status(result) mustEqual NOT_FOUND
+        verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
       }
     }
 
-    "must respond with ServiceUnavailable(coreError) when error received from core" in {
-      val coreErrorResponse = CoreErrorResponse(Instant.now(), None, "OSS_111", "There was an error")
+    "must audit a failure event and respond with ServiceUnavailable(coreError) when error received from core" in {
+      val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, "OSS_111", "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
       when(mockCoreVatReturnConnector.submit(any()))
         .thenReturn(Future.successful(Left(eisErrorResponse)))
 
-      val app =
-        applicationBuilder()
-          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
-          .build()
+      val app = applicationBuilder().overrides(
+        bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
+        bind[AuditService].toInstance(mockAuditService)
+      ).build()
 
       running(app) {
 
         val result = route(app, request).value
 
+        val expectedAuditEvent = CoreVatReturnAuditModel(
+          "id",
+          "",
+          vrn.vrn,
+          readVatReturn,
+          SubmissionResult.Failure,
+          Some(coreErrorResponse)
+        )
+
         status(result) mustEqual SERVICE_UNAVAILABLE
+        verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
       }
     }
 
