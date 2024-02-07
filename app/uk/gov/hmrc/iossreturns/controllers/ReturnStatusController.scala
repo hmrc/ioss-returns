@@ -74,7 +74,7 @@ class ReturnStatusController @Inject()(
         )
       )
 
-      Ok(Json.toJson(CurrentReturns(returns, isExcluded, finalReturnsCompleted)))
+      Ok(Json.toJson(CurrentReturns(returns, isExcluded, finalReturnsCompleted, iossNumber)))
     }
   }
 }

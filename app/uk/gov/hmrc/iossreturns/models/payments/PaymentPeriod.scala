@@ -17,6 +17,7 @@
 package uk.gov.hmrc.iossreturns.models.payments
 
 import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 import java.time.Month
 
@@ -25,15 +26,19 @@ final case class PaymentPeriod(year: Int, month: Month)
 
 object PaymentPeriod {
 
-  implicit val monthReads: Reads[Month] = {
-    Reads.at[Int](__ \ "month")
-      .map(Month.of)
+  val reads: Reads[PaymentPeriod] = {
+    (
+      (__ \ "year").read[Int] and
+        (__ \ "month").read[String].map(m => Month.of(m.substring(1).toInt))
+      )((year, month) => PaymentPeriod(year, month))
   }
 
-  implicit val monthWrites: Writes[Month] = {
-    Writes.at[Int](__ \ "month")
-      .contramap(_.getValue)
+  val writes: OWrites[PaymentPeriod] = {
+    (
+      (__ \ "year").write[Int] and
+        (__ \ "month").write[String].contramap[Month](m => s"M${m.getValue}")
+      )(unlift(PaymentPeriod.unapply))
   }
 
-  implicit val format: OFormat[PaymentPeriod] = Json.format[PaymentPeriod]
+  implicit val format: OFormat[PaymentPeriod] = OFormat(reads, writes)
 }
