@@ -36,7 +36,7 @@ trait ModelGenerators {
     Arbitrary {
       for {
         year <- Gen.choose(2022, 2099)
-        quarter <- Gen.oneOf(Month.values)
+        quarter <- Gen.oneOf(Month.values.toSeq)
       } yield Period(year, quarter)
     }
 
@@ -408,7 +408,7 @@ trait ModelGenerators {
         "GB79ABBY09012603367219",
         "GB21SCBL60910417068859",
         "GB42CPBK08005470328725"
-      ).map(v => Iban(v).right.get)
+      ).map(v => Iban(v).toOption.get)
     }
   }
 
