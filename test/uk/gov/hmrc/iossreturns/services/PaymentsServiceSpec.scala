@@ -36,7 +36,8 @@ import scala.concurrent.Future
 
 class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfterEach with PaymentsServiceSpecFixture with ScalaCheckPropertyChecks {
   implicit val hc = HeaderCarrier()
-  val someCommencementDate = LocalDate.now().minusYears(3)
+  val someCommencementDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(3)
+
   "PaymentsService" - {
 
     "must return payments when there are due payments and overdue payments - from FinancialData, vatReturn to be ignored" in {
@@ -88,7 +89,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
       when(vatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector)
+      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
 
       val result = service.getUnpaidPayments(iossNumber, someCommencementDate)
 
@@ -135,7 +136,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
       when(vatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector)
+      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
 
       val payment = service.calculatePayment(vatReturn1, Some(inputFinancialData))
 
@@ -192,7 +193,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
       when(vatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector)
+      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
 
       val result = service.getUnpaidPayments(iossNumber, someCommencementDate)
 
@@ -231,7 +232,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
       when(vatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector)
+      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
 
       val inputFinancialDataWithTransactionsNone = financialData.copy(financialTransactions = None)
       val inputFinancialDataWithTransactionsSomeNil = financialData.copy(financialTransactions = Some(Nil))
@@ -274,7 +275,7 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfter
       val nilVatReturn = vatReturn.copy(
         periodKey = periodKey1, goodsSupplied = Nil, totalVATAmountDueForAllMSGBP = BigDecimal(0))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector)
+      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
 
       val vatCorrectionAmount = 50
 
