@@ -94,7 +94,7 @@ class PaymentsService @Inject()(
   }
 
   def getVatReturnsForObligations(iossNumber: String, obligations: EtmpObligations)
-                                 (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[List[EtmpVatReturn]] =
+                                 (implicit ec: ExecutionContext): Future[List[EtmpVatReturn]] =
     Future.sequence(
       obligations.getFulfilledPeriods.map { period =>
         vatReturnConnector.get(iossNumber, period).map {
