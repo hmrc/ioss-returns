@@ -82,7 +82,7 @@ class ReturnStatusControllerSpec
       period2022SEPTEMBER
     )
 
-    lazy val request = FakeRequest(GET, routes.ReturnStatusController.getCurrentReturnsForIossNumber(vrn.vrn).url)
+    lazy val request = FakeRequest(GET, routes.ReturnStatusController.getCurrentReturnsForIossNumber(iossNumber).url)
     "must respond with OK and the OpenReturns model" - {
 
       "with no returns in progress, due or overdue if there are no returns due yet" in {
@@ -101,7 +101,7 @@ class ReturnStatusControllerSpec
 
           status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(Seq(
-          ), false, false))
+          ), false, false, iossNumber))
         }
       }
       "with no returns in progress, due or overdue if all returns are complete" in {
@@ -123,7 +123,7 @@ class ReturnStatusControllerSpec
           val result = route(app, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(Seq(Return.fromPeriod(lastPeriod, Next, false, true)), false, false))
+          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(Seq(Return.fromPeriod(lastPeriod, Next, false, true)), false, false, iossNumber))
         }
       }
 
@@ -146,7 +146,7 @@ class ReturnStatusControllerSpec
           val result = route(app, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(Seq(Return.fromPeriod(period2022SEPTEMBER, Due, false, true)), false, false))
+          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(Seq(Return.fromPeriod(period2022SEPTEMBER, Due, false, true)), false, false, iossNumber))
         }
       }
 
@@ -173,7 +173,7 @@ class ReturnStatusControllerSpec
 
           status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
-            returns, false, false))
+            returns, false, false, iossNumber))
         }
       }
 
@@ -208,7 +208,8 @@ class ReturnStatusControllerSpec
                 :::
                 List(Return.fromPeriod(lastPeriod, Due, inProgress = false, isOldest = false)),
               excluded = false,
-              finalReturnsCompleted = false
+              finalReturnsCompleted = false,
+              iossNumber = iossNumber
             ))
         }
 
@@ -240,7 +241,8 @@ class ReturnStatusControllerSpec
               Return.fromPeriod(period2022AUGUST, Overdue, false, true)
             ),
             excluded = true,
-            finalReturnsCompleted = false
+            finalReturnsCompleted = false,
+            iossNumber = iossNumber
           ))
         }
       }
@@ -268,7 +270,8 @@ class ReturnStatusControllerSpec
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
             Seq.empty,
             excluded = true,
-            finalReturnsCompleted = true
+            finalReturnsCompleted = true,
+            iossNumber = iossNumber
           ))
         }
       }
