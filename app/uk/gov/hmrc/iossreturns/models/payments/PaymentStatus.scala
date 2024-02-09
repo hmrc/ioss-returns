@@ -29,6 +29,8 @@ object PaymentStatus {
 
   case object Unknown extends PaymentStatus
 
+  case object Excluded extends PaymentStatus
+
   implicit val reads: Reads[PaymentStatus] = JsPath
     .read[String]
     .map(_.toUpperCase)
@@ -36,10 +38,12 @@ object PaymentStatus {
       case "UNPAID" => Unpaid
       case "PARTIAL" => Partial
       case "UNKNOWN" => Unknown
+      case "EXCLUDED" => Excluded
     }
   implicit val writes: Writes[PaymentStatus] = WritesString[PaymentStatus] {
     case Unpaid => "UNPAID"
     case Partial => "PARTIAL"
     case Unknown => "UNKNOWN"
+    case Excluded => "EXCLUDED"
   }
 }

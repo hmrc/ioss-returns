@@ -21,7 +21,7 @@ import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData._
-import uk.gov.hmrc.iossreturns.models.payments.PrepareData
+import uk.gov.hmrc.iossreturns.models.payments.{PaymentStatus, PrepareData}
 import uk.gov.hmrc.iossreturns.services.{FinancialDataService, PaymentsService}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -54,9 +54,12 @@ class FinancialDataController @Inject()(
         val totalAmountOwed = up.map(_.amountOwed).sum
         val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
         val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now(clock)))
+        val excludedPayments = overduePayments.filter(_.paymentStatus == PaymentStatus.Excluded)
+        val overduePaymentsNotExcluded = overduePayments.filterNot(_.paymentStatus == PaymentStatus.Excluded)
         Ok(Json.toJson(PrepareData(
           duePayments,
-          overduePayments,
+          overduePaymentsNotExcluded,
+          excludedPayments,
           totalAmountOwed,
           totalAmountOverdue,
           iossNumber = request.iossNumber

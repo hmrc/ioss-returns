@@ -18,13 +18,12 @@ package uk.gov.hmrc.iossreturns.services
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.MockitoSugar.when
-import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser.FinancialDataResponse
+import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
@@ -35,8 +34,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfterEach with PaymentsServiceSpecFixture with ScalaCheckPropertyChecks {
-  implicit val hc = HeaderCarrier()
-  val someCommencementDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(3)
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+  val someCommencementDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(3)
 
   "PaymentsService" - {
 
@@ -342,8 +341,8 @@ trait PaymentsServiceSpecFixture { self: SpecBase =>
   protected val dateFrom: LocalDate = zonedNow.toLocalDate.minusMonths(1)
   protected val dateTo: LocalDate = zonedNow.toLocalDate
 
-  protected val item = Item(Some(500), Some(""), Some(""), Some(500), Some(""))
-  protected val financialTransaction = FinancialTransaction(
+  protected val item: Item = Item(Some(500), Some(""), Some(""), Some(500), Some(""))
+  protected val financialTransaction: FinancialTransaction = FinancialTransaction(
     Some("G Ret AT EU-OMS"), None, Some(dateFrom), Some(dateTo), Some(1000), Some(500), Some(500), Some(Seq(item)))
 
   protected val vatReturn: EtmpVatReturn = EtmpVatReturn(
@@ -385,7 +384,7 @@ trait PaymentsServiceSpecFixture { self: SpecBase =>
     paymentReference = "XI/IM9001234567/2023.M11"
   )
 
-  protected val obligationsResponse = EtmpObligations(obligations = Seq(EtmpObligation(
+  protected val obligationsResponse: EtmpObligations = EtmpObligations(obligations = Seq(EtmpObligation(
     obligationDetails = Seq(
       EtmpObligationDetails(
         status = EtmpObligationsFulfilmentStatus.Fulfilled,
@@ -402,5 +401,5 @@ trait PaymentsServiceSpecFixture { self: SpecBase =>
     )
   )))
 
-  protected val financialData = FinancialData(Some("IOSS"), Some("123456789"), Some("ECOM"), zonedDateTimeNow, Some(Seq(financialTransaction)))
+  protected val financialData: FinancialData = FinancialData(Some("IOSS"), Some("123456789"), Some("ECOM"), zonedDateTimeNow, Some(Seq(financialTransaction)))
 }

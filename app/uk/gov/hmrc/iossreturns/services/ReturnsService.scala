@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.iossreturns.services
 
-import uk.gov.hmrc.iossreturns.config.Constants.excludedReturnAndPaymentExpiry
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.Period
@@ -32,7 +31,11 @@ import javax.inject.Inject
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnector)(implicit executionContext: ExecutionContext) extends Logging {
+class ReturnsService @Inject()(
+                                clock: Clock,
+                                vatReturnConnector: VatReturnConnector,
+                                checkExclusionsService: CheckExclusionsService
+                              )(implicit executionContext: ExecutionContext) extends Logging {
 
   def getStatuses(
                    iossNumber: String,
@@ -134,9 +137,9 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
   def isPeriodExcluded(period: Period, exclusions: List[EtmpExclusion]): Boolean = {
     val excluded = getLastExclusionWithoutReversal(exclusions)
     excluded match {
-      case Some(excluded) if hasActiveReturnWindowExpired(period.paymentDeadline, clock) ||
-        period.lastDay.isAfter(Period.getRunningPeriod(excluded.effectiveDate).getNext().firstDay) =>
-        true
+      case Some(excluded) if checkExclusionsService.hasActiveWindowExpired(period.paymentDeadline) ||
+        (excluded.effectiveDate.isBefore(period.firstDay) || excluded.effectiveDate == period.firstDay) =>
+          true
       case _ => false
     }
   }
@@ -151,10 +154,5 @@ class ReturnsService @Inject()(clock: Clock, vatReturnConnector: VatReturnConnec
           )
       case _ => false
     }
-  }
-
-  private def hasActiveReturnWindowExpired(dueDate: LocalDate, clock: Clock): Boolean = {
-    val today = LocalDate.now(clock)
-    today.isAfter(dueDate.plusYears(excludedReturnAndPaymentExpiry))
   }
 }
