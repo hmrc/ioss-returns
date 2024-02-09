@@ -33,7 +33,7 @@ import java.time._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class PaymentsServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfterEach with PaymentsServiceSpecFixture with ScalaCheckPropertyChecks {
+class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServiceSpecFixture with ScalaCheckPropertyChecks {
   implicit val hc: HeaderCarrier = HeaderCarrier()
   val someCommencementDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(3)
 

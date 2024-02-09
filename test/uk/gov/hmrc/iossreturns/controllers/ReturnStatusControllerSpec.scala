@@ -307,7 +307,8 @@ class ReturnStatusControllerSpec
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
             Seq.empty,
             excluded = true,
-            finalReturnsCompleted = false
+            finalReturnsCompleted = false,
+            iossNumber = iossNumber
           ))
         }
       }
@@ -346,7 +347,8 @@ class ReturnStatusControllerSpec
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
             vatReturns,
             excluded = true,
-            finalReturnsCompleted = false
+            finalReturnsCompleted = false,
+            iossNumber = iossNumber
           ))
         }
       }
