@@ -17,12 +17,13 @@
 package uk.gov.hmrc.iossreturns.services
 
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito
 import org.mockito.Mockito.when
-import org.scalatest.OptionValues
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.time.{Seconds, Span}
+import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.iossreturns.base.SpecBase
@@ -30,7 +31,7 @@ import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
-import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligation, EtmpObligationDetails, EtmpObligations, EtmpObligationsFulfilmentStatus}
+import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligation, EtmpObligationDetails, EtmpObligations, EtmpObligationsFulfilmentStatus, EtmpVatReturn}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
 import uk.gov.hmrc.iossreturns.models.youraccount.{PeriodWithStatus, SubmissionStatus}
 
@@ -45,9 +46,11 @@ class ReturnsServiceSpec
     with ScalaCheckPropertyChecks
     with Generators
     with OptionValues
-    with IntegrationPatience {
+    with IntegrationPatience
+    with BeforeAndAfterEach {
   val vatReturnConnector = mock[VatReturnConnector]
-  when(vatReturnConnector.get(any(), any())).thenReturn(Future.successful(Right(arbitraryEtmpVatReturn.arbitrary.sample.get)))
+
+  private val mockCheckExclusionsService: CheckExclusionsService = mock[CheckExclusionsService]
 
   val stubClock: Clock = Clock.fixed(LocalDate.of(2022, 10, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
   val period2021APRIL = Period(2021, Month.APRIL)
@@ -83,13 +86,17 @@ class ReturnsServiceSpec
     period2022SEPTEMBER
   )
 
-  val vatReturn = arbitraryEtmpVatReturn.arbitrary.sample.get
+  val vatReturn: EtmpVatReturn = arbitraryEtmpVatReturn.arbitrary.sample.get
   when(vatReturnConnector.get(any(), any())).thenReturn(Future.successful(Right(vatReturn)))
 
-  val stubbedNow = LocalDate.now(stubClock)
+  val stubbedNow: LocalDate = LocalDate.now(stubClock)
+
+  override def beforeEach(): Unit = {
+    Mockito.reset(mockCheckExclusionsService)
+  }
 
   "getAllPeriodsBetween" - {
-    val service = new ReturnsService(stubClock, vatReturnConnector)
+    val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
     val scenarios = Table[LocalDate, LocalDate, List[Period], String](
       ("startDate", "endDate", "expected result", "title"),
       (stubbedNow.minusMonths(3), stubbedNow, List(period2022SEPTEMBER, period2022AUGUST, period2022JULY), "get all periods from commencement date to date, excluding the current period because last day is not the end date of the current period"),
@@ -107,7 +114,7 @@ class ReturnsServiceSpec
   }
 
   "getNextPeriod" - {
-    val service = new ReturnsService(stubClock, vatReturnConnector)
+    val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
     val canIgnore = stubbedNow
     val currentPeriod = Period.getRunningPeriod(stubbedNow)
     val commencementDateBeforeCurrentPeriodsLastDay = currentPeriod.lastDay.minusDays(1)
@@ -129,14 +136,14 @@ class ReturnsServiceSpec
   }
 
   "decideStatus" - {
-    val service = new ReturnsService(stubClock, vatReturnConnector)
-    val exclusion = EtmpExclusion(EtmpExclusionReason.FailsToComply, stubbedNow, stubbedNow.minusMonths(1), false)
+    val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
+    val exclusion = EtmpExclusion(EtmpExclusionReason.FailsToComply, stubbedNow, stubbedNow.minusMonths(1), quarantine = false)
     val currentPeriod = Period.getRunningPeriod(stubbedNow)
     val periodOverdue = currentPeriod.getPrevious().getPrevious().getPrevious()
     val excludedPeriod = currentPeriod.getNext()
     val scenarios = Table[Period, List[Period], List[EtmpExclusion], PeriodWithStatus, String](
       ("period", "vat return", "exclusions", "expected result", "title"),
-      (excludedPeriod, List(excludedPeriod.getNext()), List(exclusion), PeriodWithStatus(excludedPeriod, SubmissionStatus.Excluded), "for a period where there is an exclusion with an effective date within previous period, mark is as excluded"),
+      (excludedPeriod, List(currentPeriod), List(exclusion), PeriodWithStatus(excludedPeriod, SubmissionStatus.Excluded), "for a period where there is an exclusion with an effective date within previous period, mark is as excluded"),
       (currentPeriod, List(currentPeriod), Nil, PeriodWithStatus(currentPeriod, SubmissionStatus.Complete), "for a period where there is no exclusion, AND there is a vat return, mark is as Complete"),
       (currentPeriod, List.empty, Nil, PeriodWithStatus(currentPeriod, SubmissionStatus.Due), "for a period where there is no exclusion, AND there is no vat return yet, mark is as Due, if the duedate has not passed"),
       (periodOverdue, List.empty, Nil, PeriodWithStatus(periodOverdue, SubmissionStatus.Overdue), "for a period where there is no exclusion, AND there is no vat return yet, mark is as Due, if the duedate has passed")
@@ -151,15 +158,15 @@ class ReturnsServiceSpec
   }
 
   "getStatuses" - {
-    val service = new ReturnsService(stubClock, vatReturnConnector)
-    val exclusion = EtmpExclusion(EtmpExclusionReason.FailsToComply, period2022AUGUST.firstDay, period2022AUGUST.firstDay, false)
+    val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
+    val exclusion = EtmpExclusion(EtmpExclusionReason.FailsToComply, period2022AUGUST.firstDay, period2022AUGUST.firstDay, quarantine = false)
     val currentPeriod = Period.getRunningPeriod(stubbedNow)
 
     val scenarios = Table[LocalDate, List[Period], List[EtmpExclusion], List[PeriodWithStatus], String](
       ("period", "vat return", "exclusions", "expected result", "title"),
       (stubbedNow.minusMonths(2), List(period2022SEPTEMBER, period2022AUGUST), Nil, List(PeriodWithStatus(period2022SEPTEMBER, Complete), PeriodWithStatus(period2022AUGUST, Complete), PeriodWithStatus(currentPeriod, Next)), "aif all periods return vat returns(all complete) so add next for next period"),
-      (stubbedNow.minusMonths(2), List(period2022AUGUST), List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Complete)), "exclusion for next period after effective date"),
-      (stubbedNow.minusMonths(2), List.empty, List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Overdue)), "Overdue, if vat return can not be found for period - with exclusion"),
+      (stubbedNow.minusMonths(3), List(period2022JULY), List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Excluded), PeriodWithStatus(period2022JULY, Complete)), "exclusion for next period after effective date"),
+      (stubbedNow.minusMonths(3), List.empty, List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Excluded), PeriodWithStatus(period2022JULY, Overdue)), "Overdue, if vat return can not be found for period - with exclusion"),
       (stubbedNow.minusMonths(2), List.empty, Nil, List(PeriodWithStatus(period2022SEPTEMBER, Due), PeriodWithStatus(period2022AUGUST, Overdue)), "verdue, if vat return can not be found for period - without exclusion for last month, so last month due")
     )
 
@@ -182,6 +189,93 @@ class ReturnsServiceSpec
     }
   }
 
+  ".isPeriodExcluded" - {
+
+    "must return true when period is excluded because hasActiveWindowExpired returns true" in {
+
+      when(mockCheckExclusionsService.hasActiveWindowExpired(any())) thenReturn true
+
+      val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+      val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.plusMonths(1)))
+
+      val service = new ReturnsService(stubClockAtArbitraryDate, vatReturnConnector, mockCheckExclusionsService)
+
+      val result = service.isPeriodExcluded(period, exclusion)
+
+      result mustBe true
+    }
+
+    "must return true when period is excluded because hasActiveWindowExpired returns false and the period falls after the exclusion effective date" in {
+
+      when(mockCheckExclusionsService.hasActiveWindowExpired(any())) thenReturn false
+
+      val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+
+      val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.minusMonths(1)))
+
+      val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
+
+      val result = service.isPeriodExcluded(period, exclusion)
+
+      result mustBe true
+    }
+
+    "must return true when period is excluded because hasActiveWindowExpired returns false and the period falls on the exclusion effective date" in {
+
+      when(mockCheckExclusionsService.hasActiveWindowExpired(any())) thenReturn false
+
+      val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+
+      val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = period.firstDay))
+
+      val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
+
+      val result = service.isPeriodExcluded(period, exclusion)
+
+      result mustBe true
+    }
+
+    "must return true when period is excluded because hasActiveWindowExpired returns true and the period falls after the exclusion effective date" in {
+
+      when(mockCheckExclusionsService.hasActiveWindowExpired(any())) thenReturn true
+
+      val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+      val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.minusMonths(1)))
+
+      val service = new ReturnsService(stubClockAtArbitraryDate, vatReturnConnector, mockCheckExclusionsService)
+
+      val result = service.isPeriodExcluded(period, exclusion)
+
+      result mustBe true
+    }
+
+    "must return false when period is not excluded because hasActiveWindowExpired returns false and the period falls before the exclusion effective date" in {
+
+      when(mockCheckExclusionsService.hasActiveWindowExpired(any())) thenReturn false
+
+      val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+      val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.plusMonths(1)))
+
+      val service = new ReturnsService(stubClockAtArbitraryDate, vatReturnConnector, mockCheckExclusionsService)
+
+      val result = service.isPeriodExcluded(period, exclusion)
+
+      result mustBe false
+    }
+
+    "must return false when there is no exclusion" in {
+
+      val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+      val exclusion = List.empty
+
+      val service = new ReturnsService(stubClockAtArbitraryDate, vatReturnConnector, mockCheckExclusionsService)
+
+      val result = service.isPeriodExcluded(period, exclusion)
+
+      result mustBe false
+    }
+  }
+
   "general period oss response behaviour" - {
 
     "when today is 11th October" - {
@@ -191,7 +285,7 @@ class ReturnsServiceSpec
 
       "should return September for commencement date of 30th September (comencement date as the last day of period)" in {
         val commencementDate = LocalDate.of(2021, 9, 30)
-        val service = new ReturnsService(stubClock, vatReturnConnector)
+        val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
 
         val expectedPeriods = Seq(Period(2021, Month.SEPTEMBER))
         val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", commencementDate, Nil)
@@ -204,7 +298,7 @@ class ReturnsServiceSpec
       "should return nothing for commencement date of 10th October (filter Next)" in {
         val commencementDate = LocalDate.of(2021, 10, 10)
 
-        val service = new ReturnsService(stubClock, vatReturnConnector)
+        val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
 
         val expectedPeriods = Seq.empty
 
@@ -220,7 +314,7 @@ class ReturnsServiceSpec
       val instant = Instant.ofEpochSecond(1633959834)
       val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
 
-      val service = new ReturnsService(stubClock, vatReturnConnector)
+      val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
 
       val expectedPeriods = Seq(Period(2021, Month.JULY), Period(2021, Month.AUGUST), Period(2021, Month.SEPTEMBER))
 
@@ -238,7 +332,7 @@ class ReturnsServiceSpec
 
       val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
 
-      val service = new ReturnsService(stubClock, vatReturnConnector)
+      val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
 
       val expectedPeriods = Seq(Period(2021, Month.OCTOBER), Period(2021, Month.NOVEMBER), Period(2021, Month.DECEMBER))
 
@@ -250,5 +344,4 @@ class ReturnsServiceSpec
       }
     }
   }
-
 }

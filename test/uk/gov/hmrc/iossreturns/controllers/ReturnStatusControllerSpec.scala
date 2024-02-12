@@ -30,8 +30,8 @@ import uk.gov.hmrc.iossreturns.controllers.actions.{AuthAction, FakeAuthAction, 
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
-import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
+import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return}
 import uk.gov.hmrc.iossreturns.services.ReturnsService
 
 import java.time.{Clock, LocalDate, Month, ZoneId}
@@ -104,6 +104,7 @@ class ReturnStatusControllerSpec
           ), false, false, iossNumber))
         }
       }
+
       "with no returns in progress, due or overdue if all returns are complete" in {
 
         val mockReturnService = mock[ReturnsService]
@@ -150,7 +151,6 @@ class ReturnStatusControllerSpec
         }
       }
 
-
       "with some overdue returns but nothing in progress" in {
         val periods = Seq(period2021APRIL,
           period2021MAY,
@@ -176,7 +176,6 @@ class ReturnStatusControllerSpec
             returns, false, false, iossNumber))
         }
       }
-
 
       "with a return due and some returns overdue and nothing in progress" in {
         val (period1 :: periodsInBetween) = periods.dropRight(1)
@@ -214,6 +213,7 @@ class ReturnStatusControllerSpec
         }
 
       }
+
       "with an excluded trader's final return due but not in progress and no saved answers" in {
 
         val mockReturnService = mock[ReturnsService]
@@ -275,6 +275,83 @@ class ReturnStatusControllerSpec
           ))
         }
       }
+
+      "excluded trader can't complete a return 3 years after return due date" in {
+
+        val exclusionPeriod = Period(2023, Month.NOVEMBER)
+        val stubClock: Clock = Clock.fixed(LocalDate.of(2026, 3, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
+
+        val mockReturnService = mock[ReturnsService]
+
+        val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(_.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = exclusionPeriod.firstDay))
+
+        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
+          List(
+            PeriodWithStatus(Period(2023, Month.DECEMBER), Excluded),
+            PeriodWithStatus(Period(2023, Month.JANUARY), Excluded)
+          )
+        )
+
+        when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
+        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+
+        val app = applicationBuilder
+          .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[Clock].toInstance(stubClock))
+          .build()
+
+        running(app) {
+          val result = route(app, request).value
+
+          status(result) mustEqual OK
+          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
+            Seq.empty,
+            excluded = true,
+            finalReturnsCompleted = false,
+            iossNumber = iossNumber
+          ))
+        }
+      }
+
+      "excluded trader can complete a return if return due date is within 3 years" in {
+
+        val exclusionPeriod = Period(2023, Month.NOVEMBER)
+        val stubClock: Clock = Clock.fixed(LocalDate.of(2026, 3, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
+
+        val mockReturnService = mock[ReturnsService]
+
+        val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(_.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = exclusionPeriod.firstDay))
+
+        val vatReturns = Seq(Return.fromPeriod(Period(2023, Month.JULY), Overdue, inProgress = false, isOldest = true))
+
+        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
+          List(
+            PeriodWithStatus(Period(2023, Month.DECEMBER), Excluded),
+            PeriodWithStatus(Period(2023, Month.JULY), Overdue),
+            PeriodWithStatus(Period(2023, Month.JANUARY), Excluded)
+          )
+        )
+
+        when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
+        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+
+        val app = applicationBuilder
+          .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[Clock].toInstance(stubClock))
+          .build()
+
+        running(app) {
+          val result = route(app, request).value
+
+          status(result) mustEqual OK
+          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
+            vatReturns,
+            excluded = true,
+            finalReturnsCompleted = false,
+            iossNumber = iossNumber
+          ))
+        }
+      }
     }
 
     "must respond with Unauthorized when the user is not authorised" in {
@@ -289,7 +366,5 @@ class ReturnStatusControllerSpec
         status(result) mustEqual UNAUTHORIZED
       }
     }
-
   }
-
 }

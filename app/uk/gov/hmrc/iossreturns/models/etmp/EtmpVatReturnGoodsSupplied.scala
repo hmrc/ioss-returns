@@ -19,7 +19,7 @@ package uk.gov.hmrc.iossreturns.models.etmp
 import play.api.libs.json.{Format, Json}
 
 case class EtmpVatReturnGoodsSupplied(
-                                       msOfConsumption: String, // TODO country?
+                                       msOfConsumption: String,
                                        vatRateType: EtmpVatRateType,
                                        taxableAmountGBP: BigDecimal,
                                        vatAmountGBP: BigDecimal

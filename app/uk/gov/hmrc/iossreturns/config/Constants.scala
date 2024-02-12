@@ -19,5 +19,6 @@ package uk.gov.hmrc.iossreturns.config
 object Constants {
 
   val maxTradingNames: Int = 10
+  val excludedReturnAndPaymentExpiry: Int = 3
 
 }

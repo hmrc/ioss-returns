@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.payments
+package uk.gov.hmrc.iossreturns.services
 
-import play.api.libs.json.Json
+import uk.gov.hmrc.iossreturns.config.Constants.excludedReturnAndPaymentExpiry
 
-final case class PrepareData(
-                              duePayments: List[Payment],
-                              overduePayments: List[Payment],
-                              excludedPayments: List[Payment],
-                              totalAmountOwed: BigDecimal,
-                              totalAmountOverdue: BigDecimal,
-                              iossNumber: String
-                            )
+import java.time.{Clock, LocalDate}
+import javax.inject.Inject
 
-object PrepareData {
-  implicit val format = Json.format[PrepareData]
+class CheckExclusionsService @Inject()(clock: Clock) {
+
+  def hasActiveWindowExpired(dueDate: LocalDate): Boolean = {
+    val today = LocalDate.now(clock)
+    today.isAfter(dueDate.plusYears(excludedReturnAndPaymentExpiry))
+  }
 }
