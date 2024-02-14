@@ -19,10 +19,10 @@ package uk.gov.hmrc.iossreturns.services
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligations._
-import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsFulfilmentStatus.Fulfilled
+import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
 import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpObligationsQueryParameters, EtmpVatReturn}
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataQueryParameters}
-import uk.gov.hmrc.iossreturns.models.payments.Payment
+import uk.gov.hmrc.iossreturns.models.payments.{Payment, PaymentStatus}
 import uk.gov.hmrc.iossreturns.models.{EtmpDisplayReturnError, Period}
 import uk.gov.hmrc.iossreturns.utils.Formatters._
 
@@ -33,10 +33,11 @@ import scala.concurrent.{ExecutionContext, Future}
 class PaymentsService @Inject()(
                                  financialDataConnector: FinancialDataConnector,
                                  vatReturnConnector: VatReturnConnector,
+                                 checkExclusionsService: CheckExclusionsService,
                                  clock: Clock
                                ) {
 
-  def getUnpaidPayments(iossNumber: String, startTime: LocalDate)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[List[Payment]] = {
+  def getUnpaidPayments(iossNumber: String, startTime: LocalDate, exclusions: List[EtmpExclusion])(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[List[Payment]] = {
     withFinancialDataAndVatReturns(iossNumber, startTime) {
       (financialDataMaybe, vatReturns) => {
         val vatReturnsForPeriodsWithOutstandingAmounts = filterIfPaymentOutstanding(financialDataMaybe, vatReturns)
@@ -44,7 +45,7 @@ class PaymentsService @Inject()(
         val payments = vatReturnsForPeriodsWithOutstandingAmounts.map(
           vatReturnDue => {
             calculatePayment(
-              vatReturnDue, financialDataMaybe
+              vatReturnDue, financialDataMaybe, exclusions
             )
           }
         )
@@ -119,14 +120,18 @@ class PaymentsService @Inject()(
     })
   }
 
-  def calculatePayment(vatReturn: EtmpVatReturn, financialDataMaybe: Option[FinancialData]): Payment = {
+  def calculatePayment(vatReturn: EtmpVatReturn, financialDataMaybe: Option[FinancialData], exclusions: List[EtmpExclusion]): Payment = {
     val period = Period.fromKey(vatReturn.periodKey)
     val charge = for {
       financialData <- financialDataMaybe
       chargeCalculated <- financialData.getChargeForPeriod(period)
     } yield chargeCalculated
 
-    val paymentStatus = charge.getPaymentStatus()
+    val paymentStatus = if(checkExclusionsService.isPeriodExcluded(period, exclusions)) {
+      PaymentStatus.Excluded
+    } else {
+      charge.getPaymentStatus()
+    }
 
     Payment(period,
       charge.map(c => c.outstandingAmount).getOrElse(vatReturn.totalVATAmountDueForAllMSGBP),

@@ -22,7 +22,7 @@ import play.api.mvc.Results.Ok
 import uk.gov.hmrc.iossreturns.controllers.actions.{AuthorisedRequest, DefaultAuthenticatedControllerComponents}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, Return}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Excluded}
-import uk.gov.hmrc.iossreturns.services.ReturnsService
+import uk.gov.hmrc.iossreturns.services.{CheckExclusionsService, ReturnsService}
 
 import java.time.{LocalDate, ZoneId}
 import java.time.format.DateTimeFormatter
@@ -32,7 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ReturnStatusController @Inject()(
                                         cc: DefaultAuthenticatedControllerComponents,
-                                        returnsService: ReturnsService
+                                        returnsService: ReturnsService,
+                                        checkExclusionsService: CheckExclusionsService,
                                       )(implicit ec: ExecutionContext) {
   private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     .withLocale(Locale.UK)
@@ -60,7 +61,7 @@ class ReturnStatusController @Inject()(
 
       val incompletePeriods = availablePeriodsWithStatus.filterNot(pws => Seq(Complete, Excluded).contains(pws.status))
 
-      val isExcluded = returnsService.getLastExclusionWithoutReversal(request.registration.exclusions.toList).isDefined
+      val isExcluded = checkExclusionsService.getLastExclusionWithoutReversal(request.registration.exclusions.toList).isDefined
       val finalReturnsCompleted = returnsService.hasSubmittedFinalReturn(request.registration.exclusions.toList, availablePeriodsWithStatus)
 
       val periodInProgress = None // ToDo: No saved answers, so set to None.

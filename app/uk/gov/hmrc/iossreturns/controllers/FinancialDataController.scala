@@ -49,7 +49,7 @@ class FinancialDataController @Inject()(
     implicit request => {
       val now = LocalDate.now(clock)
       val startTime = LocalDate.parse(request.registration.schemeDetails.commencementDate, etmpDateFormatter)
-      val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber, startTime)
+      val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber, startTime, request.registration.exclusions.toList)
       unpaidPayments.map { up =>
         val totalAmountOwed = up.map(_.amountOwed).sum
         val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
