@@ -19,10 +19,8 @@ package uk.gov.hmrc.iossreturns.services
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.Period
-import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsFulfilmentStatus.Fulfilled
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
-import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusionReason.Reversal
 import uk.gov.hmrc.iossreturns.models.youraccount.{PeriodWithStatus, SubmissionStatus}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 
@@ -114,9 +112,9 @@ class ReturnsService @Inject()(
   }
 
   def decideStatus(period: Period, fulfilledPeriods: List[Period], exclusions: List[EtmpExclusion]): PeriodWithStatus = {
-    if (isPeriodExcluded(period, exclusions))
+    if (checkExclusionsService.isPeriodExcluded(period, exclusions)) {
       PeriodWithStatus(period, SubmissionStatus.Excluded)
-    else {
+    } else {
       if (fulfilledPeriods.contains(period)) {
         PeriodWithStatus(period, SubmissionStatus.Complete)
       } else {
@@ -129,23 +127,8 @@ class ReturnsService @Inject()(
     }
   }
 
-  def getLastExclusionWithoutReversal(exclusions: List[EtmpExclusion]): Option[EtmpExclusion] = {
-    // Even though API is array ETMP only return single item
-    exclusions.headOption.filterNot(_.exclusionReason == Reversal)
-  }
-
-  def isPeriodExcluded(period: Period, exclusions: List[EtmpExclusion]): Boolean = {
-    val excluded = getLastExclusionWithoutReversal(exclusions)
-    excluded match {
-      case Some(excluded) if checkExclusionsService.hasActiveWindowExpired(period.paymentDeadline) ||
-        (excluded.effectiveDate.isBefore(period.firstDay) || excluded.effectiveDate == period.firstDay) =>
-          true
-      case _ => false
-    }
-  }
-
   def hasSubmittedFinalReturn(exclusions: List[EtmpExclusion], periodsWithStatus: Seq[PeriodWithStatus]): Boolean = {
-    getLastExclusionWithoutReversal(exclusions) match {
+    checkExclusionsService.getLastExclusionWithoutReversal(exclusions) match {
       case Some(EtmpExclusion(_, _, effectiveDate, _)) =>
         periodsWithStatus
           .exists(periodWithStatus =>

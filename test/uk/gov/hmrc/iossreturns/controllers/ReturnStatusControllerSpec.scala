@@ -32,7 +32,7 @@ import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return}
-import uk.gov.hmrc.iossreturns.services.ReturnsService
+import uk.gov.hmrc.iossreturns.services.{CheckExclusionsService, ReturnsService}
 
 import java.time.{Clock, LocalDate, Month, ZoneId}
 import scala.concurrent.Future
@@ -46,6 +46,8 @@ class ReturnStatusControllerSpec
       .overrides(
         bind[AuthAction].to[FakeAuthAction]
       )
+
+  private val mockCheckExclusionsService: CheckExclusionsService = mock[CheckExclusionsService]
 
   ".getCurrentReturnsForIossNumber()" - {
     val stubClock: Clock = Clock.fixed(LocalDate.of(2022, 10, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
@@ -89,10 +91,11 @@ class ReturnStatusControllerSpec
         val mockReturnService = mock[ReturnsService]
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(Seq.empty)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
-        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
+        when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
@@ -101,7 +104,7 @@ class ReturnStatusControllerSpec
 
           status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(Seq(
-          ), false, false, iossNumber))
+          ), excluded = false, finalReturnsCompleted = false, iossNumber))
         }
       }
 
@@ -113,10 +116,11 @@ class ReturnStatusControllerSpec
           periods.dropRight(1).map(PeriodWithStatus(_, Complete)).toList ::: List(PeriodWithStatus(lastPeriod, Next))
         )
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
-        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
+        when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
@@ -124,7 +128,11 @@ class ReturnStatusControllerSpec
           val result = route(app, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(Seq(Return.fromPeriod(lastPeriod, Next, false, true)), false, false, iossNumber))
+          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
+            Seq(Return.fromPeriod(lastPeriod, Next, inProgress = false, isOldest = true)),
+            excluded = false,
+            finalReturnsCompleted = false,
+            iossNumber))
         }
       }
 
@@ -136,10 +144,11 @@ class ReturnStatusControllerSpec
           List(PeriodWithStatus(period2022SEPTEMBER, Due))
         )
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
-        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
+        when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
@@ -147,7 +156,11 @@ class ReturnStatusControllerSpec
           val result = route(app, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(Seq(Return.fromPeriod(period2022SEPTEMBER, Due, false, true)), false, false, iossNumber))
+          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
+            Seq(Return.fromPeriod(period2022SEPTEMBER, Due, inProgress = false, isOldest = true)),
+            excluded = false,
+            finalReturnsCompleted = false,
+            iossNumber))
         }
       }
 
@@ -159,21 +172,23 @@ class ReturnStatusControllerSpec
         val mockReturnService = mock[ReturnsService]
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periods.map(PeriodWithStatus(_, Overdue)))
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
-        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
+        when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
-        val returns = Return.fromPeriod(periods.head, Overdue, false, true) :: periods.tail.map(Return.fromPeriod(_, Overdue, false, false)).toList
+        val returns = Return.fromPeriod(periods.head, Overdue, inProgress = false, isOldest = true) ::
+          periods.tail.map(Return.fromPeriod(_, Overdue, inProgress = false, isOldest = false)).toList
 
         running(app) {
           val result = route(app, request).value
 
           status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
-            returns, false, false, iossNumber))
+            returns, excluded = false, finalReturnsCompleted = false, iossNumber))
         }
       }
 
@@ -189,10 +204,11 @@ class ReturnStatusControllerSpec
             List(PeriodWithStatus(lastPeriod, Due))
         )
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
-        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn None
+        when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
@@ -224,10 +240,11 @@ class ReturnStatusControllerSpec
           List(PeriodWithStatus(period2022AUGUST, Overdue), PeriodWithStatus(period2022SEPTEMBER, Excluded))
         )
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
-        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+        when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
@@ -238,7 +255,7 @@ class ReturnStatusControllerSpec
           status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
             Seq(
-              Return.fromPeriod(period2022AUGUST, Overdue, false, true)
+              Return.fromPeriod(period2022AUGUST, Overdue, inProgress = false, isOldest = true)
             ),
             excluded = true,
             finalReturnsCompleted = false,
@@ -256,10 +273,11 @@ class ReturnStatusControllerSpec
           List(PeriodWithStatus(period2022AUGUST, Complete), PeriodWithStatus(period2022SEPTEMBER, Excluded))
         )
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn true
-        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+        when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
@@ -293,10 +311,11 @@ class ReturnStatusControllerSpec
         )
 
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
-        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+        when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
@@ -333,10 +352,11 @@ class ReturnStatusControllerSpec
         )
 
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
-        when(mockReturnService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+        when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
+          .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 

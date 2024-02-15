@@ -127,7 +127,7 @@ class FinancialDataControllerSpec
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
 
-      when(paymentsService.getUnpaidPayments(any(), any())(any(), any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
+      when(paymentsService.getUnpaidPayments(any(), any(), any())(any(), any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
 
       val app = applicationBuilder().overrides(bind[PaymentsService].to(paymentsService))
         .build()
@@ -164,7 +164,7 @@ class FinancialDataControllerSpec
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
 
-      when(paymentsService.getUnpaidPayments(any(), any())(any(), any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
+      when(paymentsService.getUnpaidPayments(any(), any(), any())(any(), any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
 
       val app = applicationBuilder().overrides(bind[PaymentsService].to(paymentsService))
         .build()

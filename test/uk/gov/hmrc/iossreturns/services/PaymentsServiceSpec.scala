@@ -17,7 +17,9 @@
 package uk.gov.hmrc.iossreturns.services
 
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito
 import org.mockito.MockitoSugar.when
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
@@ -27,15 +29,31 @@ import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConn
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
-import uk.gov.hmrc.iossreturns.models.payments.Payment
+import uk.gov.hmrc.iossreturns.models.payments.{Charge, Payment, PaymentStatus}
+import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
 import java.time._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServiceSpecFixture with ScalaCheckPropertyChecks {
+class PaymentsServiceSpec extends SpecBase
+    with MockitoSugar
+    with PaymentsServiceSpecFixture
+    with ScalaCheckPropertyChecks
+    with BeforeAndAfterEach {
+
   implicit val hc: HeaderCarrier = HeaderCarrier()
   val someCommencementDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(3)
+
+  private val mockCheckExclusionService: CheckExclusionsService = mock[CheckExclusionsService]
+  private val mockVatReturnConnector: VatReturnConnector = mock[VatReturnConnector]
+  private val mockFinancialDataConnector: FinancialDataConnector = mock[FinancialDataConnector]
+
+  override def beforeEach(): Unit = {
+    Mockito.reset(mockCheckExclusionService)
+    Mockito.reset(mockVatReturnConnector)
+    Mockito.reset(mockFinancialDataConnector)
+  }
 
   "PaymentsService" - {
 
@@ -64,19 +82,17 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServic
 
       val inputFinancialData = financialData.copy(financialTransactions = Some(List(ft1, ft2, ft3, ft4, ft5, ft6)))
 
-      val vatReturnConnector = mock[VatReturnConnector]
-      val financialDataConnector = mock[FinancialDataConnector]
       val periodOverdueKey = "21AA"
       val periodDueKey = "21AD"
 
       val vatReturnOverdue = vatReturn.copy(periodKey = periodOverdueKey)
       val vatReturnDue = vatReturn.copy(periodKey = periodDueKey)
 
-      when(vatReturnConnector.get(iossNumber, Period.fromKey(periodOverdueKey)))
+      when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodOverdueKey)))
         .thenReturn(Future.successful(Right(vatReturnOverdue)))
-      when(vatReturnConnector.get(iossNumber, Period.fromKey(periodDueKey)))
+      when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodDueKey)))
         .thenReturn(Future.successful(Right(vatReturnDue)))
-      when(financialDataConnector.getFinancialData(any(), any()))
+      when(mockFinancialDataConnector.getFinancialData(any(), any()))
         .thenReturn(Future.successful[FinancialDataResponse](Right(Some(inputFinancialData))))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
@@ -85,16 +101,18 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServic
 
       val etmpObligation = obligationsResponse.obligations.head.copy(obligationDetails = List(obligationsDetail1, obligationsDetail2))
 
-      when(vatReturnConnector.getObligations(any(), any()))
+      when(mockVatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
+      when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
 
-      val result = service.getUnpaidPayments(iossNumber, someCommencementDate)
+      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+
+      val result = service.getUnpaidPayments(iossNumber, someCommencementDate, List.empty)
 
       whenReady(result) { r =>
-        val paymentOverdue = service.calculatePayment(vatReturnOverdue, Some(inputFinancialData))
-        val paymentDue = service.calculatePayment(vatReturnDue, Some(inputFinancialData))
+        val paymentOverdue = service.calculatePayment(vatReturnOverdue, Some(inputFinancialData), List.empty)
+        val paymentDue = service.calculatePayment(vatReturnDue, Some(inputFinancialData), List.empty)
 
         r mustBe List(paymentOverdue, paymentDue)
         paymentOverdue.amountOwed mustBe (transactionAmountOverdue1 + transactionAmountOverdue2)
@@ -115,31 +133,31 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServic
         .copy(taxPeriodFrom = Some(periodDue.firstDay), outstandingAmount = Some(BigDecimal(transactionAmount2)))
 
       val inputFinancialData = financialData.copy(financialTransactions = Some(List(ft1, ft2)))
-      val vatReturnConnector = mock[VatReturnConnector]
-      val financialDataConnector = mock[FinancialDataConnector]
 
       val periodKey1 = "21AI"
 
       val vatReturn1 = vatReturn.copy(periodKey = periodKey1)
 
-      when(vatReturnConnector.get(iossNumber, Period.fromKey(periodKey1)))
+      when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodKey1)))
         .thenReturn(Future.successful(Right(vatReturn1)))
 
-      when(financialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Right(Some(inputFinancialData))))
+      when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Right(Some(inputFinancialData))))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodKey1)
 
       val etmpObligation = obligationsResponse.obligations.head.copy(obligationDetails = List(obligationsDetail1))
 
-      when(vatReturnConnector.getObligations(any(), any()))
+      when(mockVatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
+      when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
 
-      val payment = service.calculatePayment(vatReturn1, Some(inputFinancialData))
+      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
-      val result: Future[List[Payment]] = service.getUnpaidPayments(iossNumber, someCommencementDate)
+      val payment = service.calculatePayment(vatReturn1, Some(inputFinancialData), List.empty)
+
+      val result: Future[List[Payment]] = service.getUnpaidPayments(iossNumber, someCommencementDate, List.empty)
 
       whenReady(result) { r =>
         r mustBe List(payment)
@@ -171,17 +189,14 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServic
 
       val inputFinancialData = financialData.copy(financialTransactions = Some(List(ft1, ft2, ft3, ft4)))
 
-      val vatReturnConnector = mock[VatReturnConnector]
-      val financialDataConnector = mock[FinancialDataConnector]
-
       val vatReturn1 = vatReturn.copy(periodKey = periodKey1)
       val vatReturn2 = vatReturn.copy(periodKey = periodKey2)
 
-      when(vatReturnConnector.get(iossNumber, Period.fromKey(periodKey1)))
+      when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodKey1)))
         .thenReturn(Future.successful(Right(vatReturn1)))
-      when(vatReturnConnector.get(iossNumber, Period.fromKey(periodKey2)))
+      when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodKey2)))
         .thenReturn(Future.successful(Right(vatReturn2)))
-      when(financialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful[FinancialDataResponse](Right(Some(inputFinancialData))))
+      when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful[FinancialDataResponse](Right(Some(inputFinancialData))))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodKey1)
@@ -189,15 +204,17 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServic
 
       val etmpObligation = obligationsResponse.obligations.head.copy(obligationDetails = List(obligationsDetail1, obligationsDetail2))
 
-      when(vatReturnConnector.getObligations(any(), any()))
+      when(mockVatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
+      when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
 
-      val result = service.getUnpaidPayments(iossNumber, someCommencementDate)
+      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
-      val payment1 = service.calculatePayment(vatReturn1, Some(inputFinancialData))
-      val payment2 = service.calculatePayment(vatReturn2, Some(inputFinancialData))
+      val result = service.getUnpaidPayments(iossNumber, someCommencementDate, List.empty)
+
+      val payment1 = service.calculatePayment(vatReturn1, Some(inputFinancialData), List.empty)
+      val payment2 = service.calculatePayment(vatReturn2, Some(inputFinancialData), List.empty)
 
       whenReady(result) { r =>
         r mustBe (List(payment1, payment2))
@@ -211,15 +228,12 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServic
       val periodKey1 = "21AI"
       val periodKey2 = "21AF"
 
-      val vatReturnConnector = mock[VatReturnConnector]
-      val financialDataConnector = mock[FinancialDataConnector]
-
       val vatReturn1 = vatReturn.copy(periodKey = periodKey1)
       val vatReturn2 = vatReturn.copy(periodKey = periodKey2)
 
-      when(vatReturnConnector.get(iossNumber, Period.fromKey(periodKey1)))
+      when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodKey1)))
         .thenReturn(Future.successful(Right(vatReturn1)))
-      when(vatReturnConnector.get(iossNumber, Period.fromKey(periodKey2)))
+      when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodKey2)))
         .thenReturn(Future.successful(Right(vatReturn2)))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
@@ -228,10 +242,12 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServic
 
       val etmpObligation = obligationsResponse.obligations.head.copy(obligationDetails = List(obligationsDetail1, obligationsDetail2))
 
-      when(vatReturnConnector.getObligations(any(), any()))
+      when(mockVatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
+      when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
+
+      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
       val inputFinancialDataWithTransactionsNone = financialData.copy(financialTransactions = None)
       val inputFinancialDataWithTransactionsSomeNil = financialData.copy(financialTransactions = Some(Nil))
@@ -242,12 +258,12 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServic
       )
 
       forAll(scenarios) { (inputFinancialData, title) => {
-        when(financialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Right(Some(inputFinancialData))))
+        when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Right(Some(inputFinancialData))))
 
-        val result = service.getUnpaidPayments(iossNumber, someCommencementDate)
+        val result = service.getUnpaidPayments(iossNumber, someCommencementDate, List.empty)
 
-        val payment1 = service.calculatePayment(vatReturn1, Some(inputFinancialData))
-        val payment2 = service.calculatePayment(vatReturn2, Some(inputFinancialData))
+        val payment1 = service.calculatePayment(vatReturn1, Some(inputFinancialData), List.empty)
+        val payment2 = service.calculatePayment(vatReturn2, Some(inputFinancialData), List.empty)
 
         s"when $title" in {
           whenReady(result) { r =>
@@ -260,21 +276,91 @@ class PaymentsServiceSpec extends SpecBase with MockitoSugar with PaymentsServic
       }
     }
 
+    ".calculatePayment" - {
+
+      "must calculate payment when a period is not excluded" in {
+
+        val updatedFinancialData: FinancialData = financialData.copy(
+          financialTransactions = Some(Seq(financialTransaction.copy(
+            taxPeriodFrom = Some(LocalDate.of(2023, 11, 1)),
+            taxPeriodTo = Some(LocalDate.of(2023, 11, 30)))
+          ))
+        )
+
+        when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
+        when(mockVatReturnConnector.get(any(), any())) thenReturn Right(vatReturn).toFuture
+        when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Right(Some(updatedFinancialData)).toFuture
+
+        val period: Period = Period.fromKey(vatReturn.periodKey)
+        val chargeForPeriod: Charge = updatedFinancialData.getChargeForPeriod(period).get
+
+        val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+
+        val expectedResult = Payment(
+          period = period,
+          amountOwed = chargeForPeriod.outstandingAmount,
+          dateDue = period.paymentDeadline,
+          paymentStatus = PaymentStatus.Partial
+        )
+        val result = service.calculatePayment(vatReturn, Some(updatedFinancialData), List(arbitraryEtmpExclusion.arbitrary.sample.value))
+
+        result mustBe expectedResult
+      }
+
+      "must calculate payment when a period is excluded" in {
+
+        when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn true
+
+        val period: Period = Period.fromKey(vatReturn.periodKey)
+
+        val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+
+        val expectedResult = Payment(
+          period = period,
+          amountOwed = vatReturn.totalVATAmountDueForAllMSGBP,
+          dateDue = period.paymentDeadline,
+          paymentStatus = PaymentStatus.Excluded
+        )
+        val result = service.calculatePayment(vatReturn, Some(financialData), List(arbitraryEtmpExclusion.arbitrary.sample.value))
+
+        result mustBe expectedResult
+      }
+
+      "when financial data unavailable must use vat return total vat amount due" in {
+
+        when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
+        when(mockVatReturnConnector.get(any(), any())) thenReturn Right(vatReturn).toFuture
+        when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Future.failed(new Exception("Some exception"))
+
+        val period: Period = Period.fromKey(vatReturn.periodKey)
+
+        val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+
+        val expectedResult = Payment(
+          period = period,
+          amountOwed = vatReturn.totalVATAmountDueForAllMSGBP,
+          dateDue = period.paymentDeadline,
+          paymentStatus = PaymentStatus.Unknown
+        )
+        val result = service.calculatePayment(vatReturn, Some(financialData), List(arbitraryEtmpExclusion.arbitrary.sample.value))
+
+        result mustBe expectedResult
+
+      }
+    }
+
     "filterIfPaymentOutstanding correctly: " +
       "if some payments 'FOR THAT PERIOD' made with outstanding amount " +
       "or no payments made 'FOR THAT PERIOD' but there is vat amount 'FOR THAT PERIOD'" in {
 
       val inputFinancialDataWithNoTransactions = financialData.copy(financialTransactions = None)
 
-      val vatReturnConnector = mock[VatReturnConnector]
-      val financialDataConnector = mock[FinancialDataConnector]
-
       val periodKey1 = "21AI"
 
       val nilVatReturn = vatReturn.copy(
         periodKey = periodKey1, goodsSupplied = Nil, totalVATAmountDueForAllMSGBP = BigDecimal(0))
 
-      val service = new PaymentsService(financialDataConnector, vatReturnConnector, stubClockAtArbitraryDate)
+      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
       val vatCorrectionAmount = 50
 
@@ -336,7 +422,7 @@ trait PaymentsServiceSpecFixture { self: SpecBase =>
     ZoneOffset.UTC
   )
 
-  protected val zonedDateTimeNow = ZonedDateTime.now(stubClockAtArbitraryDate).plusSeconds(1)
+  protected val zonedDateTimeNow: ZonedDateTime = ZonedDateTime.now(stubClockAtArbitraryDate).plusSeconds(1)
 
   protected val dateFrom: LocalDate = zonedNow.toLocalDate.minusMonths(1)
   protected val dateTo: LocalDate = zonedNow.toLocalDate

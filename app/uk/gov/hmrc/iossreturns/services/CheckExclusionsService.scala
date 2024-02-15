@@ -17,14 +17,32 @@
 package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.iossreturns.config.Constants.excludedReturnAndPaymentExpiry
+import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
+import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusionReason.Reversal
 
 import java.time.{Clock, LocalDate}
 import javax.inject.Inject
 
 class CheckExclusionsService @Inject()(clock: Clock) {
 
-  def hasActiveWindowExpired(dueDate: LocalDate): Boolean = {
+  private def hasActiveWindowExpired(dueDate: LocalDate): Boolean = {
     val today = LocalDate.now(clock)
     today.isAfter(dueDate.plusYears(excludedReturnAndPaymentExpiry))
+  }
+
+  def getLastExclusionWithoutReversal(exclusions: List[EtmpExclusion]): Option[EtmpExclusion] = {
+    // Even though API is array ETMP only return single item
+    exclusions.headOption.filterNot(_.exclusionReason == Reversal)
+  }
+
+  def isPeriodExcluded(period: Period, exclusions: List[EtmpExclusion]): Boolean = {
+    val excluded = getLastExclusionWithoutReversal(exclusions)
+
+    excluded match {
+      case Some(excluded) if hasActiveWindowExpired(period.paymentDeadline) ||
+        (excluded.effectiveDate.isBefore(period.firstDay) || excluded.effectiveDate == period.firstDay) => true
+      case _ => false
+    }
   }
 }
