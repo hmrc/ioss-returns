@@ -169,7 +169,7 @@ class ReturnControllerSpec
   }
 
   ".get" - {
-    val period = Period(2023, Month.NOVEMBER)
+    val period = StandardPeriod(2023, Month.NOVEMBER)
 
     lazy val request = FakeRequest(GET, routes.ReturnController.get(period).url)
 
@@ -223,7 +223,7 @@ class ReturnControllerSpec
   }
 
   ".getForIossNumber" - {
-    val period = Period(2023, Month.NOVEMBER)
+    val period = StandardPeriod(2023, Month.NOVEMBER)
 
     lazy val request = FakeRequest(GET, routes.ReturnController.getForIossNumber(period, iossNumber).url)
 

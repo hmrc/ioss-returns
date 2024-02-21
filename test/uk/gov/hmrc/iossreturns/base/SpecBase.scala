@@ -28,7 +28,7 @@ trait SpecBase
   protected val vrn: Vrn = Vrn("123456789")
 
   val iossNumber = "IM9001234567"
-  def period: Period = Period(2021, Month.NOVEMBER)
+  def period: Period = StandardPeriod(2021, Month.NOVEMBER)
 
   val userAnswersId: String = "12345-credId"
   val testCredentials: Credentials = Credentials(userAnswersId, "GGW")

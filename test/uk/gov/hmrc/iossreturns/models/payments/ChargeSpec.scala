@@ -18,7 +18,7 @@ package uk.gov.hmrc.iossreturns.models.payments
 
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.StandardPeriod
 
 import java.time.Month
 
@@ -26,9 +26,9 @@ class ChargeSpec extends SpecBase with ScalaCheckPropertyChecks {
 
   "Charge" - {
     "must" - {
-      val chargeOutStandingAmountEqualToOriginalAmount = Charge(Period(2020, Month.MAY), BigDecimal(10), BigDecimal(10), BigDecimal(10))
+      val chargeOutStandingAmountEqualToOriginalAmount = Charge(StandardPeriod(2020, Month.MAY), BigDecimal(10), BigDecimal(10), BigDecimal(10))
 
-      val chargeOutStandingAmountNotEqualToOriginalAmount = Charge(Period(2020, Month.MAY), BigDecimal(10), BigDecimal(7), BigDecimal(3))
+      val chargeOutStandingAmountNotEqualToOriginalAmount = Charge(StandardPeriod(2020, Month.MAY), BigDecimal(10), BigDecimal(7), BigDecimal(3))
 
       val scenarios = Table[Option[Charge], PaymentStatus](
         ("Charge", "Payment Status"),
