@@ -131,10 +131,18 @@ class ReturnsService @Inject()(
     checkExclusionsService.getLastExclusionWithoutReversal(exclusions) match {
       case Some(EtmpExclusion(_, _, effectiveDate, _)) =>
         periodsWithStatus
-          .exists(periodWithStatus =>
-            periodWithStatus.period == Period.getRunningPeriod(effectiveDate) &&
+          .exists { periodWithStatus =>
+
+            val runningPeriod = Period.getRunningPeriod(effectiveDate)
+
+            val periodToCheck = if(runningPeriod.firstDay == effectiveDate) {
+              runningPeriod.getPrevious()
+            } else {
+              runningPeriod
+            }
+            periodWithStatus.period == periodToCheck &&
               periodWithStatus.status == SubmissionStatus.Complete
-          )
+          }
       case _ => false
     }
   }
