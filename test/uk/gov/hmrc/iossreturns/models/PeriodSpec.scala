@@ -133,4 +133,25 @@ class PeriodSpec
     }
   }
 
+  ".isBefore" - {
+
+    "should return true when current period is before other period" in {
+      val currentPeriod = StandardPeriod(2022, Month.JANUARY)
+      val otherPeriod = StandardPeriod(2022, Month.FEBRUARY)
+
+      val result = currentPeriod.isBefore(otherPeriod)
+
+      assert(result)
+    }
+
+    "should return false when current period is before other period" in {
+      val currentPeriod = StandardPeriod(2022, Month.JANUARY)
+      val otherPeriod = StandardPeriod(2022, Month.FEBRUARY)
+
+      val result = otherPeriod.isBefore(currentPeriod)
+
+      assert(!result)
+    }
+  }
+
 }

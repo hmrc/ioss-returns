@@ -18,7 +18,7 @@ package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.Period.{getNext, getPrevious, isBefore}
+import uk.gov.hmrc.iossreturns.models.Period.{getNext, getPrevious}
 import uk.gov.hmrc.iossreturns.models.{Period, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion

@@ -35,6 +35,13 @@ trait Period {
   val paymentDeadline: LocalDate =
     LocalDate.of(year, month, 1).plusMonths(2).minusDays(1)
 
+  def isBefore(other: Period): Boolean = {
+    val yearMonth: YearMonth = YearMonth.of(year, month)
+    val yearMonthOther: YearMonth = YearMonth.of(other.year, other.month)
+
+    yearMonth.isBefore(yearMonthOther)
+  }
+
 }
 
 case class StandardPeriod(year: Int, month: Month) extends Period {
@@ -129,16 +136,6 @@ object Period {
       StandardPeriod(currentPeriod.year - 1, Month.DECEMBER)
     else
       StandardPeriod(currentPeriod.year, currentPeriod.month.minus(1))
-  }
-
-  def isBefore(other: Period): Boolean = {
-    val standardPeriod = StandardPeriod(other.year, other.month)
-    val year = standardPeriod.year
-    val month = standardPeriod.month
-    val yearMonth: YearMonth = YearMonth.of(year, month)
-    val yearMonthOther: YearMonth = YearMonth.of(other.year, other.month)
-
-    yearMonth.isBefore(yearMonthOther)
   }
 
   def getRunningPeriod(date: LocalDate): Period =
