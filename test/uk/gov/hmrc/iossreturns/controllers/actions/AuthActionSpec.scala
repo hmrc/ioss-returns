@@ -11,17 +11,18 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
-import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
+import uk.gov.hmrc.auth.core.retrieve.{~, Retrieval}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.TestAuthRetrievals._
 import uk.gov.hmrc.iossreturns.models.RegistrationWrapper
+import uk.gov.hmrc.iossreturns.services.AccountService
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
 
@@ -34,10 +35,12 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
   private val registrationWrapper: RegistrationWrapper = mock[RegistrationWrapper]
   private val mockAuthConnector: AuthConnector = mock[AuthConnector]
   private val mockRegistrationConnector: RegistrationConnector = mock[RegistrationConnector]
+  private val mockAccountService: AccountService = mock[AccountService]
 
   override def beforeEach(): Unit = {
     Mockito.reset(mockAuthConnector)
     Mockito.reset(mockRegistrationConnector)
+    Mockito.reset(mockAccountService)
   }
 
   class Harness(authAction: AuthAction) {
@@ -64,8 +67,9 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
               .thenReturn(Future.successful(Some("id") ~ vatAndIossEnrolment))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
+            when(mockAccountService.getLatestAccount()(any())) thenReturn iossNumber.toFuture
 
-            val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
+            val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
             val controller = new Harness(action)
             val result = controller.onPageLoad()(FakeRequest())
 
@@ -93,7 +97,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
               .thenReturn(Future.successful(Some("id") ~ Enrolments(Set.empty)))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
-            val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
+            val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
             val controller = new Harness(action)
             val result = controller.onPageLoad()(FakeRequest())
 
@@ -121,7 +125,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
               .thenReturn(Future.successful(Some("id") ~ iossEnrolment))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
-            val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
+            val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
             val controller = new Harness(action)
             val result = controller.onPageLoad()(FakeRequest())
 
@@ -149,7 +153,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
               .thenReturn(Future.successful(Some("id") ~ vatEnrolment))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
-            val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
+            val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
             val controller = new Harness(action)
             val result = controller.onPageLoad()(FakeRequest())
 
@@ -175,7 +179,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
 
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
-            val authAction = new AuthActionImpl(new FakeFailingAuthConnector(new MissingBearerToken), bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector)
+            val authAction = new AuthActionImpl(new FakeFailingAuthConnector(new MissingBearerToken), bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
             val controller = new Harness(authAction)
             val result = controller.onPageLoad()(FakeRequest())
 

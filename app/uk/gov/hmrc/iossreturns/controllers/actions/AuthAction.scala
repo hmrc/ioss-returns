@@ -17,8 +17,8 @@
 package uk.gov.hmrc.iossreturns.controllers.actions
 
 import play.api.Logging
-import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
+import play.api.mvc.Results.Unauthorized
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
@@ -26,6 +26,7 @@ import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
+import uk.gov.hmrc.iossreturns.services.AccountService
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.Inject
@@ -37,7 +38,8 @@ class AuthActionImpl @Inject()(
                                 override val authConnector: AuthConnector,
                                 val parser: BodyParsers.Default,
                                 config: AppConfig,
-                                registrationConnector: RegistrationConnector
+                                registrationConnector: RegistrationConnector,
+                                accountService: AccountService
                               )(implicit val executionContext: ExecutionContext)
   extends AuthAction with AuthorisedFunctions with Logging {
 
@@ -50,11 +52,14 @@ class AuthActionImpl @Inject()(
       CredentialStrength(CredentialStrength.strong)).retrieve(Retrievals.internalId and Retrievals.allEnrolments) {
 
       case Some(internalId) ~ enrolments =>
+
         (findVrnFromEnrolments(enrolments), findIossFromEnrolments(enrolments)) match {
-          case (Some(vrn), Some(iossNumber)) =>
-            registrationConnector.getRegistration().flatMap { registrationWrapper =>
-              block(AuthorisedRequest(request, internalId, vrn, iossNumber, registrationWrapper.registration))
-            }
+          case (Some(vrn), Some(_)) =>
+            for {
+              latestIossNumber <- accountService.getLatestAccount()
+              registrationWrapper <- registrationConnector.getRegistration()
+              result <- block(AuthorisedRequest(request, internalId, vrn, latestIossNumber, registrationWrapper.registration))
+            } yield result
           case _ =>
             logger.warn(s"Insufficient enrolments")
             throw InsufficientEnrolments("Insufficient enrolments")
@@ -64,7 +69,7 @@ class AuthActionImpl @Inject()(
         logger.warn("Unable to retrieve authorisation data")
         throw new UnauthorizedException("Unable to retrieve authorisation data")
     } recover {
-      case  a: AuthorisationException =>
+      case a: AuthorisationException =>
         logger.warn(s"Unauthorised given $a")
         Unauthorized
     }

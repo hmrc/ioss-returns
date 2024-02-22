@@ -20,6 +20,7 @@ import play.api.Configuration
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpErrorFunctions}
 import uk.gov.hmrc.iossreturns.config.Service
 import uk.gov.hmrc.iossreturns.models.RegistrationWrapper
+import uk.gov.hmrc.iossreturns.models.enrolments.EACDEnrolments
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,4 +32,7 @@ class RegistrationConnector @Inject()(config: Configuration, httpClient: HttpCli
 
   def getRegistration()(implicit hc: HeaderCarrier): Future[RegistrationWrapper] =
     httpClient.GET[RegistrationWrapper](s"$baseUrl/registration")
+
+  def getAccounts()(implicit hc: HeaderCarrier): Future[EACDEnrolments] =
+    httpClient.GET[EACDEnrolments](s"$baseUrl/accounts")
 }
