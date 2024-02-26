@@ -27,6 +27,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
 import uk.gov.hmrc.iossreturns.services.AccountService
+import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.Inject
@@ -53,16 +54,21 @@ class AuthActionImpl @Inject()(
 
       case Some(internalId) ~ enrolments =>
 
-        (findVrnFromEnrolments(enrolments), findIossFromEnrolments(enrolments)) match {
-          case (Some(vrn), Some(_)) =>
-            for {
-              latestIossNumber <- accountService.getLatestAccount()
-              registrationWrapper <- registrationConnector.getRegistration()
-              result <- block(AuthorisedRequest(request, internalId, vrn, latestIossNumber, registrationWrapper.registration))
-            } yield result
-          case _ =>
-            logger.warn(s"Insufficient enrolments")
-            throw InsufficientEnrolments("Insufficient enrolments")
+        val hcWithSession = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+        val futureMaybeIossNumber = findIossFromEnrolments(enrolments)(hcWithSession)
+
+        futureMaybeIossNumber.flatMap { maybeIossNumber =>
+
+          (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
+            case (Some(vrn), Some(latestIossNumber)) =>
+              for {
+                registrationWrapper <- registrationConnector.getRegistration()
+                result <- block(AuthorisedRequest(request, internalId, vrn, latestIossNumber, registrationWrapper.registration))
+              } yield result
+            case _ =>
+              logger.warn(s"Insufficient enrolments")
+              throw InsufficientEnrolments("Insufficient enrolments")
+          }
         }
 
       case _ =>
@@ -86,7 +92,14 @@ class AuthActionImpl @Inject()(
           enrolment.identifiers.find(_.key == "VATRegNo").map(e => Vrn(e.value))
       }
 
-  private def findIossFromEnrolments(enrolments: Enrolments): Option[String] = {
-    enrolments.enrolments.find(_.key == config.iossEnrolment).flatMap(_.identifiers.find(_.key == "IOSSNumber").map(_.value))
+  private def findIossFromEnrolments(enrolments: Enrolments)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+    val filteredIossNumbers = enrolments.enrolments.filter(_.key == config.iossEnrolment).flatMap(_.identifiers.filter(_.key == "IOSSNumber").map(_.value)).toSeq
+
+    filteredIossNumbers match {
+      case firstEnrolment :: Nil => Some(firstEnrolment).toFuture
+      case multipleEnrolments if multipleEnrolments.nonEmpty =>
+        accountService.getLatestAccount().map(x => Some(x))
+      case _ => None.toFuture
+    }
   }
 }
