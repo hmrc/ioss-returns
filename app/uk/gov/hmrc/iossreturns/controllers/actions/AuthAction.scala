@@ -50,12 +50,12 @@ class AuthActionImpl @Inject()(
 
     authorised(AuthProviders(AuthProvider.GovernmentGateway) and
       (AffinityGroup.Individual or AffinityGroup.Organisation) and
-      CredentialStrength(CredentialStrength.strong)).retrieve(Retrievals.internalId and Retrievals.allEnrolments) {
+      CredentialStrength(CredentialStrength.strong)).retrieve(Retrievals.credentials and Retrievals.internalId and Retrievals.allEnrolments) {
 
-      case Some(internalId) ~ enrolments =>
+      case Some(credentials) ~ Some(internalId) ~ enrolments =>
 
         val hcWithSession = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-        val futureMaybeIossNumber = findIossFromEnrolments(enrolments)(hcWithSession)
+        val futureMaybeIossNumber = findIossFromEnrolments(enrolments, credentials.providerId)(hcWithSession)
 
         futureMaybeIossNumber.flatMap { maybeIossNumber =>
 
@@ -92,13 +92,13 @@ class AuthActionImpl @Inject()(
           enrolment.identifiers.find(_.key == "VATRegNo").map(e => Vrn(e.value))
       }
 
-  private def findIossFromEnrolments(enrolments: Enrolments)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+  private def findIossFromEnrolments(enrolments: Enrolments, credId: String)(implicit hc: HeaderCarrier): Future[Option[String]] = {
     val filteredIossNumbers = enrolments.enrolments.filter(_.key == config.iossEnrolment).flatMap(_.identifiers.filter(_.key == "IOSSNumber").map(_.value)).toSeq
 
     filteredIossNumbers match {
       case firstEnrolment :: Nil => Some(firstEnrolment).toFuture
       case multipleEnrolments if multipleEnrolments.nonEmpty =>
-        accountService.getLatestAccount().map(x => Some(x))
+        accountService.getLatestAccount(credId).map(x => Some(x))
       case _ => None.toFuture
     }
   }

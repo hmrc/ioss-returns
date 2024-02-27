@@ -61,11 +61,11 @@ class AccountServiceSpec extends SpecBase with MockitoSugar with BeforeAndAfterE
         )
       ))
 
-      when(mockRegistrationConnector.getAccounts()(any())) thenReturn enrolments.toFuture
+      when(mockRegistrationConnector.getAccounts(any())(any())) thenReturn enrolments.toFuture
       when(mockAppConfig.iossEnrolment) thenReturn enrolmentKey
       val service = new AccountService(mockAppConfig, mockRegistrationConnector)
 
-      val result = service.getLatestAccount().futureValue
+      val result = service.getLatestAccount(testCredentials.providerId).futureValue
 
       result mustBe "IM9009876543"
     }
