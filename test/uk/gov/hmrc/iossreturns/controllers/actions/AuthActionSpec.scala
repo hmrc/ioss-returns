@@ -11,7 +11,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
-import uk.gov.hmrc.auth.core.retrieve.{~, Retrieval}
+import uk.gov.hmrc.auth.core.retrieve.{~, Credentials, Retrieval}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.config.AppConfig
@@ -26,7 +26,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
 
-  private type RetrievalsType = Option[String] ~ Enrolments
+  private type RetrievalsType = Option[Credentials] ~ Option[String] ~ Enrolments
 
   private val vatEnrolment = Enrolments(Set(Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", "123456789")), "Activated")))
   private val vatAndIossEnrolment = Enrolments(Set(Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", "123456789")), "Activated"), Enrolment("HMRC-IOSS-ORG", Seq(EnrolmentIdentifier("IOSSNumber", "IM9001234567")), "Activated")))
@@ -65,9 +65,9 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some("id") ~ vatAndIossEnrolment))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatAndIossEnrolment))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
-            when(mockAccountService.getLatestAccount()(any())) thenReturn iossNumber.toFuture
+            when(mockAccountService.getLatestAccount(any())(any())) thenReturn iossNumber.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
             val controller = new Harness(action)
@@ -94,7 +94,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some("id") ~ Enrolments(Set.empty)))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ Enrolments(Set.empty)))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
@@ -122,7 +122,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some("id") ~ iossEnrolment))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ iossEnrolment))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
@@ -150,7 +150,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some("id") ~ vatEnrolment))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatEnrolment))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)

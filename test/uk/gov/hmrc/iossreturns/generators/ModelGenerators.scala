@@ -20,12 +20,13 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.option
 import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.enrolments.{EACDEnrolment, EACDEnrolments, EACDIdentifiers}
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.etmp.registration._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 import uk.gov.hmrc.iossreturns.models.payments.Charge
 
-import java.time.{Instant, LocalDate, LocalDateTime, Month, ZoneId, ZonedDateTime}
+import java.time.{Instant, LocalDate, LocalDateTime, Month, ZonedDateTime, ZoneId}
 import java.time.temporal.ChronoUnit
 import scala.math.BigDecimal.RoundingMode
 
@@ -460,11 +461,11 @@ trait ModelGenerators {
   implicit val arbitraryEtmpPreviousEURegistrationDetails: Arbitrary[EtmpPreviousEuRegistrationDetails] = {
     Arbitrary {
       for {
-        issuedBy <- arbitrary[String]
-        registrationNumber <- arbitrary[String]
+        issuedBy <- Gen.alphaStr
+        registrationNumber <- Gen.alphaStr
         schemeType <- Gen.oneOf(SchemeType.values)
-        intermediaryNumber <- Gen.option(arbitrary[String])
-      } yield registration.EtmpPreviousEuRegistrationDetails(issuedBy, registrationNumber, schemeType, intermediaryNumber)
+        intermediaryNumber <- Gen.alphaStr
+      } yield registration.EtmpPreviousEuRegistrationDetails(issuedBy, registrationNumber, schemeType, Some(intermediaryNumber))
     }
   }
 
@@ -525,5 +526,42 @@ trait ModelGenerators {
     } yield RegistrationWrapper(
       etmpRegistration
     )
+  }
+
+  implicit val arbitraryEACDIdentifiers: Arbitrary[EACDIdentifiers] = {
+    Arbitrary {
+      for {
+        key <- Gen.alphaStr
+        value <- Gen.alphaStr
+      } yield EACDIdentifiers(
+        key = key,
+        value = value
+      )
+    }
+  }
+
+  implicit val arbitraryEACDEnrolment: Arbitrary[EACDEnrolment] = {
+    Arbitrary {
+      for {
+        service <- Gen.alphaStr
+        state <- Gen.alphaStr
+        identifiers <- Gen.listOfN(2, arbitraryEACDIdentifiers.arbitrary)
+      } yield EACDEnrolment(
+        service = service,
+        state = state,
+        activationDate = Some(LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)),
+        identifiers = identifiers
+      )
+    }
+  }
+
+  implicit val arbitraryEACDEnrolments: Arbitrary[EACDEnrolments] = {
+    Arbitrary {
+      for {
+        enrolments <- Gen.listOfN(2, arbitraryEACDEnrolment.arbitrary)
+      } yield EACDEnrolments(
+        enrolments = enrolments
+      )
+    }
   }
 }

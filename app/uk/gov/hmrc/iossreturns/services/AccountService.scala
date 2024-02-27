@@ -28,8 +28,8 @@ class AccountService @Inject()(
                                 registrationConnector: RegistrationConnector
                               )(implicit ec: ExecutionContext) {
 
-  def getLatestAccount()(implicit hc: HeaderCarrier): Future[String] = {
-    registrationConnector.getAccounts().map { accounts =>
+  def getLatestAccount(credId: String)(implicit hc: HeaderCarrier): Future[String] = {
+    registrationConnector.getAccounts(credId).map { accounts =>
       accounts.enrolments
         .filter(_.activationDate.isDefined)
         .maxBy(_.activationDate.get)

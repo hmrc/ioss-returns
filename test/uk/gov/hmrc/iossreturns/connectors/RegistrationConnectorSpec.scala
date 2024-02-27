@@ -8,6 +8,7 @@ import play.api.test.Helpers.running
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.RegistrationWrapper
+import uk.gov.hmrc.iossreturns.models.enrolments.EACDEnrolments
 
 class RegistrationConnectorSpec extends SpecBase with WireMockHelper {
 
@@ -39,5 +40,29 @@ class RegistrationConnectorSpec extends SpecBase with WireMockHelper {
         result mustBe registrationWrapper
       }
     }
+  }
+
+  ".getAccounts" - {
+    val userId = "user-123456"
+    val url = s"/ioss-registration/accounts/$userId"
+
+    "must return a registration when the server provides one" in {
+
+      val app = application
+
+      running(app) {
+        val connector = app.injector.instanceOf[RegistrationConnector]
+        val eACDEnrolments = arbitrary[EACDEnrolments].sample.value
+
+        val responseBody = Json.toJson(eACDEnrolments).toString
+
+        server.stubFor(get(urlEqualTo(url)).willReturn(ok().withBody(responseBody)))
+
+        val result = connector.getAccounts(userId).futureValue
+
+        result mustEqual eACDEnrolments
+      }
+    }
+
   }
 }
