@@ -54,8 +54,7 @@ class AuthActionImpl @Inject()(
 
       case Some(credentials) ~ Some(internalId) ~ enrolments =>
 
-        val hcWithSession = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-        val futureMaybeIossNumber = findIossFromEnrolments(enrolments, credentials.providerId)(hcWithSession)
+        val futureMaybeIossNumber = findIossFromEnrolments(enrolments, credentials.providerId)
 
         futureMaybeIossNumber.flatMap { maybeIossNumber =>
 
