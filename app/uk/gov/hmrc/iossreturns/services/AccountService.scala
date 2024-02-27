@@ -17,14 +17,12 @@
 package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class AccountService @Inject()(
-                                appConfig: AppConfig,
                                 registrationConnector: RegistrationConnector
                               )(implicit ec: ExecutionContext) {
 
@@ -34,7 +32,7 @@ class AccountService @Inject()(
         .filter(_.activationDate.isDefined)
         .maxBy(_.activationDate.get)
         .identifiers
-        .filter(_.key == appConfig.iossEnrolment)
+        .filter(_.key == "IOSSNumber")
         .head
         .value
     }
