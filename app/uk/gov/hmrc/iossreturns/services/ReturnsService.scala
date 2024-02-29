@@ -91,14 +91,15 @@ class ReturnsService @Inject()(
 
   def getAllPeriodsBetween(commencementDate: LocalDate, endDate: LocalDate): List[Period] = {
     val startPeriod = Period(commencementDate.getYear, commencementDate.getMonth)
-    val endPeriod = Period(endDate.getYear, endDate.getMonth)
+    getPeriodsUntilDate(startPeriod, endDate)
+  }
 
-    val lastPeriod = if (endDate.isBefore(endPeriod.lastDay))
-      endPeriod.getPrevious()
-    else
-      endPeriod
-
-    getAllPeriodsUntil(Nil, startPeriod, lastPeriod)
+  private def getPeriodsUntilDate(currentPeriod: Period, endDate: LocalDate): List[Period] = {
+    if (currentPeriod.lastDay.isBefore(endDate)) {
+      List(currentPeriod) ++ getPeriodsUntilDate(currentPeriod.getNext(), endDate)
+    } else {
+      List.empty
+    }
   }
 
   @tailrec
