@@ -102,16 +102,6 @@ class ReturnsService @Inject()(
     }
   }
 
-  @tailrec
-  private def getAllPeriodsUntil(periodsUpToNow: List[Period], startPeriod: Period, endPeriod: Period): List[Period] = {
-    if (endPeriod.isBefore(startPeriod))
-      Nil
-    else if (startPeriod == endPeriod)
-      startPeriod :: periodsUpToNow
-    else
-      getAllPeriodsUntil(startPeriod :: periodsUpToNow, startPeriod.getNext(), endPeriod)
-  }
-
   def decideStatus(period: Period, fulfilledPeriods: List[Period], exclusions: List[EtmpExclusion]): PeriodWithStatus = {
     if (checkExclusionsService.isPeriodExcluded(period, exclusions)) {
       PeriodWithStatus(period, SubmissionStatus.Excluded)
