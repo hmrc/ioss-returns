@@ -99,9 +99,10 @@ class ReturnsServiceSpec
     val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
     val scenarios = Table[LocalDate, LocalDate, List[Period], String](
       ("startDate", "endDate", "expected result", "title"),
-      (stubbedNow.minusMonths(3), stubbedNow, List(period2022SEPTEMBER, period2022AUGUST, period2022JULY), "get all periods from commencement date to date, excluding the current period because last day is not the end date of the current period"),
-      (stubbedNow.minusMonths(3), stubbedNow.plusMonths(1).minusDays(1), List(period2022SEPTEMBER.getNext(), period2022SEPTEMBER, period2022AUGUST, period2022JULY), "get all periods from commencement date to end date being the last day of the period, thus including the current period"),
-      (stubbedNow.plusMonths(1), stubbedNow, Nil, "return no periods if startDate is in the future, and end date is now.")
+      (stubbedNow.minusMonths(3), stubbedNow, List(period2022JULY, period2022AUGUST, period2022SEPTEMBER), "get all periods from commencement date to date, excluding the current period because last day is not the end date of the current period"),
+      (stubbedNow.minusMonths(3), stubbedNow.plusMonths(1).withDayOfMonth(1).minusDays(1), List(period2022JULY, period2022AUGUST, period2022SEPTEMBER), "get all periods from commencement date to end date being the last day of the period, thus including the current period"),
+      (stubbedNow.plusMonths(1), stubbedNow, Nil, "return no periods if startDate is in the future, and end date is now."),
+      (LocalDate.of(2024, 2, 10), LocalDate.of(2024, 2, 29), Nil, "Return empty when today is a leap day and commencement day is a leap day")
     )
 
 
@@ -168,10 +169,10 @@ class ReturnsServiceSpec
 
     val scenarios = Table[LocalDate, List[Period], List[Period], List[EtmpExclusion], List[PeriodWithStatus], String](
       ("period", "vat return", "excludedPeriods", "exclusions", "expected result", "title"),
-      (stubbedNow.minusMonths(2), List(period2022SEPTEMBER, period2022AUGUST), Nil, Nil, List(PeriodWithStatus(period2022SEPTEMBER, Complete), PeriodWithStatus(period2022AUGUST, Complete), PeriodWithStatus(currentPeriod, Next)), "aif all periods return vat returns(all complete) so add next for next period"),
-      (stubbedNow.minusMonths(3), List(period2022JULY), List(period2022SEPTEMBER, period2022AUGUST), List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Excluded), PeriodWithStatus(period2022JULY, Complete)), "exclusion for next period after effective date"),
-      (stubbedNow.minusMonths(3), List.empty, List(period2022SEPTEMBER, period2022AUGUST), List(exclusion), List(PeriodWithStatus(period2022SEPTEMBER, Excluded), PeriodWithStatus(period2022AUGUST, Excluded), PeriodWithStatus(period2022JULY, Overdue)), "Overdue, if vat return can not be found for period - with exclusion"),
-      (stubbedNow.minusMonths(2), List.empty, Nil, Nil, List(PeriodWithStatus(period2022SEPTEMBER, Due), PeriodWithStatus(period2022AUGUST, Overdue)), "verdue, if vat return can not be found for period - without exclusion for last month, so last month due")
+      (stubbedNow.minusMonths(2), List(period2022AUGUST, period2022SEPTEMBER), Nil, Nil, List(PeriodWithStatus(period2022AUGUST, Complete), PeriodWithStatus(period2022SEPTEMBER, Complete), PeriodWithStatus(currentPeriod, Next)), "aif all periods return vat returns(all complete) so add next for next period"),
+      (stubbedNow.minusMonths(3), List(period2022JULY), List(period2022AUGUST, period2022SEPTEMBER), List(exclusion), List(PeriodWithStatus(period2022JULY, Complete), PeriodWithStatus(period2022AUGUST, Excluded), PeriodWithStatus(period2022SEPTEMBER, Excluded)), "exclusion for next period after effective date"),
+      (stubbedNow.minusMonths(3), List.empty, List(period2022AUGUST, period2022SEPTEMBER), List(exclusion), List(PeriodWithStatus(period2022JULY, Overdue), PeriodWithStatus(period2022AUGUST, Excluded), PeriodWithStatus(period2022SEPTEMBER, Excluded)), "Overdue, if vat return can not be found for period - with exclusion"),
+      (stubbedNow.minusMonths(2), List.empty, Nil, Nil, List(PeriodWithStatus(period2022AUGUST, Overdue), PeriodWithStatus(period2022SEPTEMBER, Due)), "verdue, if vat return can not be found for period - without exclusion for last month, so last month due")
     )
 
     forAll(scenarios) {
