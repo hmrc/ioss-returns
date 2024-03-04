@@ -33,11 +33,21 @@ import scala.concurrent.{ExecutionContext, Future}
 class ReturnStatusController @Inject()(
                                         cc: DefaultAuthenticatedControllerComponents,
                                         returnsService: ReturnsService,
-                                        checkExclusionsService: CheckExclusionsService,
+                                        checkExclusionsService: CheckExclusionsService
                                       )(implicit ec: ExecutionContext) {
   private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     .withLocale(Locale.UK)
     .withZone(ZoneId.systemDefault())
+
+  def listStatuses(commencementDate: LocalDate): Action[AnyContent] = cc.auth().async {
+    implicit request =>
+      val excludedTrader = request.registration.exclusions.toList
+      val periodWithStatuses = returnsService.getStatuses(request.iossNumber, commencementDate, excludedTrader)
+
+      periodWithStatuses.map( { pws =>
+        Ok(Json.toJson(pws))
+      })
+  }
 
   def getCurrentReturnsForIossNumber(iossNumber: String): Action[AnyContent] = cc.checkIossNumber(iossNumber).async {
     implicit request =>
