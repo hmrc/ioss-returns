@@ -168,10 +168,64 @@ class ReturnControllerSpec
     }
   }
 
-  ".getRegistration" - {
+  ".get" - {
     val period = Period(2023, Month.NOVEMBER)
 
     lazy val request = FakeRequest(GET, routes.ReturnController.get(period).url)
+
+    "must respond with OK and a sequence of returns when some exist for this user" in {
+
+      val vatReturn = arbitrary[EtmpVatReturn].sample.value
+
+      when(mockCoreVatReturnConnector.get(any(), any())) thenReturn Future.successful(Right(vatReturn))
+
+      val app =
+        applicationBuilder()
+          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
+          .build()
+
+      running(app) {
+        val result = route(app, request).value
+
+        status(result) mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(vatReturn)
+      }
+    }
+
+    "must respond with and error when the connector responds with an error" in {
+
+      when(mockCoreVatReturnConnector.get(any(), any())) thenReturn Future.successful(Left(ServerError))
+
+      val app =
+        applicationBuilder()
+          .overrides(bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector))
+          .build()
+
+      running(app) {
+        val result = route(app, request).value
+
+        status(result) mustEqual INTERNAL_SERVER_ERROR
+      }
+    }
+
+    "must respond with Unauthorized when the user is not authorised" in {
+
+      val app =
+        new GuiceApplicationBuilder()
+          .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
+          .build()
+
+      running(app) {
+        val result = route(app, request).value
+        status(result) mustEqual UNAUTHORIZED
+      }
+    }
+  }
+
+  ".getForIossNumber" - {
+    val period = Period(2023, Month.NOVEMBER)
+
+    lazy val request = FakeRequest(GET, routes.ReturnController.getForIossNumber(period, iossNumber).url)
 
     "must respond with OK and a sequence of returns when some exist for this user" in {
 
