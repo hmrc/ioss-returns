@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.iossreturns.services
 
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligations._
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
@@ -37,7 +36,7 @@ class PaymentsService @Inject()(
                                  clock: Clock
                                ) {
 
-  def getUnpaidPayments(iossNumber: String, startTime: LocalDate, exclusions: List[EtmpExclusion])(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[List[Payment]] = {
+  def getUnpaidPayments(iossNumber: String, startTime: LocalDate, exclusions: List[EtmpExclusion])(implicit ec: ExecutionContext): Future[List[Payment]] = {
     withFinancialDataAndVatReturns(iossNumber, startTime) {
       (financialDataMaybe, vatReturns) => {
         val vatReturnsForPeriodsWithOutstandingAmounts = filterIfPaymentOutstanding(financialDataMaybe, vatReturns)
@@ -56,7 +55,7 @@ class PaymentsService @Inject()(
   }
 
   private def withFinancialDataAndVatReturns[T](iossNumber: String, startTime: LocalDate)
-                                               (block: (Option[FinancialData], List[EtmpVatReturn]) => T)(implicit ec: ExecutionContext, hc: HeaderCarrier) = {
+                                               (block: (Option[FinancialData], List[EtmpVatReturn]) => T)(implicit ec: ExecutionContext): Future[T] = {
 
     val now = LocalDate.now(clock)
     val fromDate: String = startTime.format(etmpDateFormatter)
