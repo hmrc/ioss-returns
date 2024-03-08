@@ -17,7 +17,7 @@
 package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData._
@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.{Clock, LocalDate}
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class FinancialDataController @Inject()(
                                          cc: DefaultAuthenticatedControllerComponents,
@@ -68,10 +68,17 @@ class FinancialDataController @Inject()(
     }
   }
 
-  def getCharge(period: Period): Action[AnyContent] = cc.auth().async {
-    implicit request =>
-      financialDataService.getCharge(request.iossNumber, period).map { chargeData =>
-        Ok(Json.toJson(chargeData))
-      }
+  def getCharge(period: Period): Action[AnyContent] = cc.auth().async { implicit request =>
+    getCharge(period, request.iossNumber)
+  }
+
+  def getChargeForIossNumber(period: Period, iossNumber: String): Action[AnyContent] = cc.auth().async {
+    getCharge(period, iossNumber)
+  }
+
+  private def getCharge(period: Period, iossNumber: String): Future[Result] = {
+    financialDataService.getCharge(iossNumber, period).map { chargeData =>
+      Ok(Json.toJson(chargeData))
+    }
   }
 }

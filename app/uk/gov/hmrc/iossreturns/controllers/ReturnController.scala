@@ -17,7 +17,7 @@
 package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
 import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.{Clock, LocalDate}
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ReturnController @Inject()(
                                   cc: DefaultAuthenticatedControllerComponents,
@@ -54,12 +54,19 @@ class ReturnController @Inject()(
       }
   }
 
-  def get(period: Period): Action[AnyContent] = cc.auth().async {
-    implicit request =>
-      coreVatReturnConnector.get(request.iossNumber, period).map {
-        case Right(vatReturn) => Ok(Json.toJson(vatReturn))
-        case Left(errorResponse) => InternalServerError(Json.toJson(errorResponse.body))
-      }
+  def get(period: Period): Action[AnyContent] = cc.auth().async { implicit request =>
+    get(period, request.iossNumber)
+  }
+
+  def getForIossNumber(period: Period, iossNumber: String): Action[AnyContent] = cc.auth().async {
+    get(period, iossNumber)
+  }
+
+  private def get(period: Period, iossNumber: String): Future[Result] = {
+    coreVatReturnConnector.get(iossNumber, period).map {
+      case Right(vatReturn) => Ok(Json.toJson(vatReturn))
+      case Left(errorResponse) => InternalServerError(Json.toJson(errorResponse.body))
+    }
   }
 
   def getObligations(iossNumber: String): Action[AnyContent] = cc.auth().async {
