@@ -2,6 +2,7 @@
 GET         /financial-data/get/:commencementDate           uk.gov.hmrc.iossreturns.controllers.FinancialDataController.get(commencementDate: LocalDate)
 
 GET         /return/:period                                 uk.gov.hmrc.iossreturns.controllers.ReturnController.get(period: Period)
+GET         /return/:period/:iossNumber                     uk.gov.hmrc.iossreturns.controllers.ReturnController.getForIossNumber(period: Period, iossNumber: String)
 
 POST        /return                                         uk.gov.hmrc.iossreturns.controllers.ReturnController.submit
 
@@ -16,3 +17,4 @@ POST        /external-entry/:page                           uk.gov.hmrc.iossretu
 GET         /external-entry                                 uk.gov.hmrc.iossreturns.controllers.external.ExternalEntryController.getExternalEntry()
 
 GET         /financial-data/charge/:period                  uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getCharge(period: Period)
+GET         /financial-data/charge/:period/:iossNumber      uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getChargeForIossNumber(period: Period, iossNumber: String)

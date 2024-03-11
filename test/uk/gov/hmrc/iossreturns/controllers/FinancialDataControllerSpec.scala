@@ -127,7 +127,7 @@ class FinancialDataControllerSpec
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
 
-      when(paymentsService.getUnpaidPayments(any(), any(), any())(any(), any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
+      when(paymentsService.getUnpaidPayments(any(), any(), any())(any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
 
       val app = applicationBuilder().overrides(bind[PaymentsService].to(paymentsService))
         .build()
@@ -164,7 +164,7 @@ class FinancialDataControllerSpec
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
 
-      when(paymentsService.getUnpaidPayments(any(), any(), any())(any(), any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
+      when(paymentsService.getUnpaidPayments(any(), any(), any())(any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
 
       val app = applicationBuilder().overrides(bind[PaymentsService].to(paymentsService))
         .build()
@@ -194,6 +194,61 @@ class FinancialDataControllerSpec
   ".getCharge" - {
 
     lazy val request = FakeRequest(GET, routes.FinancialDataController.getCharge(period).url)
+
+    "must return charge data when service responds with valid charge data" in {
+
+      val charge: Charge = arbitraryCharge.arbitrary.sample.value
+
+      val application = applicationBuilder()
+        .overrides(bind[FinancialDataService].toInstance(mockFinancialDataService))
+        .build()
+
+      when(mockFinancialDataService.getCharge(any(), any())) thenReturn Some(charge).toFuture
+
+      running(application) {
+
+        val result = route(application, request).value
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.toJson(charge)
+      }
+    }
+
+    "must throw an Exception if the API call fails" in {
+
+      val application = applicationBuilder()
+        .overrides(bind[FinancialDataService].toInstance(mockFinancialDataService))
+        .build()
+
+      when(mockFinancialDataService.getCharge(any(), any())) thenReturn
+        Future.failed(FinancialDataException("Some exception"))
+
+      running(application) {
+
+        val result = route(application, request).value
+
+        whenReady(result.failed) { exp => exp mustBe a[Exception] }
+      }
+    }
+
+    "must respond with Unauthorized when the user is not authorised" in {
+
+      val application = new GuiceApplicationBuilder()
+        .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
+        .build()
+
+      running(application) {
+
+        val result = route(application, request).value
+
+        status(result) mustBe UNAUTHORIZED
+      }
+    }
+  }
+
+  ".getChargeForIossNumber" - {
+
+    lazy val request = FakeRequest(GET, routes.FinancialDataController.getChargeForIossNumber(period, iossNumber).url)
 
     "must return charge data when service responds with valid charge data" in {
 

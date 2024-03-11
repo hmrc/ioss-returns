@@ -26,7 +26,6 @@ import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 
 import java.time.{Clock, LocalDate}
 import javax.inject.Inject
-import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 
 class ReturnsService @Inject()(

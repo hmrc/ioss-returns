@@ -32,9 +32,8 @@ class EtmpBankDetailsSpec extends SpecBase {
 
       val json = Json.obj(
         "accountName" -> accountName,
-        "bic" -> bic,
         "iban" -> iban
-      )
+      ) ++ bic.map(b => Json.obj("bic" -> b)).getOrElse(Json.obj())
 
       val expectedResult = EtmpBankDetails(
         accountName = accountName,
