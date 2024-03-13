@@ -157,8 +157,8 @@ class ReturnsServiceSpec
           for (ep <- excludedPeriods) {
             when(mockCheckExclusionsService.isPeriodExcluded(ep, exclusions)) thenReturn true
           }
-        service.decideStatus(period, fulfilledPeriods, exclusions) mustEqual expected
-      }
+          service.decideStatus(period, fulfilledPeriods, exclusions) mustEqual expected
+        }
       }
     }
   }
