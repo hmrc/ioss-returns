@@ -22,6 +22,7 @@ import play.api.mvc.Results.Unauthorized
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.iossreturns.config.AppConfig
@@ -48,11 +49,19 @@ class AuthActionImpl @Inject()(
 
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-    authorised(AuthProviders(AuthProvider.GovernmentGateway) and
+    authorised(
       (AffinityGroup.Individual or AffinityGroup.Organisation) and
-      CredentialStrength(CredentialStrength.strong)).retrieve(Retrievals.credentials and Retrievals.internalId and Retrievals.allEnrolments) {
+        CredentialStrength(CredentialStrength.strong)
+    ).retrieve(
+      Retrievals.credentials and
+        Retrievals.internalId and
+        Retrievals.allEnrolments and
+        Retrievals.affinityGroup and
+        Retrievals.confidenceLevel and
+        Retrievals.credentialRole
+    ) {
 
-      case Some(credentials) ~ Some(internalId) ~ enrolments =>
+      case Some(credentials) ~ Some(internalId) ~ enrolments ~ Some(Organisation) ~ _ ~ Some(credentialRole) if credentialRole == User =>
 
         val futureMaybeIossNumber = findIossFromEnrolments(enrolments, credentials.providerId)
 
@@ -70,6 +79,24 @@ class AuthActionImpl @Inject()(
           }
         }
 
+      case Some(credentials) ~ Some(internalId) ~ enrolments ~ Some(Individual) ~ confidence ~ _ =>
+        val futureMaybeIossNumber = findIossFromEnrolments(enrolments, credentials.providerId)
+
+        futureMaybeIossNumber.flatMap { maybeIossNumber =>
+
+          (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
+            case (Some(vrn), Some(latestIossNumber)) =>
+              if (confidence >= ConfidenceLevel.L250) {
+                getRegistrationAndBlock(request, block, internalId, vrn, latestIossNumber)
+              } else {
+                logger.warn("Insufficient confidence level")
+                throw InsufficientConfidenceLevel("Insufficient confidence level")
+              }
+            case _ =>
+              logger.warn(s"Insufficient enrolments")
+              throw InsufficientEnrolments("Insufficient enrolments")
+          }
+        }
       case _ =>
         logger.warn("Unable to retrieve authorisation data")
         throw new UnauthorizedException("Unable to retrieve authorisation data")
@@ -78,6 +105,19 @@ class AuthActionImpl @Inject()(
         logger.warn(s"Unauthorised given $a")
         Unauthorized
     }
+  }
+
+  private def getRegistrationAndBlock[A](
+                                          request: Request[A],
+                                          block: AuthorisedRequest[A] => Future[Result],
+                                          internalId: String,
+                                          vrn: Vrn,
+                                          latestIossNumber: String
+                                        )(implicit hc: HeaderCarrier): Future[Result] = {
+    for {
+      registrationWrapper <- registrationConnector.getRegistration()
+      result <- block(AuthorisedRequest(request, internalId, vrn, latestIossNumber, registrationWrapper.registration))
+    } yield result
   }
 
   private def findVrnFromEnrolments(enrolments: Enrolments): Option[Vrn] =
