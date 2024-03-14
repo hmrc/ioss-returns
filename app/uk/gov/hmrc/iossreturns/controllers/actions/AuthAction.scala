@@ -69,10 +69,7 @@ class AuthActionImpl @Inject()(
 
           (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
             case (Some(vrn), Some(latestIossNumber)) =>
-              for {
-                registrationWrapper <- registrationConnector.getRegistration()
-                result <- block(AuthorisedRequest(request, internalId, vrn, latestIossNumber, registrationWrapper.registration))
-              } yield result
+              getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber)
             case _ =>
               logger.warn(s"Insufficient enrolments")
               throw InsufficientEnrolments("Insufficient enrolments")
@@ -87,7 +84,7 @@ class AuthActionImpl @Inject()(
           (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
             case (Some(vrn), Some(latestIossNumber)) =>
               if (confidence >= ConfidenceLevel.L250) {
-                getRegistrationAndBlock(request, block, internalId, vrn, latestIossNumber)
+                getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber)
               } else {
                 logger.warn("Insufficient confidence level")
                 throw InsufficientConfidenceLevel("Insufficient confidence level")
@@ -111,12 +108,13 @@ class AuthActionImpl @Inject()(
                                           request: Request[A],
                                           block: AuthorisedRequest[A] => Future[Result],
                                           internalId: String,
+                                          credentialId: String,
                                           vrn: Vrn,
                                           latestIossNumber: String
                                         )(implicit hc: HeaderCarrier): Future[Result] = {
     for {
       registrationWrapper <- registrationConnector.getRegistration()
-      result <- block(AuthorisedRequest(request, internalId, vrn, latestIossNumber, registrationWrapper.registration))
+      result <- block(AuthorisedRequest(request, internalId, credentialId, vrn, latestIossNumber, registrationWrapper.registration))
     } yield result
   }
 

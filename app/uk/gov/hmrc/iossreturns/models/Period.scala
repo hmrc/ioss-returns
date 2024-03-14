@@ -89,6 +89,8 @@ case class Period(year: Int, month: Month) {
 object Period {
   private val pattern: Regex = """(\d{4})-M(1[0-2]|[1-9])""".r.anchored
 
+  def apply(yearMonth: YearMonth): Period = Period(yearMonth.getYear, yearMonth.getMonth)
+
   def apply(yearString: String, monthString: String): Try[Period] =
     for {
       year <- Try(yearString.toInt)

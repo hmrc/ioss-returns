@@ -26,7 +26,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.controllers.actions.{AuthAction, FakeAuthAction, FakeFailingAuthConnector}
+import uk.gov.hmrc.iossreturns.controllers.actions.{AuthAction, CheckOwnIossNumberFilter, FakeAuthAction, FakeCheckOwnIossNumberFilterProvider, FakeFailingAuthConnector}
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
@@ -44,7 +44,8 @@ class ReturnStatusControllerSpec
   protected def applicationBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .overrides(
-        bind[AuthAction].to[FakeAuthAction]
+        bind[AuthAction].to[FakeAuthAction],
+        bind[CheckOwnIossNumberFilter].to[FakeCheckOwnIossNumberFilterProvider]
       )
 
   private val mockCheckExclusionsService: CheckExclusionsService = mock[CheckExclusionsService]

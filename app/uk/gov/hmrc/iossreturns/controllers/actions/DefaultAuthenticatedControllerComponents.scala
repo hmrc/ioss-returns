@@ -33,6 +33,12 @@ trait AuthenticatedControllerComponents extends ControllerComponents {
     actionBuilder andThen
       identify
 
+  def checkOwnIossNumber: CheckOwnIossNumberFilter
+
+  def checkIossNumber(iossNumber: String): ActionBuilder[AuthorisedRequest, AnyContent] =
+    auth() andThen
+      checkOwnIossNumber(iossNumber)
+
 }
 
 case class DefaultAuthenticatedControllerComponents @Inject()(
@@ -42,5 +48,6 @@ case class DefaultAuthenticatedControllerComponents @Inject()(
                                                                langs: Langs,
                                                                fileMimeTypes: FileMimeTypes,
                                                                executionContext: ExecutionContext,
-                                                               identify: AuthAction
+                                                               identify: AuthAction,
+                                                               checkOwnIossNumber: CheckOwnIossNumberFilter
                                                              ) extends AuthenticatedControllerComponents

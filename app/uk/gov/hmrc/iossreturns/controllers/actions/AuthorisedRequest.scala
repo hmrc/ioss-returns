@@ -24,6 +24,7 @@ import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpDisplayRegistration
 case class AuthorisedRequest[A](
                                  request: Request[A],
                                  userId: String,
+                                 credentialId: String,
                                  vrn: Vrn,
                                  iossNumber: String,
                                  registration: EtmpDisplayRegistration
