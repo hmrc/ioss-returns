@@ -39,7 +39,7 @@ class ReturnStatusController @Inject()(
     .withLocale(Locale.UK)
     .withZone(ZoneId.systemDefault())
 
-  def getCurrentReturnsForIossNumber(iossNumber: String): Action[AnyContent] = cc.auth().async {
+  def getCurrentReturnsForIossNumber(iossNumber: String): Action[AnyContent] = cc.checkIossNumber(iossNumber).async {
     implicit request =>
       getResultForCurrentReturns(iossNumber)
   }

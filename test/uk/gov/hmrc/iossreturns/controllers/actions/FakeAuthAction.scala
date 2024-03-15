@@ -18,5 +18,5 @@ class FakeAuthAction @Inject()(bodyParsers: BodyParsers.Default)
   extends AuthActionImpl(mock[AuthConnector], bodyParsers, mock[AppConfig], mock[RegistrationConnector], mock[AccountService]) {
 
   override def invokeBlock[A](request: Request[A], block: AuthorisedRequest[A] => Future[Result]): Future[Result] =
-    block(AuthorisedRequest(request, "id", Vrn("123456789"), "IM9001234567", etmpRegistration))
+    block(AuthorisedRequest(request, "id", "credId", Vrn("123456789"), "IM9001234567", etmpRegistration))
 }

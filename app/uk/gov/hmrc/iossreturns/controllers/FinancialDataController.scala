@@ -72,7 +72,7 @@ class FinancialDataController @Inject()(
     getCharge(period, request.iossNumber)
   }
 
-  def getChargeForIossNumber(period: Period, iossNumber: String): Action[AnyContent] = cc.auth().async {
+  def getChargeForIossNumber(period: Period, iossNumber: String): Action[AnyContent] = cc.checkIossNumber(iossNumber).async {
     getCharge(period, iossNumber)
   }
 

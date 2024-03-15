@@ -20,9 +20,9 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
+import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
 import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
-import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
 import uk.gov.hmrc.iossreturns.services.AuditService
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -58,7 +58,7 @@ class ReturnController @Inject()(
     get(period, request.iossNumber)
   }
 
-  def getForIossNumber(period: Period, iossNumber: String): Action[AnyContent] = cc.auth().async {
+  def getForIossNumber(period: Period, iossNumber: String): Action[AnyContent] = cc.checkIossNumber(iossNumber).async {
     get(period, iossNumber)
   }
 
@@ -69,7 +69,7 @@ class ReturnController @Inject()(
     }
   }
 
-  def getObligations(iossNumber: String): Action[AnyContent] = cc.auth().async {
+  def getObligations(iossNumber: String): Action[AnyContent] = cc.checkIossNumber(iossNumber).async {
     implicit request =>
 
       val fromDate: String = request.registration.schemeDetails.commencementDate.format(etmpDateFormatter)
