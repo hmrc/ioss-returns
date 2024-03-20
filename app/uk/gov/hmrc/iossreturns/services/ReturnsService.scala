@@ -18,7 +18,8 @@ package uk.gov.hmrc.iossreturns.services
 
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.Period.{getNext, getPrevious}
+import uk.gov.hmrc.iossreturns.models.{Period, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
 import uk.gov.hmrc.iossreturns.models.youraccount.{PeriodWithStatus, SubmissionStatus}
@@ -77,7 +78,7 @@ class ReturnsService @Inject()(
   def getNextPeriod(periods: List[Period], commencementLocalDate: LocalDate): Period = {
     val runningPeriod = Period.getRunningPeriod(LocalDate.now(clock))
     if (periods.nonEmpty) {
-      periods.maxBy(_.lastDay.toEpochDay).getNext()
+      getNext(periods.maxBy(_.lastDay.toEpochDay))
     } else {
       if (commencementLocalDate.isAfter(runningPeriod.lastDay)) {
         Period.getRunningPeriod(commencementLocalDate)
@@ -89,13 +90,13 @@ class ReturnsService @Inject()(
   }
 
   def getAllPeriodsBetween(commencementDate: LocalDate, endDate: LocalDate): List[Period] = {
-    val startPeriod = Period(commencementDate.getYear, commencementDate.getMonth)
+    val startPeriod = StandardPeriod(commencementDate.getYear, commencementDate.getMonth)
     getPeriodsUntilDate(startPeriod, endDate)
   }
 
   private def getPeriodsUntilDate(currentPeriod: Period, endDate: LocalDate): List[Period] = {
     if (currentPeriod.lastDay.isBefore(endDate)) {
-      List(currentPeriod) ++ getPeriodsUntilDate(currentPeriod.getNext(), endDate)
+      List(currentPeriod) ++ getPeriodsUntilDate(getNext(currentPeriod), endDate)
     } else {
       List.empty
     }
@@ -126,7 +127,7 @@ class ReturnsService @Inject()(
             val runningPeriod = Period.getRunningPeriod(effectiveDate)
 
             val periodToCheck = if(runningPeriod.firstDay == effectiveDate) {
-              runningPeriod.getPrevious()
+              getPrevious(runningPeriod)
             } else {
               runningPeriod
             }

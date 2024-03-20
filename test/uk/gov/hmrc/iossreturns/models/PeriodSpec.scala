@@ -17,14 +17,16 @@
 package uk.gov.hmrc.iossreturns.models
 
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.EitherValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.mvc.{PathBindable, QueryStringBindable}
 import uk.gov.hmrc.iossreturns.generators.Generators
+import uk.gov.hmrc.iossreturns.models.Period.getNext
 
-import java.time.Month
+import java.time.{LocalDate, Month}
 
 class PeriodSpec
   extends AnyFreeSpec
@@ -42,7 +44,6 @@ class PeriodSpec
 
         forAll(arbitrary[Period]) {
           period =>
-
             pathBindable.bind("key", period.toString).value mustEqual period
         }
       }
@@ -76,35 +77,80 @@ class PeriodSpec
     "getNext" - {
       "when current period is January" in {
         val year = 2021
-        val current = Period(year, Month.JANUARY)
-        val expected = Period(year, Month.FEBRUARY)
+        val current = StandardPeriod(year, Month.JANUARY)
+        val expected = StandardPeriod(year, Month.FEBRUARY)
 
-        current.getNext() mustBe expected
+        getNext(current) mustBe expected
       }
 
       "when current period is February" in {
         val year = 2021
-        val current = Period(year, Month.FEBRUARY)
-        val expected = Period(year, Month.MARCH)
+        val current = StandardPeriod(year, Month.FEBRUARY)
+        val expected = StandardPeriod(year, Month.MARCH)
 
-        current.getNext() mustBe expected
+        getNext(current) mustBe expected
       }
 
       "when current period is July" in {
         val year = 2021
-        val current = Period(year, Month.JULY)
-        val expected = Period(year, Month.AUGUST)
+        val current = StandardPeriod(year, Month.JULY)
+        val expected = StandardPeriod(year, Month.AUGUST)
 
-        current.getNext() mustBe expected
+        getNext(current) mustBe expected
       }
 
       "when current month is December" in {
         val year = 2021
-        val current = Period(year, Month.DECEMBER)
-        val expected = Period(year + 1, Month.JANUARY)
+        val current = StandardPeriod(year, Month.DECEMBER)
+        val expected = StandardPeriod(year + 1, Month.JANUARY)
 
-        current.getNext() mustBe expected
+        getNext(current) mustBe expected
       }
+    }
+  }
+
+  ".firstDay" - {
+
+    "must be the first of the month when the month is January" in {
+
+      forAll(Gen.choose(2023, 2100)) {
+        year =>
+          val period = StandardPeriod(year, Month.JANUARY)
+          period.firstDay mustEqual LocalDate.of(year, Month.JANUARY, 1)
+      }
+    }
+  }
+
+  ".lastDay" - {
+
+    "must be the last of the month when the month is January" in {
+
+      forAll(Gen.choose(2023, 2100)) {
+        year =>
+          val period = StandardPeriod(year, Month.JANUARY)
+          period.lastDay mustEqual LocalDate.of(year, Month.JANUARY, 31)
+      }
+    }
+  }
+
+  ".isBefore" - {
+
+    "should return true when current period is before other period" in {
+      val currentPeriod = StandardPeriod(2022, Month.JANUARY)
+      val otherPeriod = StandardPeriod(2022, Month.FEBRUARY)
+
+      val result = currentPeriod.isBefore(otherPeriod)
+
+      assert(result)
+    }
+
+    "should return false when current period is before other period" in {
+      val currentPeriod = StandardPeriod(2022, Month.JANUARY)
+      val otherPeriod = StandardPeriod(2022, Month.FEBRUARY)
+
+      val result = otherPeriod.isBefore(currentPeriod)
+
+      assert(!result)
     }
   }
 

@@ -38,7 +38,7 @@ trait ModelGenerators {
       for {
         year <- Gen.choose(2022, 2099)
         quarter <- Gen.oneOf(Month.values.toSeq)
-      } yield Period(year, quarter)
+      } yield StandardPeriod(year, quarter)
     }
 
   implicit val arbitraryCoreTraderId: Arbitrary[CoreTraderId] =

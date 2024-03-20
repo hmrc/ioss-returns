@@ -26,7 +26,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser.FinancialDataResponse
 import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
-import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.{Period, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 import uk.gov.hmrc.iossreturns.models.payments.{Charge, Payment, PaymentStatus}
@@ -59,8 +59,8 @@ class PaymentsServiceSpec extends SpecBase
 
     "must return payments when there are due payments and overdue payments - from FinancialData, vatReturn to be ignored" in {
 
-      val periodOverdue = Period(2021, Month.JANUARY)
-      val periodDue = Period(2021, Month.APRIL)
+      val periodOverdue = StandardPeriod(2021, Month.JANUARY)
+      val periodDue = StandardPeriod(2021, Month.APRIL)
 
       val transactionAmountDue1 = 250
       val transactionAmountDue2 = 750
@@ -122,7 +122,7 @@ class PaymentsServiceSpec extends SpecBase
 
     "must return correct payment when there are due payments - from FinancialData, vatReturn to be ignored" in {
 
-      val periodDue = Period(2021, Month.SEPTEMBER)
+      val periodDue = StandardPeriod(2021, Month.SEPTEMBER)
 
       val transactionAmount1 = 250
       val transactionAmount2 = 750
@@ -167,8 +167,8 @@ class PaymentsServiceSpec extends SpecBase
 
     "must return payments when there are overdue payments - from FinancialData, vatReturn to be ignored" in {
 
-      val periodOverdue1 = Period(2021, Month.JUNE)
-      val periodOverdue2 = Period(2021, Month.SEPTEMBER)
+      val periodOverdue1 = StandardPeriod(2021, Month.JUNE)
+      val periodOverdue2 = StandardPeriod(2021, Month.SEPTEMBER)
 
       val periodKey1 = "21AI"
       val periodKey2 = "21AF"
@@ -217,7 +217,7 @@ class PaymentsServiceSpec extends SpecBase
       val payment2 = service.calculatePayment(vatReturn2, Some(inputFinancialData), List.empty)
 
       whenReady(result) { r =>
-        r mustBe (List(payment1, payment2))
+        r mustBe List(payment1, payment2)
         payment1.amountOwed mustBe (transactionAmount1 + transactionAmount2)
         payment2.amountOwed mustBe (transactionAmount3 + transactionAmount4)
       }
@@ -267,7 +267,7 @@ class PaymentsServiceSpec extends SpecBase
 
         s"when $title" in {
           whenReady(result) { r =>
-            r mustBe (List(payment1, payment2))
+            r mustBe List(payment1, payment2)
             payment1.amountOwed mustBe vatReturn1.totalVATAmountDueForAllMSGBP
             payment2.amountOwed mustBe vatReturn2.totalVATAmountDueForAllMSGBP
           }

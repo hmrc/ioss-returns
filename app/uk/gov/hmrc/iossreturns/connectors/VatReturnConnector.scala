@@ -23,6 +23,7 @@ import uk.gov.hmrc.iossreturns.config.{CoreVatReturnConfig, EtmpDisplayReturnCon
 import uk.gov.hmrc.iossreturns.connectors.CoreVatReturnHttpParser.{CoreVatReturnReads, CoreVatReturnResponse}
 import uk.gov.hmrc.iossreturns.connectors.EtmpDisplayVatReturnHttpParser.{EtmpDisplayVatReturnResponse, EtmpVatReturnReads}
 import uk.gov.hmrc.iossreturns.connectors.EtmpListObligationsHttpParser.{EtmpListObligationsReads, EtmpListObligationsResponse}
+import uk.gov.hmrc.iossreturns.models.Period.toEtmpPeriodString
 import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 
@@ -81,7 +82,7 @@ class VatReturnConnector @Inject()(
       case (key, _) => key.matches(AUTHORIZATION)
     }
 
-    def url = s"${etmpDisplayReturnConfig.baseUrl}/$iossNumber/${period.toEtmpPeriodString}"
+    def url = s"${etmpDisplayReturnConfig.baseUrl}/$iossNumber/${toEtmpPeriodString(period)}"
 
     logger.info(s"Sending get request to ETMP with headers $headersWithoutAuth")
 

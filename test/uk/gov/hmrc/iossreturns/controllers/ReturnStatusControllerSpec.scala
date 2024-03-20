@@ -28,7 +28,7 @@ import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.controllers.actions.{AuthAction, CheckOwnIossNumberFilter, FakeAuthAction, FakeCheckOwnIossNumberFilterProvider, FakeFailingAuthConnector}
 import uk.gov.hmrc.iossreturns.generators.Generators
-import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.StandardPeriod
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return}
@@ -52,21 +52,21 @@ class ReturnStatusControllerSpec
 
   ".getCurrentReturnsForIossNumber()" - {
     val stubClock: Clock = Clock.fixed(LocalDate.of(2022, 10, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
-    val period2021APRIL = Period(2021, Month.APRIL)
-    val period2021MAY = Period(2021, Month.MAY)
-    val period2021JUNE = Period(2021, Month.JUNE)
-    val period2021JULY = Period(2021, Month.JULY)
-    val period2021AUGUST = Period(2021, Month.AUGUST)
-    val period2021SEPTEMBER = Period(2021, Month.SEPTEMBER)
-    val period2022JANUARY = Period(2022, Month.JANUARY)
-    val period2022FEBRUARY = Period(2022, Month.FEBRUARY)
-    val period2022MARCH = Period(2022, Month.MARCH)
-    val period2022APRIL = Period(2022, Month.APRIL)
-    val period2022MAY = Period(2022, Month.MAY)
-    val period2022JUNE = Period(2022, Month.JUNE)
-    val period2022JULY = Period(2022, Month.JULY)
-    val period2022AUGUST = Period(2022, Month.AUGUST)
-    val period2022SEPTEMBER = Period(2022, Month.SEPTEMBER)
+    val period2021APRIL = StandardPeriod(2021, Month.APRIL)
+    val period2021MAY = StandardPeriod(2021, Month.MAY)
+    val period2021JUNE = StandardPeriod(2021, Month.JUNE)
+    val period2021JULY = StandardPeriod(2021, Month.JULY)
+    val period2021AUGUST = StandardPeriod(2021, Month.AUGUST)
+    val period2021SEPTEMBER = StandardPeriod(2021, Month.SEPTEMBER)
+    val period2022JANUARY = StandardPeriod(2022, Month.JANUARY)
+    val period2022FEBRUARY = StandardPeriod(2022, Month.FEBRUARY)
+    val period2022MARCH = StandardPeriod(2022, Month.MARCH)
+    val period2022APRIL = StandardPeriod(2022, Month.APRIL)
+    val period2022MAY = StandardPeriod(2022, Month.MAY)
+    val period2022JUNE = StandardPeriod(2022, Month.JUNE)
+    val period2022JULY = StandardPeriod(2022, Month.JULY)
+    val period2022AUGUST = StandardPeriod(2022, Month.AUGUST)
+    val period2022SEPTEMBER = StandardPeriod(2022, Month.SEPTEMBER)
     val periods = Seq(
       period2021APRIL,
       period2021MAY,
@@ -194,7 +194,7 @@ class ReturnStatusControllerSpec
       }
 
       "with a return due and some returns overdue and nothing in progress" in {
-        val (period1 :: periodsInBetween) = periods.dropRight(1)
+        val period1 :: periodsInBetween = periods.dropRight(1)
         val lastPeriod = periods.takeRight(1).head
 
         val mockReturnService = mock[ReturnsService]
@@ -220,7 +220,7 @@ class ReturnStatusControllerSpec
           contentAsJson(result) mustEqual Json.toJson(
             CurrentReturns(
               Return.fromPeriod(period1, Overdue, inProgress = false, isOldest = true) ::
-                periodsInBetween.map(Return.fromPeriod(_, Overdue, inProgress = false, isOldest = false)).toList
+                periodsInBetween.map(Return.fromPeriod(_, Overdue, inProgress = false, isOldest = false))
                 :::
                 List(Return.fromPeriod(lastPeriod, Due, inProgress = false, isOldest = false)),
               excluded = false,
@@ -297,7 +297,7 @@ class ReturnStatusControllerSpec
 
       "excluded trader can't complete a return 3 years after return due date" in {
 
-        val exclusionPeriod = Period(2023, Month.NOVEMBER)
+        val exclusionPeriod = StandardPeriod(2023, Month.NOVEMBER)
         val stubClock: Clock = Clock.fixed(LocalDate.of(2026, 3, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
 
         val mockReturnService = mock[ReturnsService]
@@ -306,8 +306,8 @@ class ReturnStatusControllerSpec
 
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
           List(
-            PeriodWithStatus(Period(2023, Month.DECEMBER), Excluded),
-            PeriodWithStatus(Period(2023, Month.JANUARY), Excluded)
+            PeriodWithStatus(StandardPeriod(2023, Month.DECEMBER), Excluded),
+            PeriodWithStatus(StandardPeriod(2023, Month.JANUARY), Excluded)
           )
         )
 
@@ -335,20 +335,20 @@ class ReturnStatusControllerSpec
 
       "excluded trader can complete a return if return due date is within 3 years" in {
 
-        val exclusionPeriod = Period(2023, Month.NOVEMBER)
+        val exclusionPeriod = StandardPeriod(2023, Month.NOVEMBER)
         val stubClock: Clock = Clock.fixed(LocalDate.of(2026, 3, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
 
         val mockReturnService = mock[ReturnsService]
 
         val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(_.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = exclusionPeriod.firstDay))
 
-        val vatReturns = Seq(Return.fromPeriod(Period(2023, Month.JULY), Overdue, inProgress = false, isOldest = true))
+        val vatReturns = Seq(Return.fromPeriod(StandardPeriod(2023, Month.JULY), Overdue, inProgress = false, isOldest = true))
 
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
           List(
-            PeriodWithStatus(Period(2023, Month.DECEMBER), Excluded),
-            PeriodWithStatus(Period(2023, Month.JULY), Overdue),
-            PeriodWithStatus(Period(2023, Month.JANUARY), Excluded)
+            PeriodWithStatus(StandardPeriod(2023, Month.DECEMBER), Excluded),
+            PeriodWithStatus(StandardPeriod(2023, Month.JULY), Overdue),
+            PeriodWithStatus(StandardPeriod(2023, Month.JANUARY), Excluded)
           )
         )
 

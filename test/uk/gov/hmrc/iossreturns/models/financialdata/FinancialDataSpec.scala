@@ -16,32 +16,34 @@
 
 package uk.gov.hmrc.iossreturns.models.financialdata
 
+import play.api.libs.json.Json
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.{Period, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.payments.Charge
 
 import java.time.{LocalDate, Month, ZoneOffset, ZonedDateTime}
 
 class FinancialDataSpec extends SpecBase {
   protected val zonedNow: ZonedDateTime = ZonedDateTime.of(2023, 2, 1, 0, 0, 0, 0, ZoneOffset.UTC)
-  protected val zonedDateTimeNow = ZonedDateTime.now(stubClockAtArbitraryDate).plusSeconds(1)
+  protected val zonedDateTimeNow: ZonedDateTime = ZonedDateTime.now(stubClockAtArbitraryDate).plusSeconds(1)
   protected val dateFrom: LocalDate = zonedNow.toLocalDate.minusMonths(1)
   protected val dateTo: LocalDate = zonedNow.toLocalDate
-  protected val item = Item(Some(500), Some(""), Some(""), Some(500), Some(""))
+  protected val item: Item = Item(Some(500), Some(""), Some(""), Some(500), Some(""))
 
-  val originalAmount1 = BigDecimal(200)
-  val clearedAmount1 = BigDecimal(50)
-  val outstandingAmount1 = BigDecimal(150)
+  val originalAmount1: BigDecimal = BigDecimal(200)
+  val clearedAmount1: BigDecimal = BigDecimal(50)
+  val outstandingAmount1: BigDecimal = BigDecimal(150)
 
-  val originalAmount2 = BigDecimal(1000)
-  val clearedAmount2 = BigDecimal(150)
-  val outstandingAmount2 = BigDecimal(350)
+  val originalAmount2: BigDecimal = BigDecimal(1000)
+  val clearedAmount2: BigDecimal = BigDecimal(150)
+  val outstandingAmount2: BigDecimal = BigDecimal(350)
 
-  protected val financialTransaction = FinancialTransaction(Some("G Ret AT EU-OMS"), None, Some(dateFrom), Some(dateTo), None, None, None, Some(Seq(item)))
-  val ft1 = generateFinancialTransaction(None, Some(originalAmount1), Some(outstandingAmount1), Some(clearedAmount1))
-  val ft2 = generateFinancialTransaction(None, Some(originalAmount2), Some(outstandingAmount2), Some(clearedAmount2))
-  val financialData = FinancialData(None, None, None, zonedDateTimeNow, Some(List(ft1, ft2)))
-
+  protected val financialTransaction: FinancialTransaction = FinancialTransaction(Some("G Ret AT EU-OMS"), None, Some(dateFrom), Some(dateTo), None, None, None, Some(Seq(item)))
+  val ft1: FinancialTransaction = generateFinancialTransaction(None, Some(originalAmount1), Some(outstandingAmount1), Some(clearedAmount1))
+  val ft2: FinancialTransaction = generateFinancialTransaction(None, Some(originalAmount2), Some(outstandingAmount2), Some(clearedAmount2))
+  val financialData: FinancialData = FinancialData(None, None, None, zonedDateTimeNow, Some(List(ft1, ft2)))
+  private val financialTransaction2 = FinancialTransaction(Some("G Ret AT EU-OMS"), None, Some(dateFrom), Some(dateTo), Some(1000), Some(500), Some(500), Some(Seq(item)))
+  private val financialDataTransaction = FinancialData(Some("IOSS"), Some("123456789"), Some("ECOM"), zonedDateTimeNow, Some(Seq(financialTransaction2)))
   private def generateFinancialTransaction(
                                             period: Option[Period],
                                             originalAmount: Option[BigDecimal],
@@ -58,10 +60,48 @@ class FinancialDataSpec extends SpecBase {
 
   }
 
+
+  private val financialDataJson =
+    s"""{
+       | "idType": "IOSS",
+       | "idNumber": "123456789",
+       | "regimeType": "ECOM",
+       | "processingDate": "${zonedDateTimeNow.toString}",
+       | "financialTransactions": [
+       |   {
+       |     "chargeType": "G Ret AT EU-OMS",
+       |     "taxPeriodFrom": "$dateFrom",
+       |     "taxPeriodTo": "$dateTo",
+       |     "originalAmount": 1000,
+       |     "outstandingAmount": 500,
+       |     "clearedAmount": 500,
+       |     "items": [
+       |       {
+       |         "amount": 500,
+       |         "clearingReason": "",
+       |         "paymentReference": "",
+       |         "paymentAmount": 500,
+       |         "paymentMethod": ""
+       |       }
+       |     ]
+       |   }
+       | ]
+       |}""".stripMargin
+
+  "FinancialData" - {
+    "must deserialise correctly" in {
+      Json.parse(financialDataJson).as[FinancialData] mustBe financialDataTransaction
+    }
+
+    "must serialise correctly`" in {
+      Json.toJson(financialDataTransaction) mustBe Json.parse(financialDataJson)
+    }
+  }
+
   "FinancialData" - {
 
     "must not generate charge when all transactions are within given period" in {
-      val period = Period(dateFrom.getYear, dateFrom.getMonth)
+      val period = StandardPeriod(dateFrom.getYear, dateFrom.getMonth)
 
       financialData.getChargeForPeriod(period) mustBe Some(Charge(
         period,
@@ -72,14 +112,14 @@ class FinancialDataSpec extends SpecBase {
     }
 
     "must not generate charge when all transactions are within a different period than the given period" in {
-      val differentPeriodThanTransactions = Period(2020, Month.JANUARY)
+      val differentPeriodThanTransactions = StandardPeriod(2020, Month.JANUARY)
 
       financialData.getChargeForPeriod(differentPeriodThanTransactions) mustBe None
     }
 
     "must not generate charge from the transactions of the given period and neglect the transactions not from the given period" in {
-      val period = Period(2021, Month.MARCH)
-      val otherPeriod = Period(2020, Month.MARCH)
+      val period = StandardPeriod(2021, Month.MARCH)
+      val otherPeriod = StandardPeriod(2020, Month.MARCH)
 
       val ft1 = generateFinancialTransaction(Some(otherPeriod), Some(originalAmount1), Some(outstandingAmount1), Some(clearedAmount1))
       val ft2 = generateFinancialTransaction(Some(period), Some(originalAmount2), Some(outstandingAmount2), Some(clearedAmount2))
