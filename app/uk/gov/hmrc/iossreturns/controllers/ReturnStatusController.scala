@@ -44,9 +44,9 @@ class ReturnStatusController @Inject()(
       val excludedTrader = request.registration.exclusions.toList
       val periodWithStatuses = returnsService.getStatuses(request.iossNumber, commencementDate, excludedTrader)
 
-      periodWithStatuses.map( { pws =>
+      periodWithStatuses.map { pws =>
         Ok(Json.toJson(pws))
-      })
+      }
   }
 
   def getCurrentReturnsForIossNumber(iossNumber: String): Action[AnyContent] = cc.checkIossNumber(iossNumber).async {

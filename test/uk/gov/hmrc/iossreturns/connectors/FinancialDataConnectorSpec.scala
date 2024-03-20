@@ -36,7 +36,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
         val app = application
 
         server.stubFor(
-          get(urlEqualTo(s"$financialDataUrl?dateFrom=${dateFrom.toString}&dateTo=${queryParameters.toDate.get.toString}"))
+          get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.get}"))
             .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
             .withQueryParam("dateTo", new EqualToPattern(now.toString))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
