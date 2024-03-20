@@ -19,14 +19,17 @@ package uk.gov.hmrc.iossreturns.generators
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.option
+import play.api.libs.json.{JsObject, Json}
+import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.enrolments.{EACDEnrolment, EACDEnrolments, EACDIdentifiers}
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.etmp.registration._
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialTransaction, Item}
 import uk.gov.hmrc.iossreturns.models.payments.Charge
+import uk.gov.hmrc.iossreturns.models.requests.SaveForLaterRequest
 
-import java.time.{Instant, LocalDate, LocalDateTime, Month, ZonedDateTime, ZoneId}
+import java.time.{Instant, LocalDate, LocalDateTime, Month, ZoneId, ZonedDateTime}
 import java.time.temporal.ChronoUnit
 import scala.math.BigDecimal.RoundingMode
 
@@ -39,6 +42,11 @@ trait ModelGenerators {
         year <- Gen.choose(2022, 2099)
         quarter <- Gen.oneOf(Month.values.toSeq)
       } yield Period(year, quarter)
+    }
+
+  implicit val arbitraryVrn: Arbitrary[Vrn] =
+    Arbitrary {
+      Gen.listOfN(9, Gen.numChar).map(_.mkString).map(Vrn)
     }
 
   implicit val arbitraryCoreTraderId: Arbitrary[CoreTraderId] =
@@ -564,4 +572,28 @@ trait ModelGenerators {
       )
     }
   }
+
+  implicit val arbitrarySavedUserAnswers: Arbitrary[SavedUserAnswers] =
+    Arbitrary {
+      for {
+        vrn <- arbitrary[Vrn]
+        period <- arbitrary[Period]
+        data = JsObject(Seq(
+          "test" -> Json.toJson("test")
+        ))
+        now = Instant.now
+      } yield SavedUserAnswers(
+        vrn, period, data, now)
+    }
+
+  implicit val arbitrarySaveForLaterRequest: Arbitrary[SaveForLaterRequest] =
+    Arbitrary {
+      for {
+        vrn <- arbitrary[Vrn]
+        period <- arbitrary[Period]
+        data = JsObject(Seq(
+          "test" -> Json.toJson("test")
+        ))
+      } yield SaveForLaterRequest(vrn, period, data)
+    }
 }

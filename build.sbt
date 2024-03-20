@@ -27,7 +27,7 @@ lazy val microservice = Project("ioss-returns", file("."))
 lazy val itSettings = Defaults.itSettings ++ Seq(
   unmanagedSourceDirectories := Seq(
     baseDirectory.value / "it",
-    baseDirectory.value / "test" / "generators"
+    baseDirectory.value / "test" / "uk" / "gov" / "hmrc" / "iossreturns" / "generators"
   ),
   unmanagedResourceDirectories := Seq(
     baseDirectory.value / "it" / "resources"

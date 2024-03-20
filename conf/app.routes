@@ -18,3 +18,7 @@ GET         /external-entry                                 uk.gov.hmrc.iossretu
 
 GET         /financial-data/charge/:period                  uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getCharge(period: Period)
 GET         /financial-data/charge/:period/:iossNumber      uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getChargeForIossNumber(period: Period, iossNumber: String)
+
+POST        /save-for-later                                 uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.post()
+GET         /save-for-later                                 uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.get()
+GET         /save-for-later/delete/:period                  uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.delete(period:Period)
