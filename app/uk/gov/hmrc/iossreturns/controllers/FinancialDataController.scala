@@ -18,7 +18,7 @@ package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, Result}
-import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
+import uk.gov.hmrc.iossreturns.controllers.actions.{AuthorisedRequest, DefaultAuthenticatedControllerComponents}
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData._
 import uk.gov.hmrc.iossreturns.models.payments.{PaymentStatus, PrepareData}
@@ -47,24 +47,34 @@ class FinancialDataController @Inject()(
 
   def prepareFinancialData(): Action[AnyContent] = cc.auth().async {
     implicit request => {
-      val now = LocalDate.now(clock)
-      val startTime = LocalDate.parse(request.registration.schemeDetails.commencementDate, etmpDateFormatter)
-      val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber, startTime, request.registration.exclusions.toList)
-      unpaidPayments.map { up =>
-        val totalAmountOwed = up.map(_.amountOwed).sum
-        val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
-        val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now(clock)))
-        val excludedPayments = overduePayments.filter(_.paymentStatus == PaymentStatus.Excluded)
-        val overduePaymentsNotExcluded = overduePayments.filterNot(_.paymentStatus == PaymentStatus.Excluded)
-        Ok(Json.toJson(PrepareData(
-          duePayments,
-          overduePaymentsNotExcluded,
-          excludedPayments,
-          totalAmountOwed,
-          totalAmountOverdue,
-          iossNumber = request.iossNumber
-        )))
-      }
+      prepare(request.iossNumber)
+    }
+  }
+
+  def prepareFinancialDataForIossNumber(iossNumber: String): Action[AnyContent] = cc.auth().async {
+    implicit request =>
+      println(s"prepareFinancialDataForIossNumber: iossNumber $iossNumber")
+      prepare(iossNumber)
+  }
+
+  private def prepare(iossNumber: String)(implicit request: AuthorisedRequest[AnyContent]): Future[Result] = {
+    val now = LocalDate.now(clock)
+    val startTime = LocalDate.parse(request.registration.schemeDetails.commencementDate, etmpDateFormatter)
+    val unpaidPayments = paymentsService.getUnpaidPayments(iossNumber, startTime, request.registration.exclusions.toList)
+    unpaidPayments.map { up =>
+      val totalAmountOwed = up.map(_.amountOwed).sum
+      val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
+      val (overduePayments, duePayments) = up.partition(_.dateDue.isBefore(LocalDate.now(clock)))
+      val excludedPayments = overduePayments.filter(_.paymentStatus == PaymentStatus.Excluded)
+      val overduePaymentsNotExcluded = overduePayments.filterNot(_.paymentStatus == PaymentStatus.Excluded)
+      Ok(Json.toJson(PrepareData(
+        duePayments,
+        overduePaymentsNotExcluded,
+        excludedPayments,
+        totalAmountOwed,
+        totalAmountOverdue,
+        iossNumber = iossNumber
+      )))
     }
   }
 
