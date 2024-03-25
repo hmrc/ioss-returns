@@ -20,9 +20,8 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
-import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
 import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
-import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpObligationsQueryParameters}
+import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
 import uk.gov.hmrc.iossreturns.services.AuditService
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter

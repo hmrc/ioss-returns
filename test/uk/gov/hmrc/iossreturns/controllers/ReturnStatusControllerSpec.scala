@@ -28,7 +28,7 @@ import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.controllers.actions._
 import uk.gov.hmrc.iossreturns.generators.Generators
-import uk.gov.hmrc.iossreturns.models.{Period, StandardPeriod}
+import uk.gov.hmrc.iossreturns.models.StandardPeriod
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return, SubmissionStatus}
