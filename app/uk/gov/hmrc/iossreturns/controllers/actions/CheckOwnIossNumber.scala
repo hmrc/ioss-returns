@@ -34,7 +34,7 @@ class CheckOwnIossNumberFilterImpl(
   override protected def filter[A](request: AuthorisedRequest[A]): Future[Option[Result]] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-    previousRegistrationService.getPreviousRegistrations(request.userId).map { previousRegistrations =>
+    previousRegistrationService.getPreviousRegistrations(request.credentialId).map { previousRegistrations =>
       val validIossNumbers: Seq[String] = request.iossNumber :: previousRegistrations.map(_.iossNumber)
       if (validIossNumbers.contains(iossNumber)) {
         None
