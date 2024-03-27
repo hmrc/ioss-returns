@@ -126,7 +126,7 @@ class ReturnsService @Inject()(
 
             val runningPeriod = Period.getRunningPeriod(effectiveDate)
 
-            val periodToCheck = if(runningPeriod.firstDay == effectiveDate) {
+            val periodToCheck = if (runningPeriod.firstDay == effectiveDate) {
               getPrevious(runningPeriod)
             } else {
               runningPeriod

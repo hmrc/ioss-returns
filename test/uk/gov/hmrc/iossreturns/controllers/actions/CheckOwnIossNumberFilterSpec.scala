@@ -38,8 +38,6 @@ class CheckOwnIossNumberFilterSpec extends SpecBase with MockitoSugar with Befor
 
   private val mockPreviousRegistrationService = mock[PreviousRegistrationService]
 
-  private implicit val emptyHeaderCarrier: HeaderCarrier = HeaderCarrier()
-
   class Harness(iossNumber: String, previousRegistrationService: PreviousRegistrationService) extends
     CheckOwnIossNumberFilterImpl(iossNumber, previousRegistrationService) {
     def callFilter(request: AuthorisedRequest[_]): Future[Option[Result]] = filter(request)

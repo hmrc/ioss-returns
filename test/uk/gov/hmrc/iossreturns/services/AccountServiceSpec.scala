@@ -22,7 +22,6 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
 import uk.gov.hmrc.iossreturns.models.enrolments.{EACDEnrolment, EACDEnrolments, EACDIdentifiers}
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
