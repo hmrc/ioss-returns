@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.config
+package uk.gov.hmrc.iossreturns.models.requests
 
-import play.api.Configuration
+import play.api.libs.json.{JsObject, Json, OFormat}
+import uk.gov.hmrc.domain.Vrn
+import uk.gov.hmrc.iossreturns.models.Period
 
-import javax.inject.{Inject, Singleton}
+case class SaveForLaterRequest(
+                             vrn: Vrn,
+                             period: Period,
+                             data: JsObject
+                           )
 
-@Singleton
-class AppConfig @Inject()(config: Configuration) {
+object SaveForLaterRequest {
 
-  val appName: String = config.get[String]("appName")
-
-  val encryptionKey: String = config.get[String]("mongodb.encryption.key")
-  val cacheTtl: Int = config.get[Int]("mongodb.timeToLiveInDays")
-
-  val iossEnrolment: String = config.get[String]("features.enrolment.ioss-enrolment-key")
-
-  val externalEntryTtlDays: Int = config.get[Int]("features.externalEntry.ttlInDays")
+  implicit val format: OFormat[SaveForLaterRequest] = Json.format[SaveForLaterRequest]
 }
