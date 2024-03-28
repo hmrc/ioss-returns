@@ -29,7 +29,8 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.generators.Generators
-import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.Period.{getNext, getPrevious, toEtmpPeriodString}
+import uk.gov.hmrc.iossreturns.models.{Period, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
@@ -48,27 +49,27 @@ class ReturnsServiceSpec
     with OptionValues
     with IntegrationPatience
     with BeforeAndAfterEach {
-  val vatReturnConnector = mock[VatReturnConnector]
+  val vatReturnConnector: VatReturnConnector = mock[VatReturnConnector]
 
   private val mockCheckExclusionsService: CheckExclusionsService = mock[CheckExclusionsService]
 
   val stubClock: Clock = Clock.fixed(LocalDate.of(2022, 10, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
-  val period2021APRIL = Period(2021, Month.APRIL)
-  val period2021MAY = Period(2021, Month.MAY)
-  val period2021JUNE = Period(2021, Month.JUNE)
-  val period2021JULY = Period(2021, Month.JULY)
-  val period2021AUGUST = Period(2021, Month.AUGUST)
-  val period2021SEPTEMBER = Period(2021, Month.SEPTEMBER)
-  val period2022JANUARY = Period(2022, Month.JANUARY)
-  val period2022FEBRUARY = Period(2022, Month.FEBRUARY)
-  val period2022MARCH = Period(2022, Month.MARCH)
-  val period2022APRIL = Period(2022, Month.APRIL)
-  val period2022MAY = Period(2022, Month.MAY)
-  val period2022JUNE = Period(2022, Month.JUNE)
-  val period2022JULY = Period(2022, Month.JULY)
-  val period2022AUGUST = Period(2022, Month.AUGUST)
-  val period2022SEPTEMBER = Period(2022, Month.SEPTEMBER)
-  val periods = Seq(
+  val period2021APRIL: StandardPeriod = StandardPeriod(2021, Month.APRIL)
+  val period2021MAY: StandardPeriod = StandardPeriod(2021, Month.MAY)
+  val period2021JUNE: StandardPeriod = StandardPeriod(2021, Month.JUNE)
+  val period2021JULY: StandardPeriod = StandardPeriod(2021, Month.JULY)
+  val period2021AUGUST: StandardPeriod = StandardPeriod(2021, Month.AUGUST)
+  val period2021SEPTEMBER: StandardPeriod = StandardPeriod(2021, Month.SEPTEMBER)
+  val period2022JANUARY: StandardPeriod = StandardPeriod(2022, Month.JANUARY)
+  val period2022FEBRUARY: StandardPeriod = StandardPeriod(2022, Month.FEBRUARY)
+  val period2022MARCH: StandardPeriod = StandardPeriod(2022, Month.MARCH)
+  val period2022APRIL: StandardPeriod = StandardPeriod(2022, Month.APRIL)
+  val period2022MAY: StandardPeriod = StandardPeriod(2022, Month.MAY)
+  val period2022JUNE: StandardPeriod = StandardPeriod(2022, Month.JUNE)
+  val period2022JULY: StandardPeriod = StandardPeriod(2022, Month.JULY)
+  val period2022AUGUST: StandardPeriod = StandardPeriod(2022, Month.AUGUST)
+  val period2022SEPTEMBER: StandardPeriod = StandardPeriod(2022, Month.SEPTEMBER)
+  val periods: Seq[StandardPeriod] = Seq(
     period2021APRIL,
     period2021MAY,
     period2021JUNE,
@@ -140,8 +141,8 @@ class ReturnsServiceSpec
     val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
     val exclusion = EtmpExclusion(EtmpExclusionReason.FailsToComply, stubbedNow, stubbedNow.minusMonths(1), quarantine = false)
     val currentPeriod = Period.getRunningPeriod(stubbedNow)
-    val periodOverdue = currentPeriod.getPrevious().getPrevious().getPrevious()
-    val excludedPeriod = currentPeriod.getNext()
+    val periodOverdue = getPrevious(getPrevious(getPrevious(currentPeriod)))
+    val excludedPeriod = getNext(currentPeriod)
     val scenarios = Table[Period, List[Period], List[Period], List[EtmpExclusion], PeriodWithStatus, String](
       ("period", "vat return", "excludedPeriods", "exclusions", "expected result", "title"),
       (excludedPeriod, List(currentPeriod), List(excludedPeriod), List(exclusion), PeriodWithStatus(excludedPeriod, SubmissionStatus.Excluded), "for a period where there is an exclusion with an effective date within previous period, mark is as excluded"),
@@ -156,8 +157,8 @@ class ReturnsServiceSpec
           for (ep <- excludedPeriods) {
             when(mockCheckExclusionsService.isPeriodExcluded(ep, exclusions)) thenReturn true
           }
-        service.decideStatus(period, fulfilledPeriods, exclusions) mustEqual expected
-      }
+          service.decideStatus(period, fulfilledPeriods, exclusions) mustEqual expected
+        }
       }
     }
   }
@@ -179,7 +180,7 @@ class ReturnsServiceSpec
       (commencementLocalDate: LocalDate, fulfilledPeriods: List[Period], excludedPeriods: List[Period], exclusions: List[EtmpExclusion], expected: List[PeriodWithStatus], title: String) => {
         s"when $title" in {
           val obligations = EtmpObligations(Seq(EtmpObligation(fulfilledPeriods.map { fulfilledPeriod =>
-            EtmpObligationDetails(EtmpObligationsFulfilmentStatus.Fulfilled, fulfilledPeriod.toEtmpPeriodString)
+            EtmpObligationDetails(EtmpObligationsFulfilmentStatus.Fulfilled, toEtmpPeriodString(fulfilledPeriod))
           })))
 
           when(vatReturnConnector.getObligations(any(), any())) thenReturn Future.successful(Right(obligations))
@@ -208,7 +209,7 @@ class ReturnsServiceSpec
         val commencementDate = LocalDate.of(2021, 9, 30)
         val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
 
-        val expectedPeriods = Seq(Period(2021, Month.SEPTEMBER))
+        val expectedPeriods = Seq(StandardPeriod(2021, Month.SEPTEMBER))
         val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", commencementDate, Nil)
 
         whenReady(returnValue, Timeout(Span(2, Seconds))) { statuses: Seq[PeriodWithStatus] =>
@@ -237,7 +238,7 @@ class ReturnsServiceSpec
 
       val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
 
-      val expectedPeriods = Seq(Period(2021, Month.JULY), Period(2021, Month.AUGUST), Period(2021, Month.SEPTEMBER))
+      val expectedPeriods = Seq(StandardPeriod(2021, Month.JULY), StandardPeriod(2021, Month.AUGUST), StandardPeriod(2021, Month.SEPTEMBER))
 
       val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", LocalDate.now(stubClock).minusMonths(3), Nil)
 
@@ -255,7 +256,7 @@ class ReturnsServiceSpec
 
       val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
 
-      val expectedPeriods = Seq(Period(2021, Month.OCTOBER), Period(2021, Month.NOVEMBER), Period(2021, Month.DECEMBER))
+      val expectedPeriods = Seq(StandardPeriod(2021, Month.OCTOBER), StandardPeriod(2021, Month.NOVEMBER), StandardPeriod(2021, Month.DECEMBER))
 
       val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", LocalDate.now(stubClock).minusMonths(3), Nil)
 

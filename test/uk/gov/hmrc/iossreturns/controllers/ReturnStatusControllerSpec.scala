@@ -26,12 +26,12 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.controllers.actions.{AuthAction, CheckOwnIossNumberFilter, FakeAuthAction, FakeCheckOwnIossNumberFilterProvider, FakeFailingAuthConnector}
+import uk.gov.hmrc.iossreturns.controllers.actions._
 import uk.gov.hmrc.iossreturns.generators.Generators
-import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.StandardPeriod
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
-import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return}
+import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return, SubmissionStatus}
 import uk.gov.hmrc.iossreturns.services.{CheckExclusionsService, ReturnsService}
 
 import java.time.{Clock, LocalDate, Month, ZoneId}
@@ -48,25 +48,27 @@ class ReturnStatusControllerSpec
         bind[CheckOwnIossNumberFilter].to[FakeCheckOwnIossNumberFilterProvider]
       )
 
+  private val completeOrExcludedStatuses: Seq[SubmissionStatus] = Seq(Complete, Excluded)
+
   private val mockCheckExclusionsService: CheckExclusionsService = mock[CheckExclusionsService]
 
   ".getCurrentReturnsForIossNumber()" - {
     val stubClock: Clock = Clock.fixed(LocalDate.of(2022, 10, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
-    val period2021APRIL = Period(2021, Month.APRIL)
-    val period2021MAY = Period(2021, Month.MAY)
-    val period2021JUNE = Period(2021, Month.JUNE)
-    val period2021JULY = Period(2021, Month.JULY)
-    val period2021AUGUST = Period(2021, Month.AUGUST)
-    val period2021SEPTEMBER = Period(2021, Month.SEPTEMBER)
-    val period2022JANUARY = Period(2022, Month.JANUARY)
-    val period2022FEBRUARY = Period(2022, Month.FEBRUARY)
-    val period2022MARCH = Period(2022, Month.MARCH)
-    val period2022APRIL = Period(2022, Month.APRIL)
-    val period2022MAY = Period(2022, Month.MAY)
-    val period2022JUNE = Period(2022, Month.JUNE)
-    val period2022JULY = Period(2022, Month.JULY)
-    val period2022AUGUST = Period(2022, Month.AUGUST)
-    val period2022SEPTEMBER = Period(2022, Month.SEPTEMBER)
+    val period2021APRIL = StandardPeriod(2021, Month.APRIL)
+    val period2021MAY = StandardPeriod(2021, Month.MAY)
+    val period2021JUNE = StandardPeriod(2021, Month.JUNE)
+    val period2021JULY = StandardPeriod(2021, Month.JULY)
+    val period2021AUGUST = StandardPeriod(2021, Month.AUGUST)
+    val period2021SEPTEMBER = StandardPeriod(2021, Month.SEPTEMBER)
+    val period2022JANUARY = StandardPeriod(2022, Month.JANUARY)
+    val period2022FEBRUARY = StandardPeriod(2022, Month.FEBRUARY)
+    val period2022MARCH = StandardPeriod(2022, Month.MARCH)
+    val period2022APRIL = StandardPeriod(2022, Month.APRIL)
+    val period2022MAY = StandardPeriod(2022, Month.MAY)
+    val period2022JUNE = StandardPeriod(2022, Month.JUNE)
+    val period2022JULY = StandardPeriod(2022, Month.JULY)
+    val period2022AUGUST = StandardPeriod(2022, Month.AUGUST)
+    val period2022SEPTEMBER = StandardPeriod(2022, Month.SEPTEMBER)
     val periods = Seq(
       period2021APRIL,
       period2021MAY,
@@ -105,17 +107,22 @@ class ReturnStatusControllerSpec
 
           status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(Seq(
-          ), excluded = false, finalReturnsCompleted = false, iossNumber))
+          ), excluded = false, finalReturnsCompleted = false, iossNumber,
+            Seq.empty))
         }
       }
 
       "with no returns in progress, due or overdue if all returns are complete" in {
-
         val mockReturnService = mock[ReturnsService]
         val lastPeriod = periods.takeRight(1).head
-        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
-          periods.dropRight(1).map(PeriodWithStatus(_, Complete)).toList ::: List(PeriodWithStatus(lastPeriod, Next))
-        )
+        val periodsWithStatuses = periods.dropRight(1).map(PeriodWithStatus(_, Complete)).toList ::: List(PeriodWithStatus(lastPeriod, Next))
+
+        val completeOrExcludedReturns: List[Return] = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
+
+        // Check we are not doing an empty list and in fact negating the value of the test, stranger things have happened
+        completeOrExcludedReturns.length mustBe 14
+
+        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
@@ -129,16 +136,32 @@ class ReturnStatusControllerSpec
           val result = route(app, request).value
 
           status(result) mustEqual OK
+
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
-            Seq(Return.fromPeriod(lastPeriod, Next, inProgress = false, isOldest = true)),
+            returns = Seq(Return.fromPeriod(lastPeriod, Next, inProgress = false, isOldest = true)),
             excluded = false,
             finalReturnsCompleted = false,
-            iossNumber))
+            iossNumber = iossNumber,
+            completeOrExcludedReturns = completeOrExcludedReturns
+          ))
         }
       }
 
-      "with a return due but not in progress if there's one return due but no saved answers" in {
+      def convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses: List[PeriodWithStatus]): List[Return] = {
+        val sortedPeriodsWithStatuses = periodsWithStatuses.sortBy(_.period)
 
+        val completeOrExcludedPeriodsWithStatuses =
+          sortedPeriodsWithStatuses.filter(periodsWithStatus => completeOrExcludedStatuses.contains(periodsWithStatus.status))
+
+        val completeOrExcludedReturns = completeOrExcludedPeriodsWithStatuses.zipWithIndex.map { case (periodWithStatus, index) =>
+          val isOldest = index == 0
+          Return.fromPeriod(periodWithStatus.period, periodWithStatus.status, inProgress = false, isOldest = isOldest)
+        }
+
+        completeOrExcludedReturns
+      }
+
+      "with a return due but not in progress if there's one return due but no saved answers" in {
         val mockReturnService = mock[ReturnsService]
 
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
@@ -161,7 +184,9 @@ class ReturnStatusControllerSpec
             Seq(Return.fromPeriod(period2022SEPTEMBER, Due, inProgress = false, isOldest = true)),
             excluded = false,
             finalReturnsCompleted = false,
-            iossNumber))
+            iossNumber,
+            Seq.empty
+          ))
         }
       }
 
@@ -189,12 +214,12 @@ class ReturnStatusControllerSpec
 
           status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
-            returns, excluded = false, finalReturnsCompleted = false, iossNumber))
+            returns, excluded = false, finalReturnsCompleted = false, iossNumber, Seq.empty))
         }
       }
 
       "with a return due and some returns overdue and nothing in progress" in {
-        val (period1 :: periodsInBetween) = periods.dropRight(1)
+        val period1 :: periodsInBetween = periods.dropRight(1)
         val lastPeriod = periods.takeRight(1).head
 
         val mockReturnService = mock[ReturnsService]
@@ -220,12 +245,13 @@ class ReturnStatusControllerSpec
           contentAsJson(result) mustEqual Json.toJson(
             CurrentReturns(
               Return.fromPeriod(period1, Overdue, inProgress = false, isOldest = true) ::
-                periodsInBetween.map(Return.fromPeriod(_, Overdue, inProgress = false, isOldest = false)).toList
+                periodsInBetween.map(Return.fromPeriod(_, Overdue, inProgress = false, isOldest = false))
                 :::
                 List(Return.fromPeriod(lastPeriod, Due, inProgress = false, isOldest = false)),
               excluded = false,
               finalReturnsCompleted = false,
-              iossNumber = iossNumber
+              iossNumber = iossNumber,
+              Seq.empty
             ))
         }
 
@@ -235,20 +261,24 @@ class ReturnStatusControllerSpec
 
         val mockReturnService = mock[ReturnsService]
 
-        val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(_.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = period2022AUGUST.firstDay))
-
-        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
-          List(PeriodWithStatus(period2022AUGUST, Overdue), PeriodWithStatus(period2022SEPTEMBER, Excluded))
+        val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(
+          _.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = period2022AUGUST.firstDay)
         )
+
+        val periodsWithStatuses = List(PeriodWithStatus(period2022AUGUST, Overdue), PeriodWithStatus(period2022SEPTEMBER, Excluded))
+
+        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+
+        val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
+        completeOfExcludedReturns.size mustBe 1
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
-
 
         running(app) {
           val result = route(app, request).value
@@ -260,7 +290,8 @@ class ReturnStatusControllerSpec
             ),
             excluded = true,
             finalReturnsCompleted = false,
-            iossNumber = iossNumber
+            iossNumber = iossNumber,
+            completeOrExcludedReturns = completeOfExcludedReturns
           ))
         }
       }
@@ -270,11 +301,13 @@ class ReturnStatusControllerSpec
 
         val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(_.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = period2022AUGUST.firstDay))
 
-        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
-          List(PeriodWithStatus(period2022AUGUST, Complete), PeriodWithStatus(period2022SEPTEMBER, Excluded))
-        )
+        val periodsWithStatuses = List(PeriodWithStatus(period2022AUGUST, Complete), PeriodWithStatus(period2022SEPTEMBER, Excluded))
+        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn true
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+
+        val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
+        completeOfExcludedReturns.size mustBe 2
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
@@ -290,29 +323,34 @@ class ReturnStatusControllerSpec
             Seq.empty,
             excluded = true,
             finalReturnsCompleted = true,
-            iossNumber = iossNumber
+            iossNumber = iossNumber,
+            completeOrExcludedReturns = completeOfExcludedReturns
           ))
         }
       }
 
       "excluded trader can't complete a return 3 years after return due date" in {
 
-        val exclusionPeriod = Period(2023, Month.NOVEMBER)
+        val exclusionPeriod = StandardPeriod(2023, Month.NOVEMBER)
         val stubClock: Clock = Clock.fixed(LocalDate.of(2026, 3, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
 
         val mockReturnService = mock[ReturnsService]
 
         val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(_.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = exclusionPeriod.firstDay))
 
-        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
-          List(
-            PeriodWithStatus(Period(2023, Month.DECEMBER), Excluded),
-            PeriodWithStatus(Period(2023, Month.JANUARY), Excluded)
-          )
+        val periodsWithStatuses = List(
+          PeriodWithStatus(StandardPeriod(2023, Month.DECEMBER), Excluded),
+          PeriodWithStatus(StandardPeriod(2023, Month.JANUARY), Excluded)
         )
 
+        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses )
+
+        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+
+        val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
+        completeOfExcludedReturns.size mustBe 2
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
@@ -324,36 +362,41 @@ class ReturnStatusControllerSpec
           val result = route(app, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
+           contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
             Seq.empty,
             excluded = true,
             finalReturnsCompleted = false,
-            iossNumber = iossNumber
+            iossNumber = iossNumber,
+            completeOrExcludedReturns = completeOfExcludedReturns
           ))
         }
       }
 
       "excluded trader can complete a return if return due date is within 3 years" in {
 
-        val exclusionPeriod = Period(2023, Month.NOVEMBER)
+        val exclusionPeriod = StandardPeriod(2023, Month.NOVEMBER)
         val stubClock: Clock = Clock.fixed(LocalDate.of(2026, 3, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
 
         val mockReturnService = mock[ReturnsService]
 
         val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(_.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = exclusionPeriod.firstDay))
 
-        val vatReturns = Seq(Return.fromPeriod(Period(2023, Month.JULY), Overdue, inProgress = false, isOldest = true))
+        val vatReturns = Seq(Return.fromPeriod(StandardPeriod(2023, Month.JULY), Overdue, inProgress = false, isOldest = true))
 
-        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
-          List(
-            PeriodWithStatus(Period(2023, Month.DECEMBER), Excluded),
-            PeriodWithStatus(Period(2023, Month.JULY), Overdue),
-            PeriodWithStatus(Period(2023, Month.JANUARY), Excluded)
-          )
+        val periodsWithStatuses = List(
+          PeriodWithStatus(StandardPeriod(2023, Month.DECEMBER), Excluded),
+          PeriodWithStatus(StandardPeriod(2023, Month.JULY), Overdue),
+          PeriodWithStatus(StandardPeriod(2023, Month.JANUARY), Excluded)
         )
 
+        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
+
+        when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+
+        val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
+        completeOfExcludedReturns.size mustBe 2
 
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
@@ -369,7 +412,8 @@ class ReturnStatusControllerSpec
             vatReturns,
             excluded = true,
             finalReturnsCompleted = false,
-            iossNumber = iossNumber
+            iossNumber = iossNumber,
+            completeOrExcludedReturns = completeOfExcludedReturns
           ))
         }
       }
@@ -388,4 +432,6 @@ class ReturnStatusControllerSpec
       }
     }
   }
+
+
 }

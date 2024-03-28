@@ -21,26 +21,80 @@ import play.api.libs.functional.syntax._
 import play.api.mvc.{PathBindable, QueryStringBindable}
 
 import java.time.Month._
-import java.time.format.TextStyle
 import java.time.{LocalDate, Month, YearMonth}
-import java.util.Locale
 import scala.util.Try
 import scala.util.matching.Regex
 
-case class Period(year: Int, month: Month) {
-  val firstDay: LocalDate = LocalDate.of(year, month, 1)
-
-  val lastDay: LocalDate = firstDay.plusMonths(1).minusDays(1)
+trait Period {
+  val year: Int
+  val month: Month
+  val firstDay: LocalDate
+  val lastDay: LocalDate
+  val isPartial: Boolean
 
   val paymentDeadline: LocalDate =
-    firstDay.plusMonths(2).minusDays(1)
+    LocalDate.of(year, month, 1).plusMonths(2).minusDays(1)
 
-  def displayText: String =
-    s"${month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)} ${year}"
+  def isBefore(other: Period): Boolean = {
+    val yearMonth: YearMonth = YearMonth.of(year, month)
+    val yearMonthOther: YearMonth = YearMonth.of(other.year, other.month)
+
+    yearMonth.isBefore(yearMonthOther)
+  }
+
+}
+
+case class StandardPeriod(year: Int, month: Month) extends Period {
+
+  override val firstDay: LocalDate = LocalDate.of(year, month, 1)
+  override val lastDay: LocalDate = firstDay.plusMonths(1).minusDays(1)
+  override val isPartial: Boolean = false
 
   override def toString: String = s"$year-M${month.getValue}"
 
-  def toEtmpPeriodString: String = {
+}
+
+object StandardPeriod {
+  val reads: Reads[StandardPeriod] = {
+    (
+      (__ \ "year").read[Int] and
+        (__ \ "month").read[String].map(m => Month.of(m.substring(1).toInt))
+    )((year, month) => StandardPeriod(year, month))
+  }
+
+  val writes: OWrites[StandardPeriod] = {
+    (
+      (__ \ "year").write[Int] and
+        (__ \ "month").write[String].contramap[Month](m => s"M${m.getValue}")
+    )(unlift(StandardPeriod.unapply))
+  }
+
+  implicit val format: Format[StandardPeriod] = Format(reads, writes)
+}
+
+object Period {
+  private val pattern: Regex = """(\d{4})-M(1[0-2]|[1-9])""".r.anchored
+
+  def apply(yearMonth: YearMonth): Period = StandardPeriod(yearMonth.getYear, yearMonth.getMonth)
+
+  def apply(yearString: String, monthString: String): Try[Period] =
+    for {
+      year <- Try(yearString.toInt)
+      month <- Try(Month.of(monthString.toInt))
+    } yield StandardPeriod(year, month)
+
+  def fromString(string: String): Option[Period] =
+    string match {
+      case pattern(yearString, monthString) =>
+        Period(yearString, monthString).toOption
+      case _ =>
+        None
+    }
+
+  def toEtmpPeriodString(currentPeriod: Period): String = {
+    val standardPeriod = StandardPeriod(currentPeriod.year, currentPeriod.month)
+    val year = standardPeriod.year
+    val month = standardPeriod.month
     val lastYearDigits = year.toString.substring(2)
 
     s"$lastYearDigits${toEtmpMonthString(month)}"
@@ -64,55 +118,29 @@ case class Period(year: Int, month: Month) {
     }
   }
 
-  def getNext(): Period = {
-    if (this.month == Month.DECEMBER)
-      Period(this.year + 1, Month.JANUARY)
-    else
-      Period(this.year, this.month.plus(1))
-  }
-
-  def getPrevious(): Period = {
-    if (this.month == Month.JANUARY)
-      Period(this.year - 1, Month.DECEMBER)
-    else
-      Period(this.year, this.month.minus(1))
-  }
-
-  def isBefore(other: Period): Boolean = {
-    val yearMonth: YearMonth = YearMonth.of(year, month)
-    val yearMonthOther: YearMonth = YearMonth.of(other.year, other.month)
-
-    yearMonth.isBefore(yearMonthOther)
-  }
-}
-
-object Period {
-  private val pattern: Regex = """(\d{4})-M(1[0-2]|[1-9])""".r.anchored
-
-  def apply(yearMonth: YearMonth): Period = Period(yearMonth.getYear, yearMonth.getMonth)
-
-  def apply(yearString: String, monthString: String): Try[Period] =
-    for {
-      year <- Try(yearString.toInt)
-      month <- Try(Month.of(monthString.toInt))
-    } yield Period(year, month)
-
-  def fromString(string: String): Option[Period] =
-    string match {
-      case pattern(yearString, monthString) =>
-        Period(yearString, monthString).toOption
-      case _ =>
-        None
-    }
-
-  def getRunningPeriod(date: LocalDate): Period =
-    Period(date.getYear, date.getMonth)
-
   def fromKey(key: String): Period = {
     val yearLast2 = key.take(2)
     val month = key.drop(2)
-    Period(s"20$yearLast2".toInt, fromEtmpMonthString(month))
+    StandardPeriod(s"20$yearLast2".toInt, fromEtmpMonthString(month))
   }
+
+  def getNext(currentPeriod: Period): Period = {
+    if (currentPeriod.month == Month.DECEMBER)
+      StandardPeriod(currentPeriod.year + 1, Month.JANUARY)
+    else
+      StandardPeriod(currentPeriod.year, currentPeriod.month.plus(1))
+  }
+
+  def getPrevious(currentPeriod: Period): Period = {
+    if (currentPeriod.month == Month.JANUARY)
+      StandardPeriod(currentPeriod.year - 1, Month.DECEMBER)
+    else
+      StandardPeriod(currentPeriod.year, currentPeriod.month.minus(1))
+  }
+
+  def getRunningPeriod(date: LocalDate): Period =
+    StandardPeriod(date.getYear, date.getMonth)
+
 
   private def fromEtmpMonthString(keyMonth: String): Month = {
     keyMonth match {
@@ -131,21 +159,17 @@ object Period {
     }
   }
 
-  val reads: Reads[Period] = {
-    (
-      (__ \ "year").read[Int] and
-        (__ \ "month").read[String].map(m => Month.of(m.substring(1).toInt))
-      )((year, month) => Period(year, month))
+  val reads: Reads[Period] =
+    StandardPeriod.format.widen[Period] orElse
+      PartialReturnPeriod.format.widen[Period]
+
+
+  val writes: Writes[Period] = {
+    case s: StandardPeriod => Json.toJson(s)(StandardPeriod.format)
+    case p: PartialReturnPeriod => Json.toJson(p)(PartialReturnPeriod.format)
   }
 
-  val writes: OWrites[Period] = {
-    (
-      (__ \ "year").write[Int] and
-        (__ \ "month").write[String].contramap[Month](m => s"M${m.getValue}")
-      )(unlift(Period.unapply))
-  }
-
-  implicit val format: OFormat[Period] = OFormat(reads, writes)
+  implicit val format: Format[Period] = Format(reads, writes)
 
   implicit val pathBindable: PathBindable[Period] = new PathBindable[Period] {
 

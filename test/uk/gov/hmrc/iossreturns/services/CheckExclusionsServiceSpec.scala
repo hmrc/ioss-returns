@@ -2,7 +2,7 @@ package uk.gov.hmrc.iossreturns.services
 
 import org.scalatest.PrivateMethodTester
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.StandardPeriod
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
 
 import java.time.LocalDate
@@ -49,7 +49,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val service = new CheckExclusionsService(stubClockAtArbitraryDate)
 
-        val period = Period(stubbedNow.minusYears(3).getYear, stubbedNow.minusMonths(2).getMonth)
+        val period = StandardPeriod(stubbedNow.minusYears(3).getYear, stubbedNow.minusMonths(2).getMonth)
 
         val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.minusMonths(4)))
 
@@ -62,7 +62,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val service = new CheckExclusionsService(stubClockAtArbitraryDate)
 
-        val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+        val period = StandardPeriod(stubbedNow.getYear, stubbedNow.getMonth)
 
         val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.minusMonths(1)))
 
@@ -75,7 +75,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val service = new CheckExclusionsService(stubClockAtArbitraryDate)
 
-        val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+        val period = StandardPeriod(stubbedNow.getYear, stubbedNow.getMonth)
 
         val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = period.firstDay))
 
@@ -88,7 +88,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val service = new CheckExclusionsService(stubClockAtArbitraryDate)
 
-        val period = Period(stubbedNow.minusYears(3).getYear, stubbedNow.minusMonths(2).getMonth)
+        val period = StandardPeriod(stubbedNow.minusYears(3).getYear, stubbedNow.minusMonths(2).getMonth)
 
         val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.minusMonths(1)))
 
@@ -101,7 +101,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val service = new CheckExclusionsService(stubClockAtArbitraryDate)
 
-        val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+        val period = StandardPeriod(stubbedNow.getYear, stubbedNow.getMonth)
         val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.plusMonths(1)))
 
         val result = service.isPeriodExcluded(period, exclusion)
@@ -113,7 +113,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val service = new CheckExclusionsService(stubClockAtArbitraryDate)
 
-        val period = Period(stubbedNow.getYear, stubbedNow.getMonth)
+        val period = StandardPeriod(stubbedNow.getYear, stubbedNow.getMonth)
         val exclusion = List.empty
 
         val result = service.isPeriodExcluded(period, exclusion)

@@ -22,7 +22,8 @@ case class CurrentReturns(
                            returns: Seq[Return],
                            excluded: Boolean,
                            finalReturnsCompleted: Boolean,
-                           iossNumber: String
+                           iossNumber: String,
+                           completeOrExcludedReturns : Seq[Return]
                          )
 
 
