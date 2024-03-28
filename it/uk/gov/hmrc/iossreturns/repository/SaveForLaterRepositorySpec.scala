@@ -11,7 +11,7 @@ import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.crypto.{SavedUserAnswersEncryptor, SecureGCMCipher}
 import uk.gov.hmrc.iossreturns.generators.Generators
-import uk.gov.hmrc.iossreturns.models.{EncryptedSavedUserAnswers, Period, SavedUserAnswers}
+import uk.gov.hmrc.iossreturns.models.{EncryptedSavedUserAnswers, Period, SavedUserAnswers, StandardPeriod}
 import uk.gov.hmrc.iossreturns.utils.StringUtils
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, DefaultPlayMongoRepositorySupport}
 
@@ -29,7 +29,7 @@ class SaveForLaterRepositorySpec
     with OptionValues
     with Generators {
 
-  private val cipher    = new SecureGCMCipher
+  private val cipher = new SecureGCMCipher
   private val encryptor = new SavedUserAnswersEncryptor(cipher)
   private val appConfig = mock[AppConfig]
   private val secretKey = "VqmXp7yigDFxbCUdDdNZVIvbW6RgPNJsliv6swQNCL8="
@@ -38,7 +38,7 @@ class SaveForLaterRepositorySpec
   private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
 
   when(appConfig.encryptionKey) thenReturn secretKey
-  
+
   override protected val repository =
     new SaveForLaterRepository(
       mongoComponent = mongoComponent,
@@ -50,11 +50,11 @@ class SaveForLaterRepositorySpec
 
     "must insert returns for the same VRN but different periods" in {
 
-      val answers    = arbitrary[SavedUserAnswers].sample.value
-      val answers1    = answers copy (lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
-      val answers2Period = answers1.period copy (year = answers1.period.year + 1)
-      val answers2    = answers1.copy (
-        period      = answers2Period,
+      val answers = arbitrary[SavedUserAnswers].sample.value
+      val answers1 = answers copy (lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
+      val answers2Period = StandardPeriod(year = answers1.period.year + 1, month = answers1.period.month)
+      val answers2 = answers1.copy(
+        period = answers2Period,
         lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS)
       )
 
@@ -70,13 +70,13 @@ class SaveForLaterRepositorySpec
     }
 
     "must insert saved answers for different VRNs in the same period" in {
-      val answers    = arbitrary[SavedUserAnswers].sample.value
-      val answers1    = answers copy (lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
-      val vrn2       = Vrn(StringUtils.rotateDigitsInString(answers1.vrn.vrn).mkString)
-      val answers2    = answers1.copy (
-        vrn         = vrn2,
+      val answers = arbitrary[SavedUserAnswers].sample.value
+      val answers1 = answers copy (lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
+      val vrn2 = Vrn(StringUtils.rotateDigitsInString(answers1.vrn.vrn).mkString)
+      val answers2 = answers1.copy(
+        vrn = vrn2,
         lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS)
-        )
+      )
 
       val insertResult1 = repository.set(answers1).futureValue
       val insertReturn2 = repository.set(answers2).futureValue
@@ -105,23 +105,23 @@ class SaveForLaterRepositorySpec
       decryptedDatabaseRecords must contain only answers2
     }
   }
-  
+
   ".get many" - {
 
     "must return all records for the given VRN" in {
 
-      val answers    = arbitrary[SavedUserAnswers].sample.value
+      val answers = arbitrary[SavedUserAnswers].sample.value
       val answers1 = answers.copy(lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
-      val answers2Period = answers1.period copy (year = answers1.period.year + 1)
-      val answers2    = answers1.copy (
-        period      = answers2Period,
+      val answers2Period = StandardPeriod(year = answers1.period.year + 1, month = answers1.period.month)
+      val answers2 = answers1.copy(
+        period = answers2Period,
         lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS)
-        )
-
-      val vrn3       = Vrn(StringUtils.rotateDigitsInString(answers1.vrn.vrn).mkString)
-      val answers3 = answers1 copy (
-        vrn         = vrn3
       )
+
+      val vrn3 = Vrn(StringUtils.rotateDigitsInString(answers1.vrn.vrn).mkString)
+      val answers3 = answers1 copy (
+        vrn = vrn3
+        )
 
       insert(encryptor.encryptAnswers(answers1, answers1.vrn, secretKey)).futureValue
       insert(encryptor.encryptAnswers(answers2, answers2.vrn, secretKey)).futureValue
