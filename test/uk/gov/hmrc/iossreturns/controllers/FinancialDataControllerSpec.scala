@@ -191,6 +191,86 @@ class FinancialDataControllerSpec
     }
   }
 
+  ".prepareFinancialDataForIossNumber" - {
+
+    lazy val request =
+      FakeRequest(GET, routes.FinancialDataController.prepareFinancialDataForIossNumber(iossNumber).url)
+
+    "must return paymentData Json when there are due payments and overdue payments" in {
+      val now = LocalDate.now(stubClockAtArbitraryDate)
+      val periodOverdue1 = Period(now.minusYears(1).getYear, Month.JANUARY)
+      val periodOverdue2 = Period(now.minusYears(1).getYear, Month.FEBRUARY)
+      val periodDue1 = Period(now.getYear, now.getMonth.plus(1))
+      val periodDue2 = Period(now.getYear, now.getMonth.plus(2))
+      val paymentOverdue1 = Payment(periodOverdue1, 10, periodOverdue1.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentOverdue2 = Payment(periodOverdue2, 10, periodOverdue2.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
+
+      when(paymentsService.getUnpaidPayments(any(), any(), any())(any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
+
+      val app = applicationBuilder().overrides(bind[PaymentsService].to(paymentsService))
+        .build()
+
+      running(app) {
+
+        val result = route(app, request).value
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.toJson(
+          PrepareData(
+            List(paymentDue1, paymentDue2),
+            List(paymentOverdue1, paymentOverdue2),
+            List.empty,
+            List(paymentDue1,
+              paymentDue2,
+              paymentOverdue1,
+              paymentOverdue2
+            ).map(_.amountOwed).sum,
+            List(paymentOverdue1, paymentOverdue2).map(_.amountOwed).sum,
+            iossNumber)
+        )
+      }
+    }
+
+    "must return paymentData Json when there are excluded payments" in {
+      val now = LocalDate.now(stubClockAtArbitraryDate)
+      val periodOverdue1 = Period(now.minusYears(1).getYear, Month.JANUARY)
+      val periodOverdue2 = Period(now.minusYears(1).getYear, Month.FEBRUARY)
+      val periodDue1 = Period(now.getYear, now.getMonth.plus(1))
+      val periodDue2 = Period(now.getYear, now.getMonth.plus(2))
+      val paymentOverdue1 = Payment(periodOverdue1, 10, periodOverdue1.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentOverdue2 = Payment(periodOverdue2, 10, periodOverdue2.paymentDeadline, PaymentStatus.Excluded)
+      val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
+
+      when(paymentsService.getUnpaidPayments(any(), any(), any())(any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
+
+      val app = applicationBuilder().overrides(bind[PaymentsService].to(paymentsService))
+        .build()
+
+      running(app) {
+
+        val result = route(app, request).value
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.toJson(
+          PrepareData(
+            duePayments = List(paymentDue1, paymentDue2),
+            overduePayments = List(paymentOverdue1),
+            excludedPayments = List(paymentOverdue2),
+            totalAmountOwed = List(paymentDue1,
+              paymentDue2,
+              paymentOverdue1,
+              paymentOverdue2
+            ).map(_.amountOwed).sum,
+            totalAmountOverdue = List(paymentOverdue1, paymentOverdue2).map(_.amountOwed).sum,
+            iossNumber)
+        )
+      }
+    }
+  }
+
   ".getCharge" - {
 
     lazy val request = FakeRequest(GET, routes.FinancialDataController.getCharge(period).url)
