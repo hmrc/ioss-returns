@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.iossreturns.services
 
-import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.models.requests.SaveForLaterRequest
 import uk.gov.hmrc.iossreturns.models.{Period, SavedUserAnswers}
 import uk.gov.hmrc.iossreturns.repository.SaveForLaterRepository
@@ -32,7 +31,7 @@ class SaveForLaterService @Inject()(
 
   def saveAnswers(request: SaveForLaterRequest): Future[SavedUserAnswers] = {
     val answers = SavedUserAnswers(
-      vrn = request.vrn,
+      iossNumber = request.iossNumber,
       period = request.period,
       data = request.data,
       lastUpdated = Instant.now(clock)
@@ -40,10 +39,10 @@ class SaveForLaterService @Inject()(
     repository.set(answers)
   }
 
-  def get(vrn: Vrn) :  Future[Seq[SavedUserAnswers]] =
-    repository.get(vrn)
+  def get(iossNumber: String) :  Future[Seq[SavedUserAnswers]] =
+    repository.get(iossNumber)
 
-  def delete(vrn: Vrn, period: Period): Future[Boolean] =
-    repository.clear(vrn, period)
+  def delete(iossNumber: String, period: Period): Future[Boolean] =
+    repository.clear(iossNumber, period)
 
 }

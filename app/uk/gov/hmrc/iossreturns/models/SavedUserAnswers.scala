@@ -17,18 +17,17 @@
 package uk.gov.hmrc.iossreturns.models
 
 import play.api.libs.json._
-import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.crypto.EncryptedValue
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
 
 case class SavedUserAnswers(
-                             vrn: Vrn,
+                             iossNumber: String,
                              period: Period,
                              data: JsValue,
                              lastUpdated: Instant
-                    )
+                           )
 
 object SavedUserAnswers {
 
@@ -36,11 +35,11 @@ object SavedUserAnswers {
 }
 
 case class EncryptedSavedUserAnswers(
-                      vrn: Vrn,
-                      period: Period,
-                      data: EncryptedValue,
-                      lastUpdated: Instant
-                    )
+                                      iossNumber: String,
+                                      period: Period,
+                                      data: EncryptedValue,
+                                      lastUpdated: Instant
+                                    )
 
 object EncryptedSavedUserAnswers {
 
@@ -49,11 +48,11 @@ object EncryptedSavedUserAnswers {
     import play.api.libs.functional.syntax._
 
     (
-      (__ \ "vrn").read[Vrn] and
+      (__ \ "iossNumber").read[String] and
         (__ \ "period").read[Period] and
         (__ \ "data").read[EncryptedValue] and
         (__ \ "lastUpdated").read(MongoJavatimeFormats.instantFormat)
-      ) (EncryptedSavedUserAnswers.apply _)
+      )(EncryptedSavedUserAnswers.apply _)
   }
 
   val writes: OWrites[EncryptedSavedUserAnswers] = {
@@ -61,11 +60,11 @@ object EncryptedSavedUserAnswers {
     import play.api.libs.functional.syntax._
 
     (
-      (__ \ "vrn").write[Vrn] and
+      (__ \ "iossNumber").write[String] and
         (__ \ "period").write[Period] and
         (__ \ "data").write[EncryptedValue] and
         (__ \ "lastUpdated").write(MongoJavatimeFormats.instantFormat)
-      ) (unlift(EncryptedSavedUserAnswers.unapply))
+      )(unlift(EncryptedSavedUserAnswers.unapply))
   }
 
   implicit val format: OFormat[EncryptedSavedUserAnswers] = OFormat(reads, writes)

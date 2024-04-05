@@ -44,7 +44,7 @@ class SaveForLaterController @Inject()(
 
   def get(): Action[AnyContent] = auth.async {
     implicit request =>
-      saveForLaterService.get(request.vrn).map {
+      saveForLaterService.get(request.iossNumber).map {
         value => value.sortBy(_.lastUpdated).lastOption
           .map(savedUserAnswers => Ok(Json.toJson(savedUserAnswers)))
           .getOrElse(NotFound)
@@ -53,7 +53,7 @@ class SaveForLaterController @Inject()(
 
   def delete(period: Period): Action[AnyContent] = auth.async {
     implicit request =>
-      saveForLaterService.delete(request.vrn, period).map(
+      saveForLaterService.delete(request.iossNumber, period).map(
         result => Ok(Json.toJson(result)))
   }
 }

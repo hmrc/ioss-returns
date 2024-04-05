@@ -48,7 +48,7 @@ class SaveForLaterRepositorySpec
 
   ".set savedAnswers" - {
 
-    "must insert returns for the same VRN but different periods" in {
+    "must insert returns for the same IOSS Number but different periods" in {
 
       val answers = arbitrary[SavedUserAnswers].sample.value
       val answers1 = answers copy (lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
@@ -62,19 +62,19 @@ class SaveForLaterRepositorySpec
       val insertReturn2 = repository.set(answers2).futureValue
       val databaseRecords = findAll().futureValue
       val decryptedDatabaseRecords =
-        databaseRecords.map(e => encryptor.decryptAnswers(e, e.vrn, secretKey))
+        databaseRecords.map(e => encryptor.decryptAnswers(e, e.iossNumber, secretKey))
 
       insertResult1 mustBe answers1
       insertReturn2 mustBe answers2
       decryptedDatabaseRecords must contain theSameElementsAs Seq(answers1, answers2)
     }
 
-    "must insert saved answers for different VRNs in the same period" in {
+    "must insert saved answers for different IOSS Numbers in the same period" in {
       val answers = arbitrary[SavedUserAnswers].sample.value
       val answers1 = answers copy (lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
-      val vrn2 = Vrn(StringUtils.rotateDigitsInString(answers1.vrn.vrn).mkString)
+      val iossNumber2 = StringUtils.rotateDigitsInString(answers1.iossNumber).mkString
       val answers2 = answers1.copy(
-        vrn = vrn2,
+        iossNumber = iossNumber2,
         lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS)
       )
 
