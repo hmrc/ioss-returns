@@ -23,7 +23,6 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val hasActiveWindowExpired = PrivateMethod[LocalDate](Symbol("hasActiveWindowExpired"))
         service invokePrivate hasActiveWindowExpired(dueDate) mustBe true
-
       }
 
       "must return false if active return window is on the day of expiry" in {

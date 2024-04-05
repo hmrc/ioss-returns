@@ -18,7 +18,8 @@ package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, Result}
-import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
+import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
+import uk.gov.hmrc.iossreturns.controllers.actions.{AuthorisedRequest, DefaultAuthenticatedControllerComponents}
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData._
 import uk.gov.hmrc.iossreturns.models.payments.{PaymentStatus, PrepareData}
@@ -33,6 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class FinancialDataController @Inject()(
                                          cc: DefaultAuthenticatedControllerComponents,
                                          financialDataService: FinancialDataService,
+                                         registrationConnector: RegistrationConnector,
                                          paymentsService: PaymentsService,
                                          clock: Clock
                                        )(implicit ec: ExecutionContext) extends BackendController(cc) {
@@ -47,9 +49,20 @@ class FinancialDataController @Inject()(
 
   def prepareFinancialData(): Action[AnyContent] = cc.auth().async {
     implicit request => {
-      val now = LocalDate.now(clock)
-      val startTime = LocalDate.parse(request.registration.schemeDetails.commencementDate, etmpDateFormatter)
-      val unpaidPayments = paymentsService.getUnpaidPayments(request.iossNumber, startTime, request.registration.exclusions.toList)
+      prepare(request.iossNumber)
+    }
+  }
+
+  def prepareFinancialDataForIossNumber(iossNumber: String): Action[AnyContent] = cc.auth().async {
+    implicit request =>
+      prepare(iossNumber)
+  }
+
+  private def prepare(iossNumber: String)(implicit request: AuthorisedRequest[AnyContent]): Future[Result] = {
+    val now = LocalDate.now(clock)
+    registrationConnector.getRegistrationForIossNumber(iossNumber).flatMap { registrationWrapper =>
+      val startTime = LocalDate.parse(registrationWrapper.registration.schemeDetails.commencementDate, etmpDateFormatter).withDayOfMonth(1)
+      val unpaidPayments = paymentsService.getUnpaidPayments(iossNumber, startTime, request.registration.exclusions.toList)
       unpaidPayments.map { up =>
         val totalAmountOwed = up.map(_.amountOwed).sum
         val totalAmountOverdue = up.filter(_.dateDue.isBefore(now)).map(_.amountOwed).sum
@@ -62,7 +75,7 @@ class FinancialDataController @Inject()(
           excludedPayments,
           totalAmountOwed,
           totalAmountOverdue,
-          iossNumber = request.iossNumber
+          iossNumber = iossNumber
         )))
       }
     }

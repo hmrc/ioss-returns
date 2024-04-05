@@ -1,24 +1,25 @@
 # microservice specific routes
-GET         /financial-data/get/:commencementDate           uk.gov.hmrc.iossreturns.controllers.FinancialDataController.get(commencementDate: LocalDate)
+GET         /financial-data/get/:commencementDate             uk.gov.hmrc.iossreturns.controllers.FinancialDataController.get(commencementDate: LocalDate)
 
-GET         /return/:period                                 uk.gov.hmrc.iossreturns.controllers.ReturnController.get(period: Period)
-GET         /return/:period/:iossNumber                     uk.gov.hmrc.iossreturns.controllers.ReturnController.getForIossNumber(period: Period, iossNumber: String)
+GET         /return/:period                                   uk.gov.hmrc.iossreturns.controllers.ReturnController.get(period: Period)
+GET         /return/:period/:iossNumber                       uk.gov.hmrc.iossreturns.controllers.ReturnController.getForIossNumber(period: Period, iossNumber: String)
 
-POST        /return                                         uk.gov.hmrc.iossreturns.controllers.ReturnController.submit
+POST        /return                                           uk.gov.hmrc.iossreturns.controllers.ReturnController.submit
 
-GET         /vat-returns/current-returns/:iossNumber        uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturnsForIossNumber(iossNumber: String)
-GET         /vat-returns/current-returns                    uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturns
+GET         /vat-returns/current-returns/:iossNumber          uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturnsForIossNumber(iossNumber: String)
+GET         /vat-returns/current-returns                      uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturns
 GET         /vat-returns/statuses/:commencementDate         uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.listStatuses(commencementDate: LocalDate)
 
-GET         /financial-data/prepare                         uk.gov.hmrc.iossreturns.controllers.FinancialDataController.prepareFinancialData()
+GET         /financial-data/prepare                           uk.gov.hmrc.iossreturns.controllers.FinancialDataController.prepareFinancialData()
+GET         /financial-data/prepare/:iossNumber               uk.gov.hmrc.iossreturns.controllers.FinancialDataController.prepareFinancialDataForIossNumber(iossNumber: String)
 
-GET         /obligations/:iossNumber                        uk.gov.hmrc.iossreturns.controllers.ReturnController.getObligations(iossNumber: String)
+GET         /obligations/:iossNumber                          uk.gov.hmrc.iossreturns.controllers.ReturnController.getObligations(iossNumber: String)
 
-POST        /external-entry/:page                           uk.gov.hmrc.iossreturns.controllers.external.ExternalEntryController.onExternal(page: String, period: Option[Period] ?= None, lang: Option[String] ?= None)
-GET         /external-entry                                 uk.gov.hmrc.iossreturns.controllers.external.ExternalEntryController.getExternalEntry()
+POST        /external-entry/:page                             uk.gov.hmrc.iossreturns.controllers.external.ExternalEntryController.onExternal(page: String, period: Option[Period] ?= None, lang: Option[String] ?= None)
+GET         /external-entry                                   uk.gov.hmrc.iossreturns.controllers.external.ExternalEntryController.getExternalEntry()
 
-GET         /financial-data/charge/:period                  uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getCharge(period: Period)
-GET         /financial-data/charge/:period/:iossNumber      uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getChargeForIossNumber(period: Period, iossNumber: String)
+GET         /financial-data/charge/:period                    uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getCharge(period: Period)
+GET         /financial-data/charge/:period/:iossNumber        uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getChargeForIossNumber(period: Period, iossNumber: String)
 
 POST        /save-for-later                                 uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.post()
 GET         /save-for-later                                 uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.get()

@@ -19,6 +19,7 @@ package uk.gov.hmrc.iossreturns.controllers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
 import org.mockito.Mockito._
+import org.scalacheck.Arbitrary
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
@@ -28,8 +29,9 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
-import uk.gov.hmrc.iossreturns.models.StandardPeriod
+import uk.gov.hmrc.iossreturns.models.{RegistrationWrapper, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataException}
 import uk.gov.hmrc.iossreturns.models.payments.{Charge, Payment, PaymentStatus, PrepareData}
 import uk.gov.hmrc.iossreturns.services.{FinancialDataService, PaymentsService}
@@ -46,11 +48,20 @@ class FinancialDataControllerSpec
     with FinancialDataControllerFixture {
 
   private val mockFinancialDataService = mock[FinancialDataService]
+  private val mockRegistrationConnector = mock[RegistrationConnector]
   private val paymentsService = mock[PaymentsService]
 
+  private  val registrationWrapper: RegistrationWrapper = {
+    val arbirtyRegistration = Arbitrary.arbitrary[RegistrationWrapper].sample.value
+    arbirtyRegistration.copy(registration = arbirtyRegistration.registration.copy(
+      schemeDetails = arbirtyRegistration.registration.schemeDetails.copy(commencementDate = commencementDate.toString),
+      exclusions = Seq.empty
+    ))
+  }
 
   override def beforeEach(): Unit = {
     Mockito.reset(mockFinancialDataService)
+    Mockito.reset(mockRegistrationConnector)
     Mockito.reset(paymentsService)
     super.beforeEach()
   }
@@ -127,9 +138,12 @@ class FinancialDataControllerSpec
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
 
+      when(mockRegistrationConnector.getRegistrationForIossNumber(any())(any())) thenReturn registrationWrapper.toFuture
       when(paymentsService.getUnpaidPayments(any(), any(), any())(any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
 
-      val app = applicationBuilder().overrides(bind[PaymentsService].to(paymentsService))
+      val app = applicationBuilder()
+        .overrides(bind[PaymentsService].to(paymentsService))
+        .overrides(bind[RegistrationConnector].to(mockRegistrationConnector))
         .build()
 
       running(app) {
@@ -164,9 +178,100 @@ class FinancialDataControllerSpec
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
 
+      when(mockRegistrationConnector.getRegistrationForIossNumber(any())(any())) thenReturn registrationWrapper.toFuture
       when(paymentsService.getUnpaidPayments(any(), any(), any())(any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
 
-      val app = applicationBuilder().overrides(bind[PaymentsService].to(paymentsService))
+      val app = applicationBuilder()
+        .overrides(bind[PaymentsService].to(paymentsService))
+        .overrides(bind[RegistrationConnector].to(mockRegistrationConnector))
+        .build()
+
+      running(app) {
+
+        val result = route(app, request).value
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.toJson(
+          PrepareData(
+            duePayments = List(paymentDue1, paymentDue2),
+            overduePayments = List(paymentOverdue1),
+            excludedPayments = List(paymentOverdue2),
+            totalAmountOwed = List(paymentDue1,
+              paymentDue2,
+              paymentOverdue1,
+              paymentOverdue2
+            ).map(_.amountOwed).sum,
+            totalAmountOverdue = List(paymentOverdue1, paymentOverdue2).map(_.amountOwed).sum,
+            iossNumber)
+        )
+      }
+    }
+  }
+
+  ".prepareFinancialDataForIossNumber" - {
+
+    lazy val request =
+      FakeRequest(GET, routes.FinancialDataController.prepareFinancialDataForIossNumber(iossNumber).url)
+
+    "must return paymentData Json when there are due payments and overdue payments" in {
+
+      val now = LocalDate.now(stubClockAtArbitraryDate)
+      val periodOverdue1 = StandardPeriod(now.minusYears(1).getYear, Month.JANUARY)
+      val periodOverdue2 = StandardPeriod(now.minusYears(1).getYear, Month.FEBRUARY)
+      val periodDue1 = StandardPeriod(now.getYear, now.getMonth.plus(1))
+      val periodDue2 = StandardPeriod(now.getYear, now.getMonth.plus(2))
+      val paymentOverdue1 = Payment(periodOverdue1, 10, periodOverdue1.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentOverdue2 = Payment(periodOverdue2, 10, periodOverdue2.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
+
+      when(mockRegistrationConnector.getRegistrationForIossNumber(any())(any())) thenReturn registrationWrapper.toFuture
+      when(paymentsService.getUnpaidPayments(any(), any(), any())(any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
+
+      val app = applicationBuilder()
+        .overrides(bind[PaymentsService].to(paymentsService))
+        .overrides(bind[RegistrationConnector].to(mockRegistrationConnector))
+        .build()
+
+      running(app) {
+
+        val result = route(app, request).value
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.toJson(
+          PrepareData(
+            List(paymentDue1, paymentDue2),
+            List(paymentOverdue1, paymentOverdue2),
+            List.empty,
+            List(paymentDue1,
+              paymentDue2,
+              paymentOverdue1,
+              paymentOverdue2
+            ).map(_.amountOwed).sum,
+            List(paymentOverdue1, paymentOverdue2).map(_.amountOwed).sum,
+            iossNumber)
+        )
+      }
+    }
+
+    "must return paymentData Json when there are excluded payments" in {
+
+      val now = LocalDate.now(stubClockAtArbitraryDate)
+      val periodOverdue1 = StandardPeriod(now.minusYears(1).getYear, Month.JANUARY)
+      val periodOverdue2 = StandardPeriod(now.minusYears(1).getYear, Month.FEBRUARY)
+      val periodDue1 = StandardPeriod(now.getYear, now.getMonth.plus(1))
+      val periodDue2 = StandardPeriod(now.getYear, now.getMonth.plus(2))
+      val paymentOverdue1 = Payment(periodOverdue1, 10, periodOverdue1.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentOverdue2 = Payment(periodOverdue2, 10, periodOverdue2.paymentDeadline, PaymentStatus.Excluded)
+      val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
+      val paymentDue2 = Payment(periodDue2, 10, periodDue2.paymentDeadline, PaymentStatus.Unpaid)
+
+      when(mockRegistrationConnector.getRegistrationForIossNumber(any())(any())) thenReturn registrationWrapper.toFuture
+      when(paymentsService.getUnpaidPayments(any(), any(), any())(any())) thenReturn Future.successful(List(paymentDue1, paymentDue2, paymentOverdue1, paymentOverdue2))
+
+      val app = applicationBuilder()
+        .overrides(bind[PaymentsService].to(paymentsService))
+        .overrides(bind[RegistrationConnector].to(mockRegistrationConnector))
         .build()
 
       running(app) {
