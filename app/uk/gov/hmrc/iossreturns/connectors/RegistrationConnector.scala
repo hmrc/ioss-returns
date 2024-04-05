@@ -33,6 +33,10 @@ class RegistrationConnector @Inject()(config: Configuration, httpClient: HttpCli
   def getRegistration()(implicit hc: HeaderCarrier): Future[RegistrationWrapper] =
     httpClient.GET[RegistrationWrapper](s"$baseUrl/registration")
 
+  // TODO -> TEST
+  def getRegistrationForIossNumber(iossNumber: String)(implicit hc: HeaderCarrier): Future[RegistrationWrapper] =
+    httpClient.GET[RegistrationWrapper](s"$baseUrl/registration/$iossNumber")
+
   def getAccounts(credId: String)(implicit hc: HeaderCarrier): Future[EACDEnrolments] =
     httpClient.GET[EACDEnrolments](s"$baseUrl/accounts/$credId")
 }
