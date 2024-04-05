@@ -1,9 +1,9 @@
 package uk.gov.hmrc.iossreturns.base
 
-import org.scalatest.{OptionValues, TryValues}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -12,8 +12,9 @@ import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.controllers.actions.{AuthAction, CheckOwnIossNumberFilter, FakeAuthAction, FakeCheckOwnIossNumberFilterProvider}
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.Period
 
-import java.time.{Clock, Instant, LocalDate, LocalDateTime, Month, ZoneId}
+import java.time._
 
 trait SpecBase
   extends AnyFreeSpec

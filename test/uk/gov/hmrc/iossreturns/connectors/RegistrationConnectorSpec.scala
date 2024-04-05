@@ -42,6 +42,28 @@ class RegistrationConnectorSpec extends SpecBase with WireMockHelper {
     }
   }
 
+  ".getRegistrationForIossNumber" - {
+
+    val url = s"/ioss-registration/registration/$iossNumber"
+
+    "must return an ETMP registration when the backend successfully returns one" in {
+
+      running(application) {
+
+        val connector: RegistrationConnector = application.injector.instanceOf[RegistrationConnector]
+
+        val responseBody = Json.toJson(registrationWrapper).toString()
+
+        server.stubFor(get(urlEqualTo(url)).willReturn(ok().withBody(responseBody)))
+
+        val result = connector.getRegistrationForIossNumber(iossNumber).futureValue
+
+        result mustBe registrationWrapper
+      }
+    }
+  }
+
+
   ".getAccounts" - {
     val userId = "user-123456"
     val url = s"/ioss-registration/accounts/$userId"
