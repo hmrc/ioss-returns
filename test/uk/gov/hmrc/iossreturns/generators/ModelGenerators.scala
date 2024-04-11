@@ -576,24 +576,24 @@ trait ModelGenerators {
   implicit val arbitrarySavedUserAnswers: Arbitrary[SavedUserAnswers] =
     Arbitrary {
       for {
-        vrn <- arbitrary[Vrn]
+        iossNumber <- arbitrary[String]
         period <- arbitrary[Period]
         data = JsObject(Seq(
           "test" -> Json.toJson("test")
         ))
         now = Instant.now
       } yield SavedUserAnswers(
-        vrn, period, data, now)
+        iossNumber, period, data, now)
     }
 
   implicit val arbitrarySaveForLaterRequest: Arbitrary[SaveForLaterRequest] =
     Arbitrary {
       for {
-        vrn <- arbitrary[Vrn]
+        iossNumber <- arbitrary[String]
         period <- arbitrary[Period]
         data = JsObject(Seq(
           "test" -> Json.toJson("test")
         ))
-      } yield SaveForLaterRequest(vrn, period, data)
+      } yield SaveForLaterRequest(iossNumber, period, data)
     }
 }

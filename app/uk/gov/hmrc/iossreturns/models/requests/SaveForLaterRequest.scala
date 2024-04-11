@@ -17,16 +17,14 @@
 package uk.gov.hmrc.iossreturns.models.requests
 
 import play.api.libs.json.{JsObject, Json, OFormat}
-import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.models.Period
 
 case class SaveForLaterRequest(
-                             vrn: Vrn,
-                             period: Period,
-                             data: JsObject
-                           )
+                                iossNumber: String,
+                                period: Period,
+                                data: JsObject
+                              )
 
 object SaveForLaterRequest {
-
   implicit val format: OFormat[SaveForLaterRequest] = Json.format[SaveForLaterRequest]
 }

@@ -19,7 +19,6 @@ package uk.gov.hmrc.iossreturns.repository
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
 import play.api.libs.json.Format
-import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.crypto.SavedUserAnswersEncryptor
 import uk.gov.hmrc.iossreturns.logging.Logging
@@ -52,7 +51,7 @@ class SaveForLaterRepository @Inject()(
           .expireAfter(appConfig.cacheTtl, TimeUnit.DAYS)
       ),
       IndexModel(
-        Indexes.ascending("vrn", "period"),
+        Indexes.ascending("iossNumber", "period"),
         IndexOptions()
           .name("userAnswersReferenceIndex")
           .unique(true)
@@ -66,19 +65,19 @@ class SaveForLaterRepository @Inject()(
 
   private val encryptionKey = appConfig.encryptionKey
 
-  private def byVrnAndPeriod(vrn: Vrn, period: Period): Bson =
+  private def byIossNumberAndPeriod(iossNumber: String, period: Period): Bson =
     Filters.and(
-      Filters.equal("vrn", vrn.vrn),
+      Filters.equal("iossNumber", iossNumber),
       Filters.equal("period", period.toBson(legacyNumbers = false))
     )
 
   def set(savedUserAnswers: SavedUserAnswers): Future[SavedUserAnswers] = {
 
-    val encryptedAnswers = encryptor.encryptAnswers(savedUserAnswers, savedUserAnswers.vrn, encryptionKey)
+    val encryptedAnswers = encryptor.encryptAnswers(savedUserAnswers, savedUserAnswers.iossNumber, encryptionKey)
 
     collection
       .replaceOne(
-        filter      = byVrnAndPeriod(savedUserAnswers.vrn, savedUserAnswers.period),
+        filter      = byIossNumberAndPeriod(savedUserAnswers.iossNumber, savedUserAnswers.period),
         replacement = encryptedAnswers,
         options     = ReplaceOptions().upsert(true)
       )
@@ -86,31 +85,31 @@ class SaveForLaterRepository @Inject()(
       .map(_ => savedUserAnswers)
   }
 
-  def get(vrn: Vrn): Future[Seq[SavedUserAnswers]] =
+  def get(iossNumber: String): Future[Seq[SavedUserAnswers]] =
     collection
-      .find(Filters.equal("vrn", toBson(vrn)))
+      .find(Filters.equal("iossNumber", toBson(iossNumber)))
       .toFuture()
       .map(_.map {
         answers =>
-          encryptor.decryptAnswers(answers, answers.vrn, encryptionKey)
+          encryptor.decryptAnswers(answers, answers.iossNumber, encryptionKey)
       })
 
-  def get(vrn: Vrn, period: Period): Future[Option[SavedUserAnswers]] =
+  def get(iossNumber: String, period: Period): Future[Option[SavedUserAnswers]] =
     collection
       .find(
         Filters.and(
-          Filters.equal("vrn", toBson(vrn)),
+          Filters.equal("iossNumber", toBson(iossNumber)),
           Filters.equal("period", toBson(period))
         )
       ).headOption()
       .map(_.map {
         answers =>
-          encryptor.decryptAnswers(answers, answers.vrn, encryptionKey)
+          encryptor.decryptAnswers(answers, answers.iossNumber, encryptionKey)
       })
 
-  def clear(vrn: Vrn, period: Period): Future[Boolean] =
+  def clear(iossNumber: String, period: Period): Future[Boolean] =
     collection
-      .deleteOne(byVrnAndPeriod(vrn, period))
+      .deleteOne(byIossNumberAndPeriod(iossNumber, period))
       .toFuture()
       .map(_ => true)
 }

@@ -25,10 +25,9 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.generators.Generators
-import uk.gov.hmrc.iossreturns.models.{Period, SavedUserAnswers}
 import uk.gov.hmrc.iossreturns.models.requests.SaveForLaterRequest
+import uk.gov.hmrc.iossreturns.models.{Period, SavedUserAnswers}
 import uk.gov.hmrc.iossreturns.repository.SaveForLaterRepository
 import uk.gov.hmrc.iossreturns.services.SaveForLaterService
 
@@ -48,10 +47,10 @@ class SaveForLaterServiceSpec
 
     "must create a SavedUserAnswers, attempt to save it to the repository, and respond with the result of saving" in {
 
-      val now            = Instant.now
-      val stubClock      = Clock.fixed(now, ZoneId.systemDefault())
-      val answers      = arbitrary[SavedUserAnswers].sample.value
-      val insertResult   = answers
+      val now = Instant.now
+      val stubClock = Clock.fixed(now, ZoneId.systemDefault())
+      val answers = arbitrary[SavedUserAnswers].sample.value
+      val insertResult = answers
       val mockRepository = mock[SaveForLaterRepository]
 
       when(mockRepository.set(any())) thenReturn Future.successful(insertResult)
@@ -69,18 +68,18 @@ class SaveForLaterServiceSpec
   ".get" - {
 
     "must retrieve a sequence of Saved User Answers record" in {
-      val now            = Instant.now
-      val stubClock      = Clock.fixed(now, ZoneId.systemDefault())
-      val answers      = arbitrary[SavedUserAnswers].sample.value
+      val now = Instant.now
+      val stubClock = Clock.fixed(now, ZoneId.systemDefault())
+      val answers = arbitrary[SavedUserAnswers].sample.value
       val mockRepository = mock[SaveForLaterRepository]
-      val vrn = arbitrary[Vrn].sample.value
+      val iossNumber = arbitrary[String].sample.value
 
       when(mockRepository.get(any())) thenReturn Future.successful(Seq(answers))
       val service = new SaveForLaterService(mockRepository, stubClock)
 
-      val result = service.get(vrn).futureValue
+      val result = service.get(iossNumber).futureValue
       result mustBe Seq(answers)
-      verify(mockRepository, times(1)).get(vrn)
+      verify(mockRepository, times(1)).get(iossNumber)
 
     }
   }
@@ -88,18 +87,18 @@ class SaveForLaterServiceSpec
   ".delete" - {
 
     "must delete a single Saved User Answers record" in {
-      val now            = Instant.now
-      val stubClock      = Clock.fixed(now, ZoneId.systemDefault())
+      val now = Instant.now
+      val stubClock = Clock.fixed(now, ZoneId.systemDefault())
       val mockRepository = mock[SaveForLaterRepository]
-      val vrn = arbitrary[Vrn].sample.value
+      val iossNumber = arbitrary[String].sample.value
       val period = arbitrary[Period].sample.value
 
       when(mockRepository.clear(any(), any())) thenReturn Future.successful(true)
       val service = new SaveForLaterService(mockRepository, stubClock)
 
-      val result = service.delete(vrn, period).futureValue
+      val result = service.delete(iossNumber, period).futureValue
       result mustBe true
-      verify(mockRepository, times(1)).clear(vrn, period)
+      verify(mockRepository, times(1)).clear(iossNumber, period)
 
     }
   }

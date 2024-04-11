@@ -20,8 +20,10 @@ import play.api.libs.json.Json
 import play.api.mvc.Results.Ok
 import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.iossreturns.controllers.actions.{AuthorisedRequest, DefaultAuthenticatedControllerComponents}
+import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Excluded}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return}
+import uk.gov.hmrc.iossreturns.repository.SaveForLaterRepository
 import uk.gov.hmrc.iossreturns.services.{CheckExclusionsService, ReturnsService}
 
 import java.time.format.DateTimeFormatter
@@ -33,7 +35,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class ReturnStatusController @Inject()(
                                         cc: DefaultAuthenticatedControllerComponents,
                                         returnsService: ReturnsService,
-                                        checkExclusionsService: CheckExclusionsService
+                                        checkExclusionsService: CheckExclusionsService,
+                                        saveForLaterRepository: SaveForLaterRepository
                                       )(implicit ec: ExecutionContext) {
   private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     .withLocale(Locale.UK)
@@ -66,23 +69,25 @@ class ReturnStatusController @Inject()(
         LocalDate.parse(request.registration.schemeDetails.commencementDate, dateTimeFormatter),
         request.registration.exclusions.toList
       )
+      savedAnswers <- saveForLaterRepository.get(iossNumber)
     } yield {
+      val latestAnswer = savedAnswers.sortBy(_.lastUpdated).lastOption
+      val periodInProgress = latestAnswer.map(answer => answer.period)
+
+      val incompleteReturns = createInCompleteReturns(availablePeriodsWithStatus, periodInProgress)
+      val otherReturns = createCompleteReturns(availablePeriodsWithStatus, periodInProgress)
 
       val isExcluded = checkExclusionsService.getLastExclusionWithoutReversal(request.registration.exclusions.toList).isDefined
       val finalReturnsCompleted = returnsService.hasSubmittedFinalReturn(request.registration.exclusions.toList, availablePeriodsWithStatus)
-
-      val incompleteReturns = createInCompleteReturns(availablePeriodsWithStatus)
-      val otherReturns = createCompleteReturns(availablePeriodsWithStatus)
 
       Ok(Json.toJson(CurrentReturns(incompleteReturns, isExcluded, finalReturnsCompleted, iossNumber, otherReturns)))
     }
   }
 
-  private def createInCompleteReturns(availablePeriodsWithStatus: Seq[PeriodWithStatus]) = {
+  private def createInCompleteReturns(availablePeriodsWithStatus: Seq[PeriodWithStatus], periodInProgress: Option[Period]) = {
     val incompletePeriods = availablePeriodsWithStatus.filterNot(pws => Seq(Complete, Excluded).contains(pws.status))
-
-    val periodInProgress = None // ToDo: No saved answers, so set to None.
     val oldestPeriod = incompletePeriods.sortBy(_.period).headOption
+
     incompletePeriods.sortBy(_.period).map(
       periodWithStatus => Return.fromPeriod(
         periodWithStatus.period,
@@ -93,11 +98,10 @@ class ReturnStatusController @Inject()(
     )
   }
 
-  private def createCompleteReturns(availablePeriodsWithStatus: Seq[PeriodWithStatus]) = {
+  private def createCompleteReturns(availablePeriodsWithStatus: Seq[PeriodWithStatus], periodInProgress: Option[Period]) = {
     val completePeriods = availablePeriodsWithStatus.filter(pws => Seq(Complete, Excluded).contains(pws.status))
-
-    val periodInProgress = None // ToDo: No saved answers, so set to None.
     val oldestPeriod = completePeriods.sortBy(_.period).headOption
+
     completePeriods.sortBy(_.period).map(
       periodWithStatus => Return.fromPeriod(
         periodWithStatus.period,
