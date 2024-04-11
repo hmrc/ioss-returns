@@ -43,6 +43,7 @@ class SaveForLaterRepository @Inject()(
     collectionName = "saved-user-answers",
     mongoComponent = mongoComponent,
     domainFormat = EncryptedSavedUserAnswers.format,
+    replaceIndexes = true,
     indexes = Seq(
       IndexModel(
         Indexes.ascending("lastUpdated"),
