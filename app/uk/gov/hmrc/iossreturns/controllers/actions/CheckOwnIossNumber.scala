@@ -48,13 +48,14 @@ class CheckOwnIossNumberFilterImpl(
       }
     }
   }
+}
 
-  class CheckOwnIossNumberFilter @Inject()(
-                                            previousRegistrationService: PreviousRegistrationService
-                                          )
-                                          (implicit ec: ExecutionContext) {
+class CheckOwnIossNumberFilter @Inject()(
+                                          previousRegistrationService: PreviousRegistrationService
+                                        )
+                                        (implicit ec: ExecutionContext) {
 
-    def apply(iossNumber: String): CheckOwnIossNumberFilterImpl =
-      new CheckOwnIossNumberFilterImpl(iossNumber, previousRegistrationService)
+  def apply(iossNumber: String): CheckOwnIossNumberFilterImpl =
+    new CheckOwnIossNumberFilterImpl(iossNumber, previousRegistrationService)
 
-  }
+}
