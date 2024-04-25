@@ -20,6 +20,7 @@ import play.api.mvc.{ActionFilter, Result}
 import play.api.mvc.Results.Unauthorized
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.services.PreviousRegistrationService
+import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.Inject
@@ -34,23 +35,26 @@ class CheckOwnIossNumberFilterImpl(
   override protected def filter[A](request: AuthorisedRequest[A]): Future[Option[Result]] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-    previousRegistrationService.getPreviousRegistrations(request.credentialId).map { previousRegistrations =>
-      val validIossNumbers: Seq[String] = request.iossNumber :: previousRegistrations.map(_.iossNumber)
-      if (validIossNumbers.contains(iossNumber)) {
-        None
-      } else {
-        Some(Unauthorized)
+    if (request.iossNumber == iossNumber) {
+      None.toFuture
+    } else {
+      previousRegistrationService.getPreviousRegistrations(request.credentialId).map { previousRegistrations =>
+        val validIossNumbers: Seq[String] = request.iossNumber :: previousRegistrations.map(_.iossNumber)
+        if (validIossNumbers.contains(iossNumber)) {
+          None
+        } else {
+          Some(Unauthorized)
+        }
       }
     }
   }
-}
 
-class CheckOwnIossNumberFilter @Inject()(
-                                          previousRegistrationService: PreviousRegistrationService
-                                        )
-                                        (implicit ec: ExecutionContext) {
+  class CheckOwnIossNumberFilter @Inject()(
+                                            previousRegistrationService: PreviousRegistrationService
+                                          )
+                                          (implicit ec: ExecutionContext) {
 
-  def apply(iossNumber: String): CheckOwnIossNumberFilterImpl =
-    new CheckOwnIossNumberFilterImpl(iossNumber, previousRegistrationService)
+    def apply(iossNumber: String): CheckOwnIossNumberFilterImpl =
+      new CheckOwnIossNumberFilterImpl(iossNumber, previousRegistrationService)
 
-}
+  }
