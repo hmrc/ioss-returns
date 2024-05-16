@@ -103,18 +103,14 @@ class ReturnsService @Inject()(
   }
 
   def decideStatus(period: Period, fulfilledPeriods: List[Period], exclusions: List[EtmpExclusion]): PeriodWithStatus = {
-    if (checkExclusionsService.isPeriodExcluded(period, exclusions)) {
+    if (fulfilledPeriods.contains(period)) {
+      PeriodWithStatus(period, SubmissionStatus.Complete)
+    } else if (checkExclusionsService.isPeriodExcluded(period, exclusions)) {
       PeriodWithStatus(period, SubmissionStatus.Excluded)
+    } else if (LocalDate.now(clock).isAfter(period.paymentDeadline)) {
+      PeriodWithStatus(period, SubmissionStatus.Overdue)
     } else {
-      if (fulfilledPeriods.contains(period)) {
-        PeriodWithStatus(period, SubmissionStatus.Complete)
-      } else {
-        if (LocalDate.now(clock).isAfter(period.paymentDeadline)) {
-          PeriodWithStatus(period, SubmissionStatus.Overdue)
-        } else {
-          PeriodWithStatus(period, SubmissionStatus.Due)
-        }
-      }
+      PeriodWithStatus(period, SubmissionStatus.Due)
     }
   }
 
