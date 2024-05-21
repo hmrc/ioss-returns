@@ -147,6 +147,7 @@ class ReturnsServiceSpec
       ("period", "vat return", "excludedPeriods", "exclusions", "expected result", "title"),
       (excludedPeriod, List(currentPeriod), List(excludedPeriod), List(exclusion), PeriodWithStatus(excludedPeriod, SubmissionStatus.Excluded), "for a period where there is an exclusion with an effective date within previous period, mark is as excluded"),
       (currentPeriod, List(currentPeriod), Nil, Nil, PeriodWithStatus(currentPeriod, SubmissionStatus.Complete), "for a period where there is no exclusion, AND there is a vat return, mark is as Complete"),
+      (currentPeriod, List(currentPeriod), List(currentPeriod), List(exclusion), PeriodWithStatus(currentPeriod, SubmissionStatus.Complete), "for a fulfilled period even where there is an exclusion, mark is as Complete"),
       (currentPeriod, List.empty, Nil, Nil, PeriodWithStatus(currentPeriod, SubmissionStatus.Due), "for a period where there is no exclusion, AND there is no vat return yet, mark is as Due, if the duedate has not passed"),
       (periodOverdue, List.empty, Nil, Nil, PeriodWithStatus(periodOverdue, SubmissionStatus.Overdue), "for a period where there is no exclusion, AND there is no vat return yet, mark is as Due, if the duedate has passed")
     )
