@@ -22,6 +22,7 @@ import org.scalacheck.Gen.option
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.corrections.ReturnCorrectionValue
 import uk.gov.hmrc.iossreturns.models.enrolments.{EACDEnrolment, EACDEnrolments, EACDIdentifiers}
 import uk.gov.hmrc.iossreturns.models.etmp._
 import uk.gov.hmrc.iossreturns.models.etmp.registration._
@@ -595,5 +596,14 @@ trait ModelGenerators {
           "test" -> Json.toJson("test")
         ))
       } yield SaveForLaterRequest(iossNumber, period, data)
+    }
+
+  implicit val arbitraryReturnCorrectionValue: Arbitrary[ReturnCorrectionValue] =
+    Arbitrary {
+      for {
+        maximumCorrectionValue <- arbitrary[BigDecimal]
+      } yield ReturnCorrectionValue(
+        maximumCorrectionValue = maximumCorrectionValue
+      )
     }
 }
