@@ -18,7 +18,9 @@ package uk.gov.hmrc.iossreturns.connectors
 
 import play.api.Logging
 import play.api.http.HeaderNames.AUTHORIZATION
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpException}
+import play.api.libs.json.Json
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException, StringContextOps}
 import uk.gov.hmrc.iossreturns.config.{CoreVatReturnConfig, EtmpDisplayReturnConfig, EtmpListObligationsConfig}
 import uk.gov.hmrc.iossreturns.connectors.CoreVatReturnHttpParser.{CoreVatReturnReads, CoreVatReturnResponse}
 import uk.gov.hmrc.iossreturns.connectors.EtmpDisplayVatReturnHttpParser.{EtmpDisplayVatReturnResponse, EtmpVatReturnReads}
@@ -27,13 +29,14 @@ import uk.gov.hmrc.iossreturns.models.Period.toEtmpPeriodString
 import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 
+import java.net.URL
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class VatReturnConnector @Inject()(
-                                    httpClient: HttpClient,
+                                    httpClientV2: HttpClientV2,
                                     coreVatReturnConfig: CoreVatReturnConfig,
                                     etmpDisplayReturnConfig: EtmpDisplayReturnConfig,
                                     etmpListObligationsConfig: EtmpListObligationsConfig
@@ -56,15 +59,11 @@ class VatReturnConnector @Inject()(
       case (key, _) => key.matches(AUTHORIZATION)
     }
 
-    def url = s"${coreVatReturnConfig.baseUrl}"
+    def url = url"${coreVatReturnConfig.baseUrl}"
 
     logger.info(s"Sending request to core with headers $headersWithoutAuth")
 
-    httpClient.POST[CoreVatReturn, CoreVatReturnResponse](
-      url,
-      coreVatReturn,
-      headers = headersWithCorrelationId
-    ).recover {
+    httpClientV2.post(url).withBody(Json.toJson(coreVatReturn)).setHeader(headersWithCorrelationId: _*).execute[CoreVatReturnResponse].recover {
       case e: HttpException =>
         logger.error(s"Unexpected error response from core $url, received status ${e.responseCode}, body of response was: ${e.message}")
         Left(
@@ -82,22 +81,19 @@ class VatReturnConnector @Inject()(
       case (key, _) => key.matches(AUTHORIZATION)
     }
 
-    def url = s"${etmpDisplayReturnConfig.baseUrl}/$iossNumber/${toEtmpPeriodString(period)}"
+    def url = url"${etmpDisplayReturnConfig.baseUrl}/$iossNumber/${toEtmpPeriodString(period)}"
 
     logger.info(s"Sending get request to ETMP with headers $headersWithoutAuth")
 
-    httpClient.GET[EtmpDisplayVatReturnResponse](
-      url,
-      headers = headersWithCorrelationId
-    ).recover {
+    httpClientV2.get(url).setHeader(headersWithCorrelationId: _*).execute[EtmpDisplayVatReturnResponse].recover {
       case e: HttpException =>
         logger.error(s"Unexpected error response from core $url, received status ${e.responseCode}, body of response was: ${e.message}")
         Left(GatewayTimeout)
     }
   }
 
-  private def getObligationsUrl(iossNumber: String) =
-    s"${etmpListObligationsConfig.baseUrl}enterprise/obligation-data/${etmpListObligationsConfig.idType}/$iossNumber/${etmpListObligationsConfig.regimeType}"
+  private def getObligationsUrl(iossNumber: String): URL =
+    url"${etmpListObligationsConfig.baseUrl}enterprise/obligation-data/${etmpListObligationsConfig.idType}/$iossNumber/${etmpListObligationsConfig.regimeType}"
 
   def getObligations(idNumber: String, queryParameters: EtmpObligationsQueryParameters): Future[EtmpListObligationsResponse] = {
 
@@ -112,11 +108,10 @@ class VatReturnConnector @Inject()(
 
     logger.info(s"Sending getObligations request to ETMP with headers $headersWithoutAuth")
 
-    httpClient.GET[EtmpListObligationsResponse](
-      url,
-      queryParameters.toSeqQueryParams,
-      headers = headersWithCorrelationId
-    ).recover {
+    httpClientV2.get(url)
+      .setHeader(headersWithCorrelationId: _*)
+      .transform(_.withQueryStringParameters(queryParameters.toSeqQueryParams: _*))
+      .execute[EtmpListObligationsResponse].recover {
       case e: HttpException =>
         logger.error(s"Unexpected error response from ETMP $url, received status ${e.responseCode}, body of response was: ${e.message}")
         Left(GatewayTimeout)

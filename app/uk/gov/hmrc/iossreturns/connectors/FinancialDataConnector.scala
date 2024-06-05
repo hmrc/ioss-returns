@@ -16,34 +16,35 @@
 
 package uk.gov.hmrc.iossreturns.connectors
 
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpException}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException, StringContextOps}
 import uk.gov.hmrc.iossreturns.config.FinancialDataConfig
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser._
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.UnexpectedResponseStatus
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialDataQueryParameters
 
+import java.net.URL
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class FinancialDataConnector @Inject()(
-                                        http: HttpClient,
+                                        httpClientV2: HttpClientV2,
                                         financialDataConfig: FinancialDataConfig
                                       )(implicit ec: ExecutionContext) extends Logging {
 
   private implicit val emptyHc: HeaderCarrier = HeaderCarrier()
   private val headers: Seq[(String, String)] = financialDataConfig.financialDataHeaders
 
-  private def financialDataUrl(iossNumber: String) =
-    s"${financialDataConfig.baseUrl}enterprise/financial-data/IOSS/$iossNumber/${financialDataConfig.regimeType}"
+  private def financialDataUrl(iossNumber: String): URL =
+    url"${financialDataConfig.baseUrl}enterprise/financial-data/IOSS/$iossNumber/${financialDataConfig.regimeType}"
 
   def getFinancialData(iossNumber: String, queryParameters: FinancialDataQueryParameters): Future[FinancialDataResponse] = {
     val url = financialDataUrl(iossNumber)
-    http.GET[FinancialDataResponse](
-      url,
-      queryParameters.toSeqQueryParams,
-      headers = headers
-    ).recover {
+    httpClientV2.get(url).transform(_
+      .withHttpHeaders(headers: _*)
+      .withQueryStringParameters(queryParameters.toSeqQueryParams: _*)
+    ).execute[FinancialDataResponse].recover {
       case e: HttpException =>
         logger.error(s"Unexpected error response getting financial data from $url, received status ${e.responseCode}, body of response was: ${e.message}")
         Left(
