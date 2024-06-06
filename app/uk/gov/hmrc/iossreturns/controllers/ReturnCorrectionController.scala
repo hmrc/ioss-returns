@@ -20,6 +20,8 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.iossreturns.connectors.ReturnCorrectionConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
+import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.Period.toEtmpPeriodString
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -30,8 +32,8 @@ class ReturnCorrectionController @Inject()(
                                             returnCorrectionConnector: ReturnCorrectionConnector
                                           )(implicit ec: ExecutionContext) extends BackendController(cc) {
 
-  def getReturnCorrection(iossNumber: String, countryCode: String, period: String): Action[AnyContent] = cc.auth().async {
-    returnCorrectionConnector.getMaximumCorrectionValue(iossNumber, countryCode, period).map {
+  def getReturnCorrection(iossNumber: String, countryCode: String, period: Period): Action[AnyContent] = cc.auth().async {
+    returnCorrectionConnector.getMaximumCorrectionValue(iossNumber, countryCode, toEtmpPeriodString(period)).map {
       case Right(returnCorrection) =>
         Ok(Json.toJson(returnCorrection))
       case Left(errorResponse) =>
