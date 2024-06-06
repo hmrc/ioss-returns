@@ -14,22 +14,22 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.ReturnCorrectionConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
+import uk.gov.hmrc.iossreturns.models.Period.toEtmpPeriodString
 import uk.gov.hmrc.iossreturns.models.corrections.ReturnCorrectionValue
-import uk.gov.hmrc.iossreturns.models.{Country, Period, ServerError}
+import uk.gov.hmrc.iossreturns.models.{Country, ServerError}
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
 class ReturnCorrectionControllerSpec extends SpecBase with BeforeAndAfterEach {
 
   implicit lazy val hc: HeaderCarrier = HeaderCarrier()
 
-
   private val mockReturnCorrectionConnector: ReturnCorrectionConnector = mock[ReturnCorrectionConnector]
 
   private val returnCorrectionValue: ReturnCorrectionValue = arbitraryReturnCorrectionValue.arbitrary.sample.value
   private val country: Country = arbitraryCountry.arbitrary.sample.value
-  override val period: Period = arbitraryPeriod.arbitrary.sample.value
+  private val periodKey = toEtmpPeriodString(arbitraryPeriod.arbitrary.sample.value)
 
-  private lazy val request = FakeRequest(GET, routes.ReturnCorrectionController.getReturnCorrection(iossNumber, country.code, period).url)
+  private lazy val request = FakeRequest(GET, routes.ReturnCorrectionController.getReturnCorrection(iossNumber, country.code, periodKey).url)
 
   override def beforeEach(): Unit =
     Mockito.reset(mockReturnCorrectionConnector)

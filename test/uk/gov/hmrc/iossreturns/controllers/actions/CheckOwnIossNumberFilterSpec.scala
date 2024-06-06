@@ -25,7 +25,6 @@ import play.api.mvc.Result
 import play.api.mvc.Results.Unauthorized
 import play.api.test.FakeRequest
 import play.api.test.Helpers.running
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.enrolments.PreviousRegistration
 import uk.gov.hmrc.iossreturns.services.PreviousRegistrationService

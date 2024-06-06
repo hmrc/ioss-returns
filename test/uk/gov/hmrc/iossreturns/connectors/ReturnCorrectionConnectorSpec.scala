@@ -5,21 +5,19 @@ import play.api.Application
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json.Json
 import play.api.test.Helpers.running
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.models.Period.toEtmpPeriodString
 import uk.gov.hmrc.iossreturns.models.corrections.ReturnCorrectionValue
-import uk.gov.hmrc.iossreturns.models.{Country, InvalidJson, Period, UnexpectedResponseStatus}
+import uk.gov.hmrc.iossreturns.models.{Country, InvalidJson, UnexpectedResponseStatus}
 
 class ReturnCorrectionConnectorSpec
   extends SpecBase
     with WireMockHelper {
 
-  private implicit lazy val hs: HeaderCarrier = HeaderCarrier()
-
   private val returnCorrectionValueResponse: ReturnCorrectionValue = arbitraryReturnCorrectionValue.arbitrary.sample.value
 
   private val country: Country = arbitraryCountry.arbitrary.sample.value
-  override val period: Period = arbitraryPeriod.arbitrary.sample.value
+  private val periodKey = toEtmpPeriodString(arbitraryPeriod.arbitrary.sample.value)
 
   private def application: Application =
     applicationBuilder()
@@ -33,7 +31,7 @@ class ReturnCorrectionConnectorSpec
 
   "ReturnCorrectionConnector" - {
 
-    val url: String = s"/ioss-returns-stub/ecom/ReturnCorrection/$iossNumber/${country.code}/$period"
+    val url: String = s"/ioss-returns-stub/vec/iossreturns/returncorrection/v1/$iossNumber/${country.code}/$periodKey"
 
     "must return Right(ReturnCorrectionValue) when server returns CREATED" in {
 
@@ -51,7 +49,7 @@ class ReturnCorrectionConnectorSpec
           )
         )
 
-        val result = connector.getMaximumCorrectionValue(iossNumber, country.code, period).futureValue
+        val result = connector.getMaximumCorrectionValue(iossNumber, country.code, periodKey).futureValue
 
         result mustBe Right(returnCorrectionValueResponse)
       }
@@ -73,7 +71,7 @@ class ReturnCorrectionConnectorSpec
           )
         )
 
-        val result = connector.getMaximumCorrectionValue(iossNumber, country.code, period).futureValue
+        val result = connector.getMaximumCorrectionValue(iossNumber, country.code, periodKey).futureValue
 
         result mustBe Left(InvalidJson)
       }
@@ -94,7 +92,7 @@ class ReturnCorrectionConnectorSpec
           )
         )
 
-        val result = connector.getMaximumCorrectionValue(iossNumber, country.code, period).futureValue
+        val result = connector.getMaximumCorrectionValue(iossNumber, country.code, periodKey).futureValue
 
         result mustBe Left(UnexpectedResponseStatus(INTERNAL_SERVER_ERROR, errorMessage))
       }

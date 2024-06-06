@@ -6,6 +6,7 @@ import uk.gov.hmrc.iossreturns.base.SpecBase
 class ReturnCorrectionValueSpec extends SpecBase {
 
   private val returnCorrectionValueResponse: ReturnCorrectionValue = arbitraryReturnCorrectionValue.arbitrary.sample.value
+
   "ReturnCorrectionValue" - {
 
     "must serialise/deserialise to/from a ReturnCorrectionValue" in {
