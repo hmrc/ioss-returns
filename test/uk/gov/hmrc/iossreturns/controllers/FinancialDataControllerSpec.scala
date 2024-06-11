@@ -31,13 +31,13 @@ import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
-import uk.gov.hmrc.iossreturns.models.{RegistrationWrapper, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataException}
 import uk.gov.hmrc.iossreturns.models.payments.{Charge, Payment, PaymentStatus, PrepareData}
+import uk.gov.hmrc.iossreturns.models.{Period, RegistrationWrapper}
 import uk.gov.hmrc.iossreturns.services.{FinancialDataService, PaymentsService}
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
-import java.time.{LocalDate, Month}
+import java.time.{LocalDate, YearMonth}
 import scala.concurrent.Future
 
 class FinancialDataControllerSpec
@@ -128,11 +128,11 @@ class FinancialDataControllerSpec
       FakeRequest(GET, routes.FinancialDataController.prepareFinancialData().url)
 
     "must return paymentData Json when there are due payments and overdue payments" in {
-      val now = LocalDate.now(stubClockAtArbitraryDate)
-      val periodOverdue1 = StandardPeriod(now.minusYears(1).getYear, Month.JANUARY)
-      val periodOverdue2 = StandardPeriod(now.minusYears(1).getYear, Month.FEBRUARY)
-      val periodDue1 = StandardPeriod(now.getYear, now.getMonth.plus(1))
-      val periodDue2 = StandardPeriod(now.getYear, now.getMonth.plus(2))
+      val now = YearMonth.now(stubClockAtArbitraryDate)
+      val periodOverdue1 = Period(now.minusMonths(3))
+      val periodOverdue2 = Period(now.minusMonths(2))
+      val periodDue1 = Period(now.minusMonths(1))
+      val periodDue2 = Period(now)
       val paymentOverdue1 = Payment(periodOverdue1, 10, periodOverdue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentOverdue2 = Payment(periodOverdue2, 10, periodOverdue2.paymentDeadline, PaymentStatus.Unpaid)
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
@@ -168,11 +168,11 @@ class FinancialDataControllerSpec
     }
 
     "must return paymentData Json when there are excluded payments" in {
-      val now = LocalDate.now(stubClockAtArbitraryDate)
-      val periodOverdue1 = StandardPeriod(now.minusYears(1).getYear, Month.JANUARY)
-      val periodOverdue2 = StandardPeriod(now.minusYears(1).getYear, Month.FEBRUARY)
-      val periodDue1 = StandardPeriod(now.getYear, now.getMonth.plus(1))
-      val periodDue2 = StandardPeriod(now.getYear, now.getMonth.plus(2))
+      val now = YearMonth.now(stubClockAtArbitraryDate)
+      val periodOverdue1 = Period(now.minusMonths(3))
+      val periodOverdue2 = Period(now.minusMonths(2))
+      val periodDue1 = Period(now.minusMonths(1))
+      val periodDue2 = Period(now)
       val paymentOverdue1 = Payment(periodOverdue1, 10, periodOverdue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentOverdue2 = Payment(periodOverdue2, 10, periodOverdue2.paymentDeadline, PaymentStatus.Excluded)
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
@@ -214,12 +214,11 @@ class FinancialDataControllerSpec
       FakeRequest(GET, routes.FinancialDataController.prepareFinancialDataForIossNumber(iossNumber).url)
 
     "must return paymentData Json when there are due payments and overdue payments" in {
-
-      val now = LocalDate.now(stubClockAtArbitraryDate)
-      val periodOverdue1 = StandardPeriod(now.minusYears(1).getYear, Month.JANUARY)
-      val periodOverdue2 = StandardPeriod(now.minusYears(1).getYear, Month.FEBRUARY)
-      val periodDue1 = StandardPeriod(now.getYear, now.getMonth.plus(1))
-      val periodDue2 = StandardPeriod(now.getYear, now.getMonth.plus(2))
+      val now = YearMonth.now(stubClockAtArbitraryDate)
+      val periodOverdue1 = Period(now.minusMonths(3))
+      val periodOverdue2 = Period(now.minusMonths(2))
+      val periodDue1 = Period(now.minusMonths(1))
+      val periodDue2 = Period(now)
       val paymentOverdue1 = Payment(periodOverdue1, 10, periodOverdue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentOverdue2 = Payment(periodOverdue2, 10, periodOverdue2.paymentDeadline, PaymentStatus.Unpaid)
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
@@ -255,12 +254,11 @@ class FinancialDataControllerSpec
     }
 
     "must return paymentData Json when there are excluded payments" in {
-
-      val now = LocalDate.now(stubClockAtArbitraryDate)
-      val periodOverdue1 = StandardPeriod(now.minusYears(1).getYear, Month.JANUARY)
-      val periodOverdue2 = StandardPeriod(now.minusYears(1).getYear, Month.FEBRUARY)
-      val periodDue1 = StandardPeriod(now.getYear, now.getMonth.plus(1))
-      val periodDue2 = StandardPeriod(now.getYear, now.getMonth.plus(2))
+      val now = YearMonth.now(stubClockAtArbitraryDate)
+      val periodOverdue1 = Period(now.minusMonths(3))
+      val periodOverdue2 = Period(now.minusMonths(2))
+      val periodDue1 = Period(now.minusMonths(1))
+      val periodDue2 = Period(now)
       val paymentOverdue1 = Payment(periodOverdue1, 10, periodOverdue1.paymentDeadline, PaymentStatus.Unpaid)
       val paymentOverdue2 = Payment(periodOverdue2, 10, periodOverdue2.paymentDeadline, PaymentStatus.Excluded)
       val paymentDue1 = Payment(periodDue1, 10, periodDue1.paymentDeadline, PaymentStatus.Unpaid)
