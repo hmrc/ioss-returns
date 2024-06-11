@@ -39,6 +39,7 @@ class IfConfig @Inject()(
     XCorrelationId -> correlationId,
     X_FORWARDED_HOST -> "MDTP",
     ACCEPT -> MimeTypes.JSON,
+    CONTENT_TYPE -> MimeTypes.JSON,
     DATE -> Formatters.dateTimeFormatter.format(LocalDateTime.now(clock)),
     AUTHORIZATION -> s"Bearer $authorizationToken"
   )
