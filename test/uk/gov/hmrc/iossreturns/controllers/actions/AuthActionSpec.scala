@@ -9,10 +9,10 @@ import play.api.inject.bind
 import play.api.mvc.{Action, AnyContent, BodyParsers, Results}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
-import uk.gov.hmrc.auth.core.retrieve.{~, Credentials, Retrieval}
-import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
+import uk.gov.hmrc.auth.core.retrieve.{Credentials, Retrieval, ~}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.config.AppConfig
@@ -22,12 +22,12 @@ import uk.gov.hmrc.iossreturns.models.RegistrationWrapper
 import uk.gov.hmrc.iossreturns.services.AccountService
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
 
-  private type RetrievalsType = Option[Credentials] ~ Option[String] ~ Enrolments ~ Option[AffinityGroup] ~ ConfidenceLevel ~ Option[CredentialRole]
+  private type RetrievalsType = Option[Credentials] ~ Option[String] ~ Enrolments ~ Option[AffinityGroup] ~ ConfidenceLevel
 
   private val vatEnrolment = Enrolments(Set(Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", "123456789")), "Activated")))
   private val vatAndIossEnrolment = Enrolments(Set(Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", "123456789")), "Activated"), Enrolment("HMRC-IOSS-ORG", Seq(EnrolmentIdentifier("IOSSNumber", "IM9001234567")), "Activated")))
@@ -66,7 +66,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatAndIossEnrolment ~ Some(Organisation) ~ ConfidenceLevel.L50 ~ Some(User)))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatAndIossEnrolment ~ Some(Organisation) ~ ConfidenceLevel.L50))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
             when(mockAccountService.getLatestAccount(any())(any())) thenReturn iossNumber.toFuture
 
@@ -95,7 +95,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ Enrolments(Set.empty) ~ Some(Organisation) ~ ConfidenceLevel.L50 ~ Some(User)))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ Enrolments(Set.empty) ~ Some(Organisation) ~ ConfidenceLevel.L50))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
@@ -123,7 +123,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ iossEnrolment ~ Some(Organisation) ~ ConfidenceLevel.L50 ~ Some(User)))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ iossEnrolment ~ Some(Organisation) ~ ConfidenceLevel.L50))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
@@ -151,7 +151,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatEnrolment ~ Some(Organisation) ~ ConfidenceLevel.L50 ~ Some(User)))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatEnrolment ~ Some(Organisation) ~ ConfidenceLevel.L50))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
@@ -179,7 +179,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatAndIossEnrolment ~ Some(Individual) ~ ConfidenceLevel.L250 ~ None))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatAndIossEnrolment ~ Some(Individual) ~ ConfidenceLevel.L250))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)
@@ -204,7 +204,7 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
             val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
 
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatAndIossEnrolment ~ Some(Individual) ~ ConfidenceLevel.L50 ~ None))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ vatAndIossEnrolment ~ Some(Individual) ~ ConfidenceLevel.L50))
             when(mockRegistrationConnector.getRegistration()(any())) thenReturn registrationWrapper.toFuture
 
             val action = new AuthActionImpl(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService)

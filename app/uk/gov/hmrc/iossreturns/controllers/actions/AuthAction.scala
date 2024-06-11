@@ -17,12 +17,12 @@
 package uk.gov.hmrc.iossreturns.controllers.actions
 
 import play.api.Logging
-import play.api.mvc._
 import play.api.mvc.Results.Unauthorized
+import play.api.mvc._
+import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
-import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.iossreturns.config.AppConfig
@@ -57,11 +57,10 @@ class AuthActionImpl @Inject()(
         Retrievals.internalId and
         Retrievals.allEnrolments and
         Retrievals.affinityGroup and
-        Retrievals.confidenceLevel and
-        Retrievals.credentialRole
+        Retrievals.confidenceLevel
     ) {
 
-      case Some(credentials) ~ Some(internalId) ~ enrolments ~ Some(Organisation) ~ _ ~ Some(credentialRole) if credentialRole == User =>
+      case Some(credentials) ~ Some(internalId) ~ enrolments ~ Some(Organisation) ~ _ =>
 
         val futureMaybeIossNumber = findIossFromEnrolments(enrolments, credentials.providerId)
 
@@ -76,7 +75,7 @@ class AuthActionImpl @Inject()(
           }
         }
 
-      case Some(credentials) ~ Some(internalId) ~ enrolments ~ Some(Individual) ~ confidence ~ _ =>
+      case Some(credentials) ~ Some(internalId) ~ enrolments ~ Some(Individual) ~ confidence =>
         val futureMaybeIossNumber = findIossFromEnrolments(enrolments, credentials.providerId)
 
         futureMaybeIossNumber.flatMap { maybeIossNumber =>
