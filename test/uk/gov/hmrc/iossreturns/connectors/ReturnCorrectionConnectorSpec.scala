@@ -22,10 +22,10 @@ class ReturnCorrectionConnectorSpec
   private def application: Application =
     applicationBuilder()
       .configure(
-        "microservice.services.if.port" -> server.port(),
-        "microservice.services.if.host" -> "127.0.0.1",
-        "microservice.services.if.authorizationToken" -> "auth-token",
-        "microservice.services.if.environment" -> "test-environment"
+        "microservice.services.return-correction.port" -> server.port(),
+        "microservice.services.return-correction.host" -> "127.0.0.1",
+        "microservice.services.return-correction.authorizationToken" -> "auth-token",
+        "microservice.services.return-correction.environment" -> "test-environment"
       )
       .build()
 
