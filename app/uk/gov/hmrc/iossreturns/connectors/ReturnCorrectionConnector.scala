@@ -18,7 +18,7 @@ package uk.gov.hmrc.iossreturns.connectors
 
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpErrorFunctions, StringContextOps}
-import uk.gov.hmrc.iossreturns.config.IfConfig
+import uk.gov.hmrc.iossreturns.config.ReturnCorrectionConfig
 import uk.gov.hmrc.iossreturns.connectors.ReturnCorrectionHttpParser.{ReturnCorrectionReads, ReturnCorrectionResponse}
 
 import java.util.UUID
@@ -26,14 +26,14 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class ReturnCorrectionConnector @Inject()(
-                                           ifConfig: IfConfig,
+                                           returnCorrectionConfig: ReturnCorrectionConfig,
                                            httpClientV2: HttpClientV2
                                          )(implicit ec: ExecutionContext) extends HttpErrorFunctions {
 
   private implicit lazy val emptyHc: HeaderCarrier = HeaderCarrier()
-  private val baseUrl: String = ifConfig.baseUrl.baseUrl
+  private val baseUrl: String = returnCorrectionConfig.baseUrl.baseUrl
 
-  private def headers(correlationId: String): Seq[(String, String)] = ifConfig.ifHeaders(correlationId)
+  private def headers(correlationId: String): Seq[(String, String)] = returnCorrectionConfig.ifHeaders(correlationId)
 
   def getMaximumCorrectionValue(iossNumber: String, countryCode: String, period: String): Future[ReturnCorrectionResponse] = {
 

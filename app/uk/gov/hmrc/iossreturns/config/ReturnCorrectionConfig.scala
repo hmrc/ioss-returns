@@ -24,14 +24,14 @@ import uk.gov.hmrc.iossreturns.utils.Formatters
 import java.time.{Clock, LocalDateTime}
 import javax.inject.Inject
 
-class IfConfig @Inject()(
+class ReturnCorrectionConfig @Inject()(
                           config: Configuration,
                           clock: Clock
                         ) {
 
-  val baseUrl: Service = config.get[Service]("microservice.services.if")
-  val authorizationToken: String = config.get[String]("microservice.services.if.authorizationToken")
-  val environment: String = config.get[String]("microservice.services.if.environment")
+  val baseUrl: Service = config.get[Service]("microservice.services.return-correction")
+  val authorizationToken: String = config.get[String]("microservice.services.return-correction.authorizationToken")
+  val environment: String = config.get[String]("microservice.services.return-correction.environment")
 
   private val XCorrelationId: String = "X-Correlation-ID"
 
