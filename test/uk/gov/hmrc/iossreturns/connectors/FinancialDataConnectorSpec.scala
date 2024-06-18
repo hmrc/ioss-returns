@@ -36,7 +36,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
         val app = application
 
         server.stubFor(
-          get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.get}"))
+          get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
             .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
             .withQueryParam("dateTo", new EqualToPattern(now.toString))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
@@ -55,7 +55,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
 
     "must return None when server returns Not Found" in {
       server.stubFor(
-        get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.get.toString}"))
+        get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
           .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
           .withQueryParam("dateTo", new EqualToPattern(now.toString))
           .withHeader("Authorization", equalTo("Bearer auth-token"))
@@ -76,7 +76,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
 
     "must return None when server returns Service Unavailable" in {
       server.stubFor(
-        get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.get.toString}"))
+        get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
           .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
           .withQueryParam("dateTo", new EqualToPattern(now.toString))
           .withHeader("Authorization", equalTo("Bearer auth-token"))
@@ -98,7 +98,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
     "must return FinancialDataErrorResponse" - {
       "when server returns Http Exception" in {
         server.stubFor(
-          get(urlEqualTo(s"$financialDataUrl?dateFrom=${dateFrom.toString}&dateTo=${queryParameters.toDate.get.toString}"))
+          get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
             .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
             .withQueryParam("dateTo", new EqualToPattern(now.toString))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
@@ -114,7 +114,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
           val connector = application.injector.instanceOf[FinancialDataConnector]
           whenReady(connector.getFinancialData(iossNumber, queryParameters), Timeout(Span(30, Seconds))) { exp =>
             exp.isLeft mustBe true
-            exp.left.toOption.get mustBe a[ErrorResponse]
+            exp.left.value mustBe a[ErrorResponse]
           }
 
         }
@@ -124,7 +124,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
         status =>
           s"when server returns status $status" in {
             server.stubFor(
-              get(urlEqualTo(s"$financialDataUrl?dateFrom=${dateFrom.toString}&dateTo=${queryParameters.toDate.get.toString}"))
+              get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
                 .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
                 .withQueryParam("dateTo", new EqualToPattern(now.toString))
                 .withHeader("Authorization", equalTo("Bearer auth-token"))

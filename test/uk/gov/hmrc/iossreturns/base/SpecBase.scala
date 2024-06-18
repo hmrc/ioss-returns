@@ -3,7 +3,7 @@ package uk.gov.hmrc.iossreturns.base
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.{OptionValues, TryValues}
+import org.scalatest.{EitherValues, OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -21,6 +21,7 @@ trait SpecBase
     with Matchers
     with TryValues
     with OptionValues
+    with EitherValues
     with ScalaFutures
     with IntegrationPatience
     with MockitoSugar
