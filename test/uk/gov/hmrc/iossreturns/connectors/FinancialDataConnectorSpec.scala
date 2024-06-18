@@ -74,6 +74,27 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
 
     }
 
+    "must return None when server returns Service Unavailable" in {
+      server.stubFor(
+        get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.get.toString}"))
+          .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
+          .withQueryParam("dateTo", new EqualToPattern(now.toString))
+          .withHeader("Authorization", equalTo("Bearer auth-token"))
+          .withHeader("Environment", equalTo("test-environment"))
+          .willReturn(
+            aResponse()
+              .withStatus(SERVICE_UNAVAILABLE)
+          )
+      )
+
+      running(application) {
+        val connector = application.injector.instanceOf[FinancialDataConnector]
+        val result = connector.getFinancialData(iossNumber, queryParameters).futureValue
+        result mustBe Right(None)
+      }
+
+    }
+
     "must return FinancialDataErrorResponse" - {
       "when server returns Http Exception" in {
         server.stubFor(
@@ -99,7 +120,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
         }
       }
 
-      Seq(BAD_REQUEST, SERVICE_UNAVAILABLE, IM_A_TEAPOT).foreach {
+      Seq(BAD_REQUEST, IM_A_TEAPOT).foreach {
         status =>
           s"when server returns status $status" in {
             server.stubFor(
