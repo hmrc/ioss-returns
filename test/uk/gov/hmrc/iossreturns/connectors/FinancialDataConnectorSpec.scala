@@ -10,7 +10,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.running
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser.FinancialDataResponse
-import uk.gov.hmrc.iossreturns.models.{ErrorResponse, UnexpectedResponseStatus}
 import uk.gov.hmrc.iossreturns.models.financialdata._
 
 import java.time.{LocalDate, ZoneOffset, ZonedDateTime}
@@ -36,7 +35,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
         val app = application
 
         server.stubFor(
-          get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.get}"))
+          get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
             .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
             .withQueryParam("dateTo", new EqualToPattern(now.toString))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
@@ -55,7 +54,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
 
     "must return None when server returns Not Found" in {
       server.stubFor(
-        get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.get.toString}"))
+        get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
           .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
           .withQueryParam("dateTo", new EqualToPattern(now.toString))
           .withHeader("Authorization", equalTo("Bearer auth-token"))
@@ -69,15 +68,36 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
       running(application) {
         val connector = application.injector.instanceOf[FinancialDataConnector]
         val result = connector.getFinancialData(iossNumber, queryParameters).futureValue
-        result mustBe Right(None)
+        result mustBe None
       }
 
     }
 
-    "must return FinancialDataErrorResponse" - {
+    "must return None when server returns an error" in {
+      server.stubFor(
+        get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
+          .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
+          .withQueryParam("dateTo", new EqualToPattern(now.toString))
+          .withHeader("Authorization", equalTo("Bearer auth-token"))
+          .withHeader("Environment", equalTo("test-environment"))
+          .willReturn(
+            aResponse()
+              .withStatus(SERVICE_UNAVAILABLE)
+          )
+      )
+
+      running(application) {
+        val connector = application.injector.instanceOf[FinancialDataConnector]
+        val result = connector.getFinancialData(iossNumber, queryParameters).futureValue
+        result mustBe None
+      }
+
+    }
+
+    "must return None" - {
       "when server returns Http Exception" in {
         server.stubFor(
-          get(urlEqualTo(s"$financialDataUrl?dateFrom=${dateFrom.toString}&dateTo=${queryParameters.toDate.get.toString}"))
+          get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
             .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
             .withQueryParam("dateTo", new EqualToPattern(now.toString))
             .withHeader("Authorization", equalTo("Bearer auth-token"))
@@ -92,8 +112,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
         running(application) {
           val connector = application.injector.instanceOf[FinancialDataConnector]
           whenReady(connector.getFinancialData(iossNumber, queryParameters), Timeout(Span(30, Seconds))) { exp =>
-            exp.isLeft mustBe true
-            exp.left.toOption.get mustBe a[ErrorResponse]
+            exp mustBe None
           }
 
         }
@@ -103,7 +122,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
         status =>
           s"when server returns status $status" in {
             server.stubFor(
-              get(urlEqualTo(s"$financialDataUrl?dateFrom=${dateFrom.toString}&dateTo=${queryParameters.toDate.get.toString}"))
+              get(urlEqualTo(s"$financialDataUrl?dateFrom=$dateFrom&dateTo=${queryParameters.toDate.value}"))
                 .withQueryParam("dateFrom", new EqualToPattern(dateFrom.toString))
                 .withQueryParam("dateTo", new EqualToPattern(now.toString))
                 .withHeader("Authorization", equalTo("Bearer auth-token"))
@@ -117,7 +136,7 @@ class FinancialDataConnectorSpec extends SpecBase with WireMockHelper with Finan
             running(application) {
               val connector = application.injector.instanceOf[FinancialDataConnector]
               val result = connector.getFinancialData(iossNumber, queryParameters).futureValue
-              result mustBe Left(UnexpectedResponseStatus(status, s"Unexpected response from Financial Data, received status $status"))
+              result mustBe None
             }
           }
       }
@@ -186,10 +205,10 @@ trait FinancialDataConnectorFixture {
     )
   )
 
-  val expectedResult: FinancialDataResponse = Right(Some(FinancialData(
+  val expectedResult: FinancialDataResponse = Some(FinancialData(
     idType = Some("IOSS"),
     idNumber = Some("123456789"),
     regimeType = Some("ECOM"),
     processingDate = zonedNow,
-    financialTransactions = Option(financialTransactions))))
+    financialTransactions = Option(financialTransactions)))
 }

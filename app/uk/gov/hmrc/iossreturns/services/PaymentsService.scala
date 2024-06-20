@@ -73,18 +73,11 @@ class PaymentsService @Inject()(
     )
 
     for {
-      financialData <- getFinancialData(iossNumber, financialDataQueryParameters)
+      financialData <- financialDataConnector.getFinancialData(iossNumber, financialDataQueryParameters)
       obligations <- getObligations(iossNumber, queryParameters)
       vatReturns <- getVatReturnsForObligations(iossNumber, obligations)
     } yield {
       block(financialData, vatReturns)
-    }
-  }
-
-  def getFinancialData(iossNumber: String, queryParameters: FinancialDataQueryParameters)(implicit ec: ExecutionContext): Future[Option[FinancialData]] = {
-    financialDataConnector.getFinancialData(iossNumber, queryParameters).flatMap {
-      case Right(obligations) => Future.successful(obligations)
-      case Left(e) => Future.failed(new Exception(e.body))
     }
   }
 

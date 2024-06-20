@@ -31,7 +31,7 @@ import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
-import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataException}
+import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData
 import uk.gov.hmrc.iossreturns.models.payments.{Charge, Payment, PaymentStatus, PrepareData}
 import uk.gov.hmrc.iossreturns.models.{Period, RegistrationWrapper}
 import uk.gov.hmrc.iossreturns.services.{FinancialDataService, PaymentsService}
@@ -70,24 +70,6 @@ class FinancialDataControllerSpec
 
     lazy val request =
       FakeRequest(GET, routes.FinancialDataController.get(commencementDate).url)
-
-    "error if api errors" in {
-
-      val app =
-        applicationBuilder()
-          .overrides(bind[FinancialDataService].to(mockFinancialDataService))
-          .build()
-
-      when(mockFinancialDataService.getFinancialData(any(), any(), any())) thenReturn
-        Future.failed(FinancialDataException("Some exception"))
-
-      running(app) {
-
-        val result = route(app, request).value
-
-        whenReady(result.failed) { exp => exp mustBe a[Exception] }
-      }
-    }
 
     "return financial data returned from downstream" in {
       val app =
@@ -317,23 +299,6 @@ class FinancialDataControllerSpec
       }
     }
 
-    "must throw an Exception if the API call fails" in {
-
-      val application = applicationBuilder()
-        .overrides(bind[FinancialDataService].toInstance(mockFinancialDataService))
-        .build()
-
-      when(mockFinancialDataService.getCharge(any(), any())) thenReturn
-        Future.failed(FinancialDataException("Some exception"))
-
-      running(application) {
-
-        val result = route(application, request).value
-
-        whenReady(result.failed) { exp => exp mustBe a[Exception] }
-      }
-    }
-
     "must respond with Unauthorized when the user is not authorised" in {
 
       val application = new GuiceApplicationBuilder()
@@ -369,23 +334,6 @@ class FinancialDataControllerSpec
 
         status(result) mustBe OK
         contentAsJson(result) mustBe Json.toJson(charge)
-      }
-    }
-
-    "must throw an Exception if the API call fails" in {
-
-      val application = applicationBuilder()
-        .overrides(bind[FinancialDataService].toInstance(mockFinancialDataService))
-        .build()
-
-      when(mockFinancialDataService.getCharge(any(), any())) thenReturn
-        Future.failed(FinancialDataException("Some exception"))
-
-      running(application) {
-
-        val result = route(application, request).value
-
-        whenReady(result.failed) { exp => exp mustBe a[Exception] }
       }
     }
 
