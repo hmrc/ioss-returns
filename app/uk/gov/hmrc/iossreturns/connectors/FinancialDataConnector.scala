@@ -21,7 +21,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpException, StringContextOps}
 import uk.gov.hmrc.iossreturns.config.FinancialDataConfig
 import uk.gov.hmrc.iossreturns.connectors.FinancialDataHttpParser._
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.UnexpectedResponseStatus
 import uk.gov.hmrc.iossreturns.models.financialdata.FinancialDataQueryParameters
 
 import java.net.URL
@@ -47,9 +46,7 @@ class FinancialDataConnector @Inject()(
     ).execute[FinancialDataResponse].recover {
       case e: HttpException =>
         logger.error(s"Unexpected error response getting financial data from $url, received status ${e.responseCode}, body of response was: ${e.message}")
-        Left(
-          UnexpectedResponseStatus(e.responseCode, s"Unexpected error response getting financial data from $url, received status ${e.responseCode}")
-        )
+        None
     }
   }
 }

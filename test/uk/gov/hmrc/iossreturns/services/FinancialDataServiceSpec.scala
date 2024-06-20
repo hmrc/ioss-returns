@@ -38,12 +38,11 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
 
     ".getFinancialData" - {
 
-      val financialData = expectedResult
       "return back the exact result retrieved from the connector" in {
-        when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Future.successful(financialData)
+        when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Future.successful(expectedResult)
 
-        whenReady(financialDataService.getFinancialData(iossNumber, None, None), PatienceConfiguration.Timeout(Span(2, Seconds))) { maybeFinancialData =>
-          Right(maybeFinancialData) mustEqual financialData
+        whenReady(financialDataService.getFinancialData(iossNumber, None, None), PatienceConfiguration.Timeout(Span(2, Seconds))) { financialDataResponse =>
+          financialDataResponse mustEqual expectedResult
         }
       }
     }
@@ -66,7 +65,7 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
 
             val queryParameters = FinancialDataQueryParameters(fromDate = Some(period.firstDay), toDate = Some(period.lastDay))
 
-            when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Right(Some(financialData)).toFuture
+            when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Some(financialData).toFuture
 
             val response = financialDataService.getCharge(iossNumber, period).futureValue
 
@@ -88,7 +87,7 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
 
             val queryParameters = FinancialDataQueryParameters(fromDate = Some(period.firstDay), toDate = Some(period.lastDay))
 
-            when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Right(Some(financialData)).toFuture
+            when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Some(financialData).toFuture
 
             val response = financialDataService.getCharge(iossNumber, period).futureValue
 
@@ -113,7 +112,7 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
 
             val queryParameters = FinancialDataQueryParameters(fromDate = Some(period.firstDay), toDate = Some(period.lastDay))
 
-            when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Right(Some(financialData)).toFuture
+            when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Some(financialData).toFuture
 
             val response = financialDataService.getCharge(iossNumber, period).futureValue
 
@@ -135,7 +134,7 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
 
           val queryParameters = FinancialDataQueryParameters(fromDate = Some(period.firstDay), toDate = Some(period.lastDay))
 
-          when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Right(None).toFuture
+          when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn None.toFuture
 
           val response = financialDataService.getCharge(iossNumber, period).futureValue
 

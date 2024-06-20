@@ -93,7 +93,7 @@ class PaymentsServiceSpec extends SpecBase
       when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodDueKey)))
         .thenReturn(Future.successful(Right(vatReturnDue)))
       when(mockFinancialDataConnector.getFinancialData(any(), any()))
-        .thenReturn(Future.successful[FinancialDataResponse](Right(Some(inputFinancialData))))
+        .thenReturn(Future.successful[FinancialDataResponse](Some(inputFinancialData)))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodOverdueKey)
@@ -141,7 +141,7 @@ class PaymentsServiceSpec extends SpecBase
       when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodKey1)))
         .thenReturn(Future.successful(Right(vatReturn1)))
 
-      when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Right(Some(inputFinancialData))))
+      when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Some(inputFinancialData)))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodKey1)
@@ -196,7 +196,7 @@ class PaymentsServiceSpec extends SpecBase
         .thenReturn(Future.successful(Right(vatReturn1)))
       when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodKey2)))
         .thenReturn(Future.successful(Right(vatReturn2)))
-      when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful[FinancialDataResponse](Right(Some(inputFinancialData))))
+      when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful[FinancialDataResponse](Some(inputFinancialData)))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodKey1)
@@ -258,7 +258,7 @@ class PaymentsServiceSpec extends SpecBase
       )
 
       forAll(scenarios) { (inputFinancialData, title) => {
-        when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Right(Some(inputFinancialData))))
+        when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Some(inputFinancialData)))
 
         val result = service.getUnpaidPayments(iossNumber, someCommencementDate, List.empty)
 
@@ -289,7 +289,7 @@ class PaymentsServiceSpec extends SpecBase
 
         when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
         when(mockVatReturnConnector.get(any(), any())) thenReturn Right(vatReturn).toFuture
-        when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Right(Some(updatedFinancialData)).toFuture
+        when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Some(updatedFinancialData).toFuture
 
         val period: Period = Period.fromKey(vatReturn.periodKey)
         val chargeForPeriod: Charge = updatedFinancialData.getChargeForPeriod(period).get
