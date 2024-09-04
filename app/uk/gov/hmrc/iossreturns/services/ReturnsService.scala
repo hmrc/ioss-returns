@@ -107,6 +107,8 @@ class ReturnsService @Inject()(
       PeriodWithStatus(period, SubmissionStatus.Complete)
     } else if (checkExclusionsService.isPeriodExcluded(period, exclusions)) {
       PeriodWithStatus(period, SubmissionStatus.Excluded)
+    } else if (checkExclusionsService.isPeriodExpired(period, exclusions)) {
+      PeriodWithStatus(period, SubmissionStatus.Expired)
     } else if (LocalDate.now(clock).isAfter(period.paymentDeadline)) {
       PeriodWithStatus(period, SubmissionStatus.Overdue)
     } else {

@@ -44,22 +44,8 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
     ".isPeriodExcluded" - {
 
-      "must return true when period is excluded because hasActiveWindowExpired returns true" in {
 
-        val service = new CheckExclusionsService(stubClockAtArbitraryDate)
-
-        val pastDate = stubbedNow.minusYears(3).minusMonths(2)
-
-        val period = StandardPeriod(pastDate.getYear, pastDate.getMonth)
-
-        val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.minusMonths(4)))
-
-        val result = service.isPeriodExcluded(period, exclusion)
-
-        result mustBe true
-      }
-
-      "must return true when period is excluded because hasActiveWindowExpired returns false and the period falls after the exclusion effective date" in {
+      "must return true when period is excluded because the period falls after the exclusion effective date" in {
 
         val service = new CheckExclusionsService(stubClockAtArbitraryDate)
 
@@ -72,7 +58,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
         result mustBe true
       }
 
-      "must return true when period is excluded because hasActiveWindowExpired returns false and the period falls on the exclusion effective date" in {
+      "must return true when period is excluded because the period falls on the exclusion effective date" in {
 
         val service = new CheckExclusionsService(stubClockAtArbitraryDate)
 
@@ -85,22 +71,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
         result mustBe true
       }
 
-      "must return true when period is excluded because hasActiveWindowExpired returns true and the period falls after the exclusion effective date" in {
-
-        val service = new CheckExclusionsService(stubClockAtArbitraryDate)
-
-        val pastDate = stubbedNow.minusYears(3).minusMonths(2)
-
-        val period = StandardPeriod(pastDate.getYear, pastDate.getMonth)
-
-        val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.minusMonths(1)))
-
-        val result = service.isPeriodExcluded(period, exclusion)
-
-        result mustBe true
-      }
-
-      "must return false when period is not excluded because hasActiveWindowExpired returns false and the period falls before the exclusion effective date" in {
+      "must return false when period is not excluded because the period falls before the exclusion effective date" in {
 
         val service = new CheckExclusionsService(stubClockAtArbitraryDate)
 
@@ -124,6 +95,65 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
         result mustBe false
       }
     }
+
+    ".isPeriodExpired" - {
+
+      "must return true when period is expired because hasActiveWindowExpired returns true" in {
+
+        val service = new CheckExclusionsService(stubClockAtArbitraryDate)
+
+        val pastDate = stubbedNow.minusYears(3).minusMonths(2)
+
+        val period = StandardPeriod(pastDate.getYear, pastDate.getMonth)
+
+        val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.minusMonths(4)))
+
+        val result = service.isPeriodExpired(period, exclusion)
+
+        result mustBe true
+      }
+
+
+      "must return true when period is excluded because hasActiveWindowExpired returns true and the period falls after the exclusion effective date" in {
+
+        val service = new CheckExclusionsService(stubClockAtArbitraryDate)
+
+        val pastDate = stubbedNow.minusYears(3).minusMonths(2)
+
+        val period = StandardPeriod(pastDate.getYear, pastDate.getMonth)
+
+        val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.minusMonths(1)))
+
+        val result = service.isPeriodExpired(period, exclusion)
+
+        result mustBe true
+      }
+
+      "must return false when period is not excluded because hasActiveWindowExpired returns false and the period falls before the exclusion effective date" in {
+
+        val service = new CheckExclusionsService(stubClockAtArbitraryDate)
+
+        val period = StandardPeriod(stubbedNow.getYear, stubbedNow.getMonth)
+        val exclusion = List(arbitraryEtmpExclusion.arbitrary.sample.value.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = stubbedNow.plusMonths(1)))
+
+        val result = service.isPeriodExpired(period, exclusion)
+
+        result mustBe false
+      }
+
+      "must return false when there is no exclusion" in {
+
+        val service = new CheckExclusionsService(stubClockAtArbitraryDate)
+
+        val period = StandardPeriod(stubbedNow.getYear, stubbedNow.getMonth)
+        val exclusion = List.empty
+
+        val result = service.isPeriodExpired(period, exclusion)
+
+        result mustBe false
+      }
+    }
+
 
     ".getLastExclusionWithoutReversal" - {
 
