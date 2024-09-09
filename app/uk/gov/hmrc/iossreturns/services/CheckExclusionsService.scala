@@ -40,8 +40,17 @@ class CheckExclusionsService @Inject()(clock: Clock) {
     val excluded = getLastExclusionWithoutReversal(exclusions)
 
     excluded match {
-      case Some(excluded) if hasActiveWindowExpired(period.paymentDeadline) ||
+      case Some(excluded) if excluded.exclusionReason != Reversal &&
         (excluded.effectiveDate.isBefore(period.firstDay) || excluded.effectiveDate == period.firstDay) => true
+      case _ => false
+    }
+  }
+
+  def isPeriodExpired(period: Period, exclusions: List[EtmpExclusion]): Boolean = {
+    val excluded = getLastExclusionWithoutReversal(exclusions)
+
+    excluded match {
+      case Some(excluded) if excluded.exclusionReason != Reversal && hasActiveWindowExpired(period.paymentDeadline) => true
       case _ => false
     }
   }

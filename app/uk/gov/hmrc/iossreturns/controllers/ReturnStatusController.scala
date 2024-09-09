@@ -21,7 +21,7 @@ import play.api.mvc.Results.Ok
 import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.iossreturns.controllers.actions.{AuthorisedRequest, DefaultAuthenticatedControllerComponents}
 import uk.gov.hmrc.iossreturns.models.Period
-import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Excluded}
+import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Excluded, Expired}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return}
 import uk.gov.hmrc.iossreturns.repository.SaveForLaterRepository
 import uk.gov.hmrc.iossreturns.services.{CheckExclusionsService, ReturnsService}
@@ -85,7 +85,7 @@ class ReturnStatusController @Inject()(
   }
 
   private def createInCompleteReturns(availablePeriodsWithStatus: Seq[PeriodWithStatus], periodInProgress: Option[Period]) = {
-    val incompletePeriods = availablePeriodsWithStatus.filterNot(pws => Seq(Complete, Excluded).contains(pws.status))
+    val incompletePeriods = availablePeriodsWithStatus.filterNot(pws => Seq(Complete, Excluded, Expired).contains(pws.status))
     val oldestPeriod = incompletePeriods.sortBy(_.period).headOption
 
     incompletePeriods.sortBy(_.period).map(
@@ -99,7 +99,7 @@ class ReturnStatusController @Inject()(
   }
 
   private def createCompleteReturns(availablePeriodsWithStatus: Seq[PeriodWithStatus], periodInProgress: Option[Period]) = {
-    val completePeriods = availablePeriodsWithStatus.filter(pws => Seq(Complete, Excluded).contains(pws.status))
+    val completePeriods = availablePeriodsWithStatus.filter(pws => Seq(Complete, Excluded, Expired).contains(pws.status))
     val oldestPeriod = completePeriods.sortBy(_.period).headOption
 
     completePeriods.sortBy(_.period).map(
