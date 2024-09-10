@@ -19,7 +19,7 @@ package uk.gov.hmrc.iossreturns.services
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.Period.{getNext, getPrevious}
-import uk.gov.hmrc.iossreturns.models.{Period, StandardPeriod}
+import uk.gov.hmrc.iossreturns.models.{Period, PeriodYear, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
 import uk.gov.hmrc.iossreturns.models.youraccount.{PeriodWithStatus, SubmissionStatus}
@@ -88,6 +88,12 @@ class ReturnsService @Inject()(
     }
 
   }
+
+  private def getReturnsPeriods(commencementDate: LocalDate, endDate: LocalDate): Seq[Period] =
+    getAllPeriodsBetween(commencementDate, endDate).filterNot(_.lastDay.isBefore(commencementDate))
+
+  def getPeriodYears(commencementDate: LocalDate, endDate: LocalDate): Seq[PeriodYear] =
+    getReturnsPeriods(commencementDate, endDate).map(PeriodYear.fromPeriod).distinct
 
   def getAllPeriodsBetween(commencementDate: LocalDate, endDate: LocalDate): List[Period] = {
     val startPeriod = StandardPeriod(commencementDate.getYear, commencementDate.getMonth)
