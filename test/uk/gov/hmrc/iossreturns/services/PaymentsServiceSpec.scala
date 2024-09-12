@@ -104,7 +104,7 @@ class PaymentsServiceSpec extends SpecBase
       when(mockVatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
+      when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
 
       val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
@@ -151,7 +151,7 @@ class PaymentsServiceSpec extends SpecBase
       when(mockVatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
+      when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
 
       val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
@@ -207,7 +207,7 @@ class PaymentsServiceSpec extends SpecBase
       when(mockVatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
+      when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
 
       val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
@@ -245,7 +245,7 @@ class PaymentsServiceSpec extends SpecBase
       when(mockVatReturnConnector.getObligations(any(), any()))
         .thenReturn(Future.successful(Right(obligationsResponse.copy(obligations = Seq(etmpObligation)))))
 
-      when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
+      when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
 
       val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
@@ -287,7 +287,7 @@ class PaymentsServiceSpec extends SpecBase
           ))
         )
 
-        when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
+        when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
         when(mockVatReturnConnector.get(any(), any())) thenReturn Right(vatReturn).toFuture
         when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Some(updatedFinancialData).toFuture
 
@@ -309,7 +309,7 @@ class PaymentsServiceSpec extends SpecBase
 
       "must calculate payment when a period is excluded" in {
 
-        when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn true
+        when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn true
 
         val period: Period = Period.fromKey(vatReturn.periodKey)
 
@@ -328,7 +328,7 @@ class PaymentsServiceSpec extends SpecBase
 
       "when financial data unavailable must use vat return total vat amount due" in {
 
-        when(mockCheckExclusionService.isPeriodExcluded(any(), any())) thenReturn false
+        when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
         when(mockVatReturnConnector.get(any(), any())) thenReturn Right(vatReturn).toFuture
         when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Future.failed(new Exception("Some exception"))
 

@@ -119,7 +119,7 @@ class PaymentsService @Inject()(
       chargeCalculated <- financialData.getChargeForPeriod(period)
     } yield chargeCalculated
 
-    val paymentStatus = if(checkExclusionsService.isPeriodExcluded(period, exclusions)) {
+    val paymentStatus = if(checkExclusionsService.isPeriodExpired(period, exclusions)) {
       PaymentStatus.Excluded
     } else {
       charge.getPaymentStatus()
