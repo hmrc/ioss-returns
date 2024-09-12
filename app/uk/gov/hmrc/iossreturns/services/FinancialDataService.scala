@@ -61,9 +61,9 @@ class FinancialDataService @Inject()(financialDataConnector: FinancialDataConnec
   }
 
   private def getFinancialDataForDateRange(iossNumber: String, fromDate: LocalDate, toDate: LocalDate): Future[Option[FinancialData]] = {
-    financialDataConnector.getFinancialData(iossNumber, FinancialDataQueryParameters(fromDate = Some(fromDate), toDate = Some(toDate))).flatMap {
-        case Some(value) => Future.successful(Some(value))
-      case None        => Future.successful(None)
+    financialDataConnector.getFinancialData(iossNumber, FinancialDataQueryParameters(fromDate = Some(fromDate), toDate = Some(toDate))).map {
+      case Some(value) => Some(value)
+      case None => None
     }
   }
 }
