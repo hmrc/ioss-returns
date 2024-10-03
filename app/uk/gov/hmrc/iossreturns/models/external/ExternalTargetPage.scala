@@ -45,7 +45,7 @@ case object ReturnsHistory extends ExternalTargetPage with ParameterlessUrl {
 case object StartReturn extends ExternalTargetPage with UrlWithPeriod {
   override val name: String = "start-your-return"
 
-  override def url(period: Period): String = s"$prependUrl/$period/start"
+  override def url(period: Period): String = s"$prependUrl/$period/start-return"
 }
 
 case object ContinueReturn extends ExternalTargetPage with UrlWithPeriod {
