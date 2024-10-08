@@ -8,15 +8,14 @@ import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, FinancialDataConnectorFixture}
-import uk.gov.hmrc.iossreturns.models.{PeriodYear, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataQueryParameters, FinancialTransaction, Item}
 import uk.gov.hmrc.iossreturns.models.payments.Charge
+import uk.gov.hmrc.iossreturns.models.{PeriodYear, StandardPeriod}
 import uk.gov.hmrc.iossreturns.testUtils.FinancialTransactionData.getFinancialData
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
 import java.time.{LocalDate, Month, ZonedDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
   with BeforeAndAfterEach
