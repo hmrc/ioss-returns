@@ -1,5 +1,6 @@
 package uk.gov.hmrc.iossreturns.repository
 
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.OptionValues
@@ -8,9 +9,10 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.iossreturns.config.AppConfig
-import uk.gov.hmrc.iossreturns.crypto.{SavedUserAnswersEncryptor, SecureGCMCipher}
+import uk.gov.hmrc.iossreturns.crypto.SavedUserAnswersEncryptor
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.{EncryptedSavedUserAnswers, Period, SavedUserAnswers, StandardPeriod}
+import uk.gov.hmrc.iossreturns.services.crypto.EncryptionService
 import uk.gov.hmrc.iossreturns.utils.StringUtils
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, DefaultPlayMongoRepositorySupport}
 
@@ -28,15 +30,12 @@ class SaveForLaterRepositorySpec
     with OptionValues
     with Generators {
 
-  private val cipher = new SecureGCMCipher
-  private val encryptor = new SavedUserAnswersEncryptor(cipher)
+  private val mockEncryptionService: EncryptionService = mock[EncryptionService]
+  private val encryptor = new SavedUserAnswersEncryptor(mockEncryptionService)
   private val appConfig = mock[AppConfig]
-  private val secretKey = "VqmXp7yigDFxbCUdDdNZVIvbW6RgPNJsliv6swQNCL8="
 
   private val instant = Instant.now
   private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
-
-  when(appConfig.encryptionKey) thenReturn secretKey
 
   override protected val repository =
     new SaveForLaterRepository(
@@ -44,6 +43,9 @@ class SaveForLaterRepositorySpec
       encryptor = encryptor,
       appConfig = appConfig
     )
+
+  when(mockEncryptionService.encryptField(any())) thenReturn "encryptedText"
+  when(mockEncryptionService.decryptField(any())) thenReturn arbitrarySavedUserAnswers.arbitrary.sample.value.data.toString()
 
   ".set savedAnswers" - {
 
@@ -61,7 +63,7 @@ class SaveForLaterRepositorySpec
       val insertReturn2 = repository.set(answers2).futureValue
       val databaseRecords = findAll().futureValue
       val decryptedDatabaseRecords =
-        databaseRecords.map(e => encryptor.decryptAnswers(e, e.iossNumber, secretKey))
+        databaseRecords.map(e => encryptor.decryptAnswers(e, e.iossNumber))
 
       insertResult1 mustBe answers1
       insertReturn2 mustBe answers2
@@ -81,7 +83,7 @@ class SaveForLaterRepositorySpec
       val insertReturn2 = repository.set(answers2).futureValue
       val databaseRecords = findAll().futureValue
       val decryptedDatabaseRecords =
-        databaseRecords.map(e => encryptor.decryptAnswers(e, e.iossNumber, secretKey))
+        databaseRecords.map(e => encryptor.decryptAnswers(e, e.iossNumber))
 
       insertResult1 mustBe answers1
       insertReturn2 mustBe answers2
@@ -99,7 +101,7 @@ class SaveForLaterRepositorySpec
       insertResult2 mustBe answers2
 
       val decryptedDatabaseRecords =
-        findAll().futureValue.map(e => encryptor.decryptAnswers(e, e.iossNumber, secretKey))
+        findAll().futureValue.map(e => encryptor.decryptAnswers(e, e.iossNumber))
 
       decryptedDatabaseRecords must contain only answers2
     }
@@ -122,9 +124,9 @@ class SaveForLaterRepositorySpec
         iossNumber = iossNumber3
         )
 
-      insert(encryptor.encryptAnswers(answers1, answers1.iossNumber, secretKey)).futureValue
-      insert(encryptor.encryptAnswers(answers2, answers2.iossNumber, secretKey)).futureValue
-      insert(encryptor.encryptAnswers(answers3, answers3.iossNumber, secretKey)).futureValue
+      insert(encryptor.encryptAnswers(answers1, answers1.iossNumber)).futureValue
+      insert(encryptor.encryptAnswers(answers2, answers2.iossNumber)).futureValue
+      insert(encryptor.encryptAnswers(answers3, answers3.iossNumber)).futureValue
 
       val returns = repository.get(answers1.iossNumber).futureValue
 
@@ -140,7 +142,7 @@ class SaveForLaterRepositorySpec
 
       val answers = answers1.copy(lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
 
-      insert(encryptor.encryptAnswers(answers, answers.iossNumber, secretKey)).futureValue
+      insert(encryptor.encryptAnswers(answers, answers.iossNumber)).futureValue
 
       val result = repository.get(answers.iossNumber, answers.period).futureValue
 
@@ -164,7 +166,7 @@ class SaveForLaterRepositorySpec
 
       val answers = arbitrary[SavedUserAnswers].sample.value
 
-      insert(encryptor.encryptAnswers(answers, answers.iossNumber, secretKey)).futureValue
+      insert(encryptor.encryptAnswers(answers, answers.iossNumber)).futureValue
 
       val result = repository.clear(answers.iossNumber, answers.period).futureValue
 

@@ -18,39 +18,41 @@ package uk.gov.hmrc.iossreturns.crypto
 
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.iossreturns.models.{EncryptedSavedUserAnswers, SavedUserAnswers}
+import uk.gov.hmrc.iossreturns.services.crypto.EncryptionService
 
 import javax.inject.Inject
 
 class SavedUserAnswersEncryptor @Inject()(
-                                 crypto: SecureGCMCipher
-                               ) {
+                                           encryptionService: EncryptionService
+                                         ) {
 
-  def encryptData(data: JsValue, iossNumber: String, key: String): EncryptedValue = {
-    def e(field: String): EncryptedValue = crypto.encrypt(field, iossNumber, key)
+  def encryptData(data: JsValue): String = {
+    def encryptAnswerValue(field: String): String = encryptionService.encryptField(field)
 
-    e(data.toString)
+    encryptAnswerValue(data.toString)
   }
 
-  def decryptData(data: EncryptedValue, iossNumber: String, key: String): JsValue = {
-    def d(field: EncryptedValue): String = crypto.decrypt(field, iossNumber, key)
-    Json.parse(d(data))
+  def decryptData(data: String): JsValue = {
+    def decryptAnswerValue(field: String): String = encryptionService.decryptField(field)
+
+    Json.parse(decryptAnswerValue(data))
 
   }
 
-  def encryptAnswers(answers: SavedUserAnswers, iossNumber: String, key: String): EncryptedSavedUserAnswers = {
+  def encryptAnswers(answers: SavedUserAnswers, iossNumber: String): EncryptedSavedUserAnswers = {
     EncryptedSavedUserAnswers(
       iossNumber = iossNumber,
       period = answers.period,
-      data = encryptData(answers.data, iossNumber, key),
+      data = encryptData(answers.data),
       lastUpdated = answers.lastUpdated
     )
   }
 
-  def decryptAnswers(encryptedAnswers: EncryptedSavedUserAnswers, iossNumber: String, key: String): SavedUserAnswers = {
+  def decryptAnswers(encryptedAnswers: EncryptedSavedUserAnswers, iossNumber: String): SavedUserAnswers = {
     SavedUserAnswers(
       iossNumber = iossNumber,
       period = encryptedAnswers.period,
-      data = decryptData(encryptedAnswers.data, iossNumber, key),
+      data = decryptData(encryptedAnswers.data),
       lastUpdated = encryptedAnswers.lastUpdated
     )
   }

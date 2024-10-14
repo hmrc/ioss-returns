@@ -64,8 +64,6 @@ class SaveForLaterRepository @Inject()(
 
   implicit val instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
-  private val encryptionKey = appConfig.encryptionKey
-
   private def byIossNumberAndPeriod(iossNumber: String, period: Period): Bson =
     Filters.and(
       Filters.equal("iossNumber", iossNumber),
@@ -74,7 +72,7 @@ class SaveForLaterRepository @Inject()(
 
   def set(savedUserAnswers: SavedUserAnswers): Future[SavedUserAnswers] = {
 
-    val encryptedAnswers = encryptor.encryptAnswers(savedUserAnswers, savedUserAnswers.iossNumber, encryptionKey)
+    val encryptedAnswers = encryptor.encryptAnswers(savedUserAnswers, savedUserAnswers.iossNumber)
 
     collection
       .replaceOne(
@@ -92,7 +90,7 @@ class SaveForLaterRepository @Inject()(
       .toFuture()
       .map(_.map {
         answers =>
-          encryptor.decryptAnswers(answers, answers.iossNumber, encryptionKey)
+          encryptor.decryptAnswers(answers, answers.iossNumber)
       })
 
   def get(iossNumber: String, period: Period): Future[Option[SavedUserAnswers]] =
@@ -105,7 +103,7 @@ class SaveForLaterRepository @Inject()(
       ).headOption()
       .map(_.map {
         answers =>
-          encryptor.decryptAnswers(answers, answers.iossNumber, encryptionKey)
+          encryptor.decryptAnswers(answers, answers.iossNumber)
       })
 
   def clear(iossNumber: String, period: Period): Future[Boolean] =
