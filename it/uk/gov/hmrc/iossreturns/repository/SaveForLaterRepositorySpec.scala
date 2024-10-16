@@ -9,9 +9,9 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.iossreturns.config.AppConfig
-import uk.gov.hmrc.iossreturns.crypto.SavedUserAnswersEncryptor
+import uk.gov.hmrc.iossreturns.crypto.{SavedUserAnswersEncryptor, SecureGCMCipher}
 import uk.gov.hmrc.iossreturns.generators.Generators
-import uk.gov.hmrc.iossreturns.models.{EncryptedSavedUserAnswers, Period, SavedUserAnswers, StandardPeriod}
+import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.services.crypto.EncryptionService
 import uk.gov.hmrc.iossreturns.utils.StringUtils
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, DefaultPlayMongoRepositorySupport}
@@ -30,9 +30,10 @@ class SaveForLaterRepositorySpec
     with OptionValues
     with Generators {
 
-  private val mockEncryptionService: EncryptionService = mock[EncryptionService]
-  private val encryptor = new SavedUserAnswersEncryptor(mockEncryptionService)
   private val appConfig = mock[AppConfig]
+  private val mockSecureGCMCipher: SecureGCMCipher = mock[SecureGCMCipher]
+  private val mockEncryptionService: EncryptionService = mock[EncryptionService]
+  private val encryptor = new SavedUserAnswersEncryptor(appConfig, mockEncryptionService, mockSecureGCMCipher)
 
   private val instant = Instant.now
   private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
@@ -63,7 +64,7 @@ class SaveForLaterRepositorySpec
       val insertReturn2 = repository.set(answers2).futureValue
       val databaseRecords = findAll().futureValue
       val decryptedDatabaseRecords =
-        databaseRecords.map(e => encryptor.decryptAnswers(e, e.iossNumber))
+        databaseRecords.map(e => determineEncryptionType(e))
 
       insertResult1 mustBe answers1
       insertReturn2 mustBe answers2
@@ -83,7 +84,7 @@ class SaveForLaterRepositorySpec
       val insertReturn2 = repository.set(answers2).futureValue
       val databaseRecords = findAll().futureValue
       val decryptedDatabaseRecords =
-        databaseRecords.map(e => encryptor.decryptAnswers(e, e.iossNumber))
+        databaseRecords.map(e => determineEncryptionType(e))
 
       insertResult1 mustBe answers1
       insertReturn2 mustBe answers2
@@ -101,7 +102,7 @@ class SaveForLaterRepositorySpec
       insertResult2 mustBe answers2
 
       val decryptedDatabaseRecords =
-        findAll().futureValue.map(e => encryptor.decryptAnswers(e, e.iossNumber))
+        findAll().futureValue.map(e => determineEncryptionType(e))
 
       decryptedDatabaseRecords must contain only answers2
     }
@@ -171,6 +172,16 @@ class SaveForLaterRepositorySpec
       val result = repository.clear(answers.iossNumber, answers.period).futureValue
 
       result mustEqual true
+    }
+  }
+
+  private def determineEncryptionType(answers: EncryptedSavedUserAnswers): SavedUserAnswers = {
+    answers match {
+      case l: LegacyEncryptedSavedUserAnswers =>
+        encryptor.decryptLegacyAnswers(l, l.iossNumber)
+      case n: NewEncryptedSavedUserAnswers =>
+        encryptor.decryptAnswers(n, n.iossNumber)
+      case _ => throw new IllegalArgumentException("Not a valid EncryptedSavedUserAnswers type.")
     }
   }
 }

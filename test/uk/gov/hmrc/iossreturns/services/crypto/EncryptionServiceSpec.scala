@@ -23,6 +23,7 @@ class EncryptionServiceSpec extends SpecBase {
         val result = service.encryptField(textToEncrypt)
 
         result mustBe a[String]
+        result mustNot be(textToEncrypt)
       }
     }
 
@@ -43,6 +44,7 @@ class EncryptionServiceSpec extends SpecBase {
         val result = service.decryptField(encryptedValue)
 
         result mustBe a[String]
+        result mustBe textToEncrypt
       }
     }
 

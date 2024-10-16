@@ -32,7 +32,9 @@ import uk.gov.hmrc.iossreturns.models.StandardPeriod
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
 import uk.gov.hmrc.iossreturns.models.youraccount.{CurrentReturns, PeriodWithStatus, Return, SubmissionStatus}
+import uk.gov.hmrc.iossreturns.repository.SaveForLaterRepository
 import uk.gov.hmrc.iossreturns.services.{CheckExclusionsService, ReturnsService}
+import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
 import java.time.{Clock, LocalDate, Month, ZoneId}
 import scala.concurrent.Future
@@ -335,6 +337,7 @@ class ReturnStatusControllerSpec
         val stubClock: Clock = Clock.fixed(LocalDate.of(2026, 3, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
 
         val mockReturnService = mock[ReturnsService]
+        val mockSaveForLaterRepository: SaveForLaterRepository = mock[SaveForLaterRepository]
 
         val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(_.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = exclusionPeriod.firstDay))
 
@@ -348,6 +351,7 @@ class ReturnStatusControllerSpec
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+        when(mockSaveForLaterRepository.get(any())) thenReturn Seq(arbitrarySavedUserAnswers.arbitrary.sample.value).toFuture
 
         val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
         completeOfExcludedReturns.size mustBe 2
@@ -355,6 +359,7 @@ class ReturnStatusControllerSpec
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
+          .overrides(bind[SaveForLaterRepository].toInstance(mockSaveForLaterRepository))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
@@ -378,6 +383,7 @@ class ReturnStatusControllerSpec
         val stubClock: Clock = Clock.fixed(LocalDate.of(2026, 3, 1).atStartOfDay(ZoneId.systemDefault).toInstant, ZoneId.systemDefault)
 
         val mockReturnService = mock[ReturnsService]
+        val mockSaveForLaterRepository: SaveForLaterRepository = mock[SaveForLaterRepository]
 
         val exclusion: Option[EtmpExclusion] = arbitraryEtmpExclusion.arbitrary.sample.map(_.copy(exclusionReason = EtmpExclusionReason.FailsToComply, effectiveDate = exclusionPeriod.firstDay))
 
@@ -394,6 +400,7 @@ class ReturnStatusControllerSpec
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
+        when(mockSaveForLaterRepository.get(any())) thenReturn Seq(arbitrarySavedUserAnswers.arbitrary.sample.value).toFuture
 
         val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
         completeOfExcludedReturns.size mustBe 2
@@ -401,6 +408,7 @@ class ReturnStatusControllerSpec
         val app = applicationBuilder
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
+          .overrides(bind[SaveForLaterRepository].toInstance(mockSaveForLaterRepository))
           .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
@@ -432,6 +440,5 @@ class ReturnStatusControllerSpec
       }
     }
   }
-
-
 }
+

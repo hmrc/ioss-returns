@@ -16,43 +16,50 @@
 
 package uk.gov.hmrc.iossreturns.crypto
 
-import play.api.libs.json.{JsValue, Json}
-import uk.gov.hmrc.iossreturns.models.{EncryptedSavedUserAnswers, SavedUserAnswers}
+import play.api.libs.json.Json
+import uk.gov.hmrc.iossreturns.config.AppConfig
+import uk.gov.hmrc.iossreturns.models.{LegacyEncryptedSavedUserAnswers, NewEncryptedSavedUserAnswers, SavedUserAnswers}
 import uk.gov.hmrc.iossreturns.services.crypto.EncryptionService
 
 import javax.inject.Inject
 
 class SavedUserAnswersEncryptor @Inject()(
-                                           encryptionService: EncryptionService
+                                           appConfig: AppConfig,
+                                           encryptionService: EncryptionService,
+                                           secureGCMCipher: SecureGCMCipher
                                          ) {
 
-  def encryptData(data: JsValue): String = {
-    def encryptAnswerValue(field: String): String = encryptionService.encryptField(field)
+  protected val encryptionKey: String = appConfig.encryptionKey
 
-    encryptAnswerValue(data.toString)
-  }
+  def encryptAnswers(answers: SavedUserAnswers, iossNumber: String): NewEncryptedSavedUserAnswers = {
+    def encryptAnswerValue(answerValue: String): String = encryptionService.encryptField(answerValue)
 
-  def decryptData(data: String): JsValue = {
-    def decryptAnswerValue(field: String): String = encryptionService.decryptField(field)
-
-    Json.parse(decryptAnswerValue(data))
-
-  }
-
-  def encryptAnswers(answers: SavedUserAnswers, iossNumber: String): EncryptedSavedUserAnswers = {
-    EncryptedSavedUserAnswers(
+    NewEncryptedSavedUserAnswers(
       iossNumber = iossNumber,
       period = answers.period,
-      data = encryptData(answers.data),
+      data = encryptAnswerValue(answers.data.toString),
       lastUpdated = answers.lastUpdated
     )
   }
 
-  def decryptAnswers(encryptedAnswers: EncryptedSavedUserAnswers, iossNumber: String): SavedUserAnswers = {
+  def decryptAnswers(encryptedAnswers: NewEncryptedSavedUserAnswers, iossNumber: String): SavedUserAnswers = {
+    def decryptAnswerValue(answerValue: String): String = encryptionService.decryptField(answerValue)
+
     SavedUserAnswers(
       iossNumber = iossNumber,
       period = encryptedAnswers.period,
-      data = decryptData(encryptedAnswers.data),
+      data = Json.parse(decryptAnswerValue(encryptedAnswers.data)),
+      lastUpdated = encryptedAnswers.lastUpdated
+    )
+  }
+
+  def decryptLegacyAnswers(encryptedAnswers: LegacyEncryptedSavedUserAnswers, iossNumber: String): SavedUserAnswers = {
+    def decryptAnswerValue(answerValue: EncryptedValue): String = secureGCMCipher.decrypt(answerValue, iossNumber, encryptionKey)
+
+    SavedUserAnswers(
+      iossNumber = iossNumber,
+      period = encryptedAnswers.period,
+      data = Json.parse(decryptAnswerValue(encryptedAnswers.data)),
       lastUpdated = encryptedAnswers.lastUpdated
     )
   }
