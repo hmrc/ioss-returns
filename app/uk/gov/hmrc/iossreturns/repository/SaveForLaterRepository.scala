@@ -22,7 +22,7 @@ import play.api.libs.json.Format
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.crypto.SavedUserAnswersEncryptor
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.{EncryptedSavedUserAnswers, Period, SavedUserAnswers}
+import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs.JsonOps
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -35,10 +35,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class SaveForLaterRepository @Inject()(
-                                     val mongoComponent: MongoComponent,
-                                     encryptor: SavedUserAnswersEncryptor,
-                                     appConfig: AppConfig
-                                   )(implicit ec: ExecutionContext)
+                                        val mongoComponent: MongoComponent,
+                                        encryptor: SavedUserAnswersEncryptor,
+                                        appConfig: AppConfig
+                                      )(implicit ec: ExecutionContext)
   extends PlayMongoRepository[EncryptedSavedUserAnswers](
     collectionName = "saved-user-answers",
     mongoComponent = mongoComponent,
@@ -64,23 +64,21 @@ class SaveForLaterRepository @Inject()(
 
   implicit val instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
-  private val encryptionKey = appConfig.encryptionKey
-
   private def byIossNumberAndPeriod(iossNumber: String, period: Period): Bson =
     Filters.and(
       Filters.equal("iossNumber", iossNumber),
-      Filters.equal("period", period.toBson(legacyNumbers = false))
+      Filters.equal("period", period.toBson)
     )
 
   def set(savedUserAnswers: SavedUserAnswers): Future[SavedUserAnswers] = {
 
-    val encryptedAnswers = encryptor.encryptAnswers(savedUserAnswers, savedUserAnswers.iossNumber, encryptionKey)
+    val encryptedAnswers = encryptor.encryptAnswers(savedUserAnswers, savedUserAnswers.iossNumber)
 
     collection
       .replaceOne(
-        filter      = byIossNumberAndPeriod(savedUserAnswers.iossNumber, savedUserAnswers.period),
+        filter = byIossNumberAndPeriod(savedUserAnswers.iossNumber, savedUserAnswers.period),
         replacement = encryptedAnswers,
-        options     = ReplaceOptions().upsert(true)
+        options = ReplaceOptions().upsert(true)
       )
       .toFuture()
       .map(_ => savedUserAnswers)
@@ -91,8 +89,10 @@ class SaveForLaterRepository @Inject()(
       .find(Filters.equal("iossNumber", toBson(iossNumber)))
       .toFuture()
       .map(_.map {
-        answers =>
-          encryptor.decryptAnswers(answers, answers.iossNumber, encryptionKey)
+        case n: NewEncryptedSavedUserAnswers =>
+          encryptor.decryptAnswers(n, n.iossNumber)
+        case l: LegacyEncryptedSavedUserAnswers =>
+          encryptor.decryptLegacyAnswers(l, l.iossNumber)
       })
 
   def get(iossNumber: String, period: Period): Future[Option[SavedUserAnswers]] =
@@ -104,8 +104,10 @@ class SaveForLaterRepository @Inject()(
         )
       ).headOption()
       .map(_.map {
-        answers =>
-          encryptor.decryptAnswers(answers, answers.iossNumber, encryptionKey)
+        case n: NewEncryptedSavedUserAnswers =>
+          encryptor.decryptAnswers(n, n.iossNumber)
+        case l: LegacyEncryptedSavedUserAnswers =>
+          encryptor.decryptLegacyAnswers(l, l.iossNumber)
       })
 
   def clear(iossNumber: String, period: Period): Future[Boolean] =

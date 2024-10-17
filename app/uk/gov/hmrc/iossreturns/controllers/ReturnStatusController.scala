@@ -74,7 +74,7 @@ class ReturnStatusController @Inject()(
       val latestAnswer = savedAnswers.sortBy(_.lastUpdated).lastOption
       val periodInProgress = latestAnswer.map(answer => answer.period)
 
-      val incompleteReturns = createInCompleteReturns(availablePeriodsWithStatus, periodInProgress)
+      val incompleteReturns = createIncompleteReturns(availablePeriodsWithStatus, periodInProgress)
       val otherReturns = createCompleteReturns(availablePeriodsWithStatus, periodInProgress)
 
       val isExcluded = checkExclusionsService.getLastExclusionWithoutReversal(request.registration.exclusions.toList).isDefined
@@ -84,7 +84,7 @@ class ReturnStatusController @Inject()(
     }
   }
 
-  private def createInCompleteReturns(availablePeriodsWithStatus: Seq[PeriodWithStatus], periodInProgress: Option[Period]) = {
+  private def createIncompleteReturns(availablePeriodsWithStatus: Seq[PeriodWithStatus], periodInProgress: Option[Period]) = {
     val incompletePeriods = availablePeriodsWithStatus.filterNot(pws => Seq(Complete, Excluded, Expired).contains(pws.status))
     val oldestPeriod = incompletePeriods.sortBy(_.period).headOption
 

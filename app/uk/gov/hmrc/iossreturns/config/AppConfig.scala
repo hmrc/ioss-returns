@@ -25,10 +25,11 @@ class AppConfig @Inject()(config: Configuration) {
 
   val appName: String = config.get[String]("appName")
 
-  val encryptionKey: String = config.get[String]("mongodb.encryption.key")
   val cacheTtl: Int = config.get[Int]("mongodb.timeToLiveInDays")
 
   val iossEnrolment: String = config.get[String]("features.enrolment.ioss-enrolment-key")
 
   val externalEntryTtlDays: Int = config.get[Int]("features.externalEntry.ttlInDays")
+
+  val encryptionKey: String = config.get[String]("mongodb.encryption.key")
 }
