@@ -7,26 +7,31 @@ Frontend: https://github.com/hmrc/ioss-returns-frontend
 
 Stub: https://github.com/hmrc/ioss-returns-stub
 
+For more details on the Import One Stop Shop Returns service, including how to use the application, please refer
+to the instructions in the ioss-returns-frontend repository.
+
 Requirements
 ------------
 
 This service is written in [Scala](http://www.scala-lang.org/) and [Play](http://playframework.com/), so needs at least a [JRE] to run.
 
-## Run the application
+## Run the application locally via Service Manager
 
-To update from Nexus and start all services from the RELEASE version instead of snapshot
 ```
 sm2 --start IMPORT_ONE_STOP_SHOP_ALL
 ```
 
-### To run the application locally execute the following:
+### To run the application locally from the repository, execute the following:
 ```
 sm2 --stop IOSS_RETURNS
 ```
 and
 ```
-sbt run
+sbt run -Dapplication.router=testOnlyDoNotUseInAppConf.Routes
 ```
+
+### Running correct version of mongo
+Mongo 6 with a replica set is required to run the service. Please refer to the MDTP Handbook for instructions on how to run this
 
 
 Unit and Integration Tests
