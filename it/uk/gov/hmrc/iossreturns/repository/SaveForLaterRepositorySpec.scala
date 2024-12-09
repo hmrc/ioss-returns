@@ -38,7 +38,7 @@ class SaveForLaterRepositorySpec
   private val instant = Instant.now
   private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
 
-  override protected val repository =
+  override protected val repository: SaveForLaterRepository =
     new SaveForLaterRepository(
       mongoComponent = mongoComponent,
       encryptor = encryptor,

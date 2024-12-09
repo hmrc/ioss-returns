@@ -18,7 +18,7 @@ package uk.gov.hmrc.iossreturns.services
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
-import org.mockito.MockitoSugar.when
+import org.mockito.Mockito.when
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks

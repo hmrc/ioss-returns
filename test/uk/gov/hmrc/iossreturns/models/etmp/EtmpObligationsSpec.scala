@@ -2,6 +2,7 @@ package uk.gov.hmrc.iossreturns.models.etmp
 
 import play.api.libs.json.{JsSuccess, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.models.Period
 
 class EtmpObligationsSpec extends SpecBase {
 
@@ -92,6 +93,51 @@ class EtmpObligationsSpec extends SpecBase {
 
       expectedInternalJson mustBe Json.toJson(expectedResult)
       json.validate[EtmpObligations] mustBe JsSuccess(expectedResult)
+    }
+
+    "getFulfilledPeriods" - {
+
+      "must return fulfilled periods correctly" in {
+        val fulfilledDetails = Seq(
+          EtmpObligationDetails(EtmpObligationsFulfilmentStatus.Fulfilled, "23AA"),
+          EtmpObligationDetails(EtmpObligationsFulfilmentStatus.Fulfilled, "23AB")
+        )
+        val openDetails = Seq(
+          EtmpObligationDetails(EtmpObligationsFulfilmentStatus.Open, "23AC")
+        )
+
+        val obligations = EtmpObligations(
+          obligations = Seq(
+            EtmpObligation(obligationDetails = fulfilledDetails ++ openDetails)
+          )
+        )
+
+        val expectedPeriods = Seq(
+          Period.fromKey("23AA"),
+          Period.fromKey("23AB")
+        )
+
+        obligations.getFulfilledPeriods mustBe expectedPeriods
+      }
+
+      "must return an empty sequence when there are no fulfilled obligations" in {
+        val obligations = EtmpObligations(
+          obligations = Seq(
+            EtmpObligation(obligationDetails = Seq(
+              EtmpObligationDetails(EtmpObligationsFulfilmentStatus.Open, "23AA"),
+              EtmpObligationDetails(EtmpObligationsFulfilmentStatus.Open, "23AB")
+            ))
+          )
+        )
+
+        obligations.getFulfilledPeriods mustBe Seq.empty
+      }
+
+      "must handle an empty obligations list gracefully" in {
+        val obligations = EtmpObligations(obligations = Seq.empty)
+
+        obligations.getFulfilledPeriods mustBe Seq.empty
+      }
     }
   }
 }

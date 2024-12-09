@@ -213,7 +213,7 @@ class ReturnsServiceSpec
         val expectedPeriods = Seq(StandardPeriod(2021, Month.SEPTEMBER))
         val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", commencementDate, Nil)
 
-        whenReady(returnValue, Timeout(Span(2, Seconds))) { statuses: Seq[PeriodWithStatus] =>
+        whenReady(returnValue, Timeout(Span(2, Seconds))) { (statuses: Seq[PeriodWithStatus]) =>
           statuses.map(_.period) must contain theSameElementsAs expectedPeriods
         }
       }
@@ -227,7 +227,7 @@ class ReturnsServiceSpec
 
         val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", commencementDate, Nil)
 
-        whenReady(returnValue, Timeout(Span(2, Seconds))) { statuses: Seq[PeriodWithStatus] =>
+        whenReady(returnValue, Timeout(Span(2, Seconds))) { (statuses: Seq[PeriodWithStatus]) =>
           statuses.filterNot(_.status == Next).map(_.period) must contain theSameElementsAs expectedPeriods
         }
       }
@@ -245,7 +245,7 @@ class ReturnsServiceSpec
 
 
       whenReady(returnValue, Timeout(Span(2, Seconds))) {
-        statuses: Seq[PeriodWithStatus] =>
+        (statuses: Seq[PeriodWithStatus]) =>
           statuses.map(_.period) must contain theSameElementsAs expectedPeriods
       }
     }
@@ -262,7 +262,7 @@ class ReturnsServiceSpec
       val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", LocalDate.now(stubClock).minusMonths(3), Nil)
 
       whenReady(returnValue, Timeout(Span(2, Seconds))) {
-        statuses: Seq[PeriodWithStatus] =>
+        (statuses: Seq[PeriodWithStatus]) =>
           statuses.map(_.period) must contain theSameElementsAs expectedPeriods
       }
     }
