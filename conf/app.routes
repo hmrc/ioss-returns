@@ -4,7 +4,7 @@ GET         /financial-data/get/:commencementDate                     uk.gov.hmr
 GET         /return/:period                                           uk.gov.hmrc.iossreturns.controllers.ReturnController.get(period: Period)
 GET         /return/:period/:iossNumber                               uk.gov.hmrc.iossreturns.controllers.ReturnController.getForIossNumber(period: Period, iossNumber: String)
 
-POST        /return                                                   uk.gov.hmrc.iossreturns.controllers.ReturnController.submit
+POST        /return                                                   uk.gov.hmrc.iossreturns.controllers.ReturnController.submit()
 
 GET         /vat-returns/current-returns/:iossNumber                  uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturnsForIossNumber(iossNumber: String)
 GET         /vat-returns/current-returns                              uk.gov.hmrc.iossreturns.controllers.ReturnStatusController.getCurrentReturns

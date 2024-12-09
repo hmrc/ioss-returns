@@ -22,6 +22,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpErrorFunctions, StringContextOps}
 import uk.gov.hmrc.iossreturns.config.Service
 import uk.gov.hmrc.iossreturns.models.RegistrationWrapper
 import uk.gov.hmrc.iossreturns.models.enrolments.EACDEnrolments
+import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

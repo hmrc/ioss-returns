@@ -21,7 +21,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val dueDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(3).minusDays(1)
 
-        val hasActiveWindowExpired = PrivateMethod[LocalDate](Symbol("hasActiveWindowExpired"))
+        val hasActiveWindowExpired = PrivateMethod[Boolean](Symbol("hasActiveWindowExpired"))
         service invokePrivate hasActiveWindowExpired(dueDate) mustBe true
       }
 
@@ -29,7 +29,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val dueDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(3)
 
-        val hasActiveWindowExpired = PrivateMethod[LocalDate](Symbol("hasActiveWindowExpired"))
+        val hasActiveWindowExpired = PrivateMethod[Boolean](Symbol("hasActiveWindowExpired"))
         service invokePrivate hasActiveWindowExpired(dueDate) mustBe false
       }
 
@@ -37,7 +37,7 @@ class CheckExclusionsServiceSpec extends SpecBase with PrivateMethodTester {
 
         val dueDate: LocalDate = LocalDate.now(stubClockAtArbitraryDate).minusYears(2)
 
-        val hasActiveWindowExpired = PrivateMethod[LocalDate](Symbol("hasActiveWindowExpired"))
+        val hasActiveWindowExpired = PrivateMethod[Boolean](Symbol("hasActiveWindowExpired"))
         service invokePrivate hasActiveWindowExpired(dueDate) mustBe false
       }
     }

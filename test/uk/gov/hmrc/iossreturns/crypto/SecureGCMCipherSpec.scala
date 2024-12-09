@@ -2,6 +2,7 @@ package uk.gov.hmrc.iossreturns.crypto
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import play.api.libs.json.{JsResultException, Json}
 
 import java.util.Base64
 
@@ -83,6 +84,56 @@ class SecureGCMCipherSpec extends AnyFreeSpec with Matchers {
 
       decryptAttempt.failureReason must include("Key being used is not valid." +
         " It could be due to invalid encoding, wrong length or uninitialized")
+    }
+  }
+
+  "EncryptedValue" - {
+
+    "must serialize and deserialize correctly" in {
+      val encryptedValue = EncryptedValue(
+        value = "encryptedText",
+        nonce = "nonceText"
+      )
+
+      val json = Json.toJson(encryptedValue)
+
+      val expectedJson = Json.obj(
+        "value" -> "encryptedText",
+        "nonce" -> "nonceText"
+      )
+
+      json mustEqual expectedJson
+
+      val deserialized = json.as[EncryptedValue]
+
+      deserialized mustEqual encryptedValue
+    }
+
+    "must fail to deserialize if JSON is invalid" in {
+
+      val invalidJson = Json.obj(
+        "value" -> "encryptedText"
+      )
+
+      intercept[JsResultException] {
+        invalidJson.as[EncryptedValue]
+      }
+    }
+
+    "must handle additional unexpected fields gracefully" in {
+
+      val extraFieldJson = Json.obj(
+        "value" -> "encryptedText",
+        "nonce" -> "nonceText",
+        "extraField" -> "unexpectedValue"
+      )
+
+      val deserialized = extraFieldJson.as[EncryptedValue]
+
+      deserialized mustEqual EncryptedValue(
+        value = "encryptedText",
+        nonce = "nonceText"
+      )
     }
   }
 }
