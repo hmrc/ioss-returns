@@ -8,7 +8,7 @@ import java.util.Base64
 
 class SecureGCMCipherSpec extends AnyFreeSpec with Matchers {
 
-  private val encryptor = new SecureGCMCipher
+  private val encryptor = new AesGCMCrypto
   private val secretKey = "VqmXp7yigDFxbCUdDdNZVIvbW6RgPNJsliv6swQNCL8="
   private val secretKey2 = "cXo7u0HuJK8B/52xLwW7eQ=="
   private val textToEncrypt = "textNotEncrypted"

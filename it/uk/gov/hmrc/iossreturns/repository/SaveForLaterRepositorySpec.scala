@@ -9,7 +9,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.iossreturns.config.AppConfig
-import uk.gov.hmrc.iossreturns.crypto.{SavedUserAnswersEncryptor, SecureGCMCipher}
+import uk.gov.hmrc.iossreturns.crypto.{SavedUserAnswersEncryptor, AesGCMCrypto}
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.services.crypto.EncryptionService
@@ -31,7 +31,7 @@ class SaveForLaterRepositorySpec
     with Generators {
 
   private val appConfig = mock[AppConfig]
-  private val mockSecureGCMCipher: SecureGCMCipher = mock[SecureGCMCipher]
+  private val mockSecureGCMCipher: AesGCMCrypto = mock[AesGCMCrypto]
   private val mockEncryptionService: EncryptionService = mock[EncryptionService]
   private val encryptor = new SavedUserAnswersEncryptor(appConfig, mockEncryptionService, mockSecureGCMCipher)
 
