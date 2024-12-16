@@ -36,7 +36,7 @@ class EncryptionDecryptionException(method: String, reason: String, message: Str
   val failureMessage: String = message
 }
 
-class SecureGCMCipher @Inject()() {
+class AesGCMCrypto @Inject()() {
 
   val TAG_BIT_LENGTH = 128
   val ALGORITHM_TO_TRANSFORM_STRING = "AES/GCM/NoPadding"

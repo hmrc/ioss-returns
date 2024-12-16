@@ -19,6 +19,7 @@ package uk.gov.hmrc.iossreturns.connectors
 import play.api.Logging
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpException, StringContextOps}
 import uk.gov.hmrc.iossreturns.config.{CoreVatReturnConfig, EtmpDisplayReturnConfig, EtmpListObligationsConfig}
