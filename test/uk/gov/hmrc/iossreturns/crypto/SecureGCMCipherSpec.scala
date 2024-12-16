@@ -6,7 +6,7 @@ import play.api.libs.json.{JsResultException, Json}
 
 import java.util.Base64
 
-class SecureGCMCipherSpec extends AnyFreeSpec with Matchers {
+class AesGCMCryptoSpec extends AnyFreeSpec with Matchers {
 
   private val encryptor = new AesGCMCrypto
   private val secretKey = "VqmXp7yigDFxbCUdDdNZVIvbW6RgPNJsliv6swQNCL8="
