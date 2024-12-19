@@ -149,5 +149,73 @@ class ExternalEntryServiceSpec extends SpecBase {
       )
     }
 
+    "when entry page in the request is Payment" - {
+
+      "and no period is provided" - {
+        "and language is Welsh" - {
+          "must return correct response" in {
+            val mockExternalEntryRepository = mock[ExternalEntryRepository]
+            val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+            val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
+
+            when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
+            val result = service.getExternalResponse(externalRequest, userId, Payment.name, None, Some("cy"))
+
+            result mustBe Right(
+              ExternalResponse(
+                NoMoreWelsh.url(Payment.url)
+              )
+            )
+            verify(mockExternalEntryRepository, times(1)).set(externalEntry)
+          }
+        }
+
+        "and language is not Welsh" - {
+          "must return correct response" in {
+            val mockExternalEntryRepository = mock[ExternalEntryRepository]
+            val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+            val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
+
+            when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
+            val result = service.getExternalResponse(externalRequest, userId, Payment.name, None, None)
+
+            result mustBe Right(
+              ExternalResponse(
+                Payment.url
+              )
+            )
+            verify(mockExternalEntryRepository, times(1)).set(externalEntry)
+          }
+        }
+      }
+    }
+
+  }
+
+  ".getSavedResponseUrl" - {
+    "must return the saved return URL" in {
+      val mockExternalEntryRepository = mock[ExternalEntryRepository]
+      val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+
+      val savedUrl = Some("/saved/return/url")
+      when(mockExternalEntryRepository.get(userId)) thenReturn Future.successful(Some(ExternalEntry(userId, savedUrl.get, Instant.now(stubClockAtArbitraryDate))))
+
+      val result = service.getSavedResponseUrl(userId).futureValue
+
+      result mustBe savedUrl
+      verify(mockExternalEntryRepository, times(1)).get(userId)
+    }
+
+    "must return None when no saved URL is found" in {
+      val mockExternalEntryRepository = mock[ExternalEntryRepository]
+      val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+
+      when(mockExternalEntryRepository.get(userId)) thenReturn Future.successful(None)
+
+      val result = service.getSavedResponseUrl(userId).futureValue
+
+      result mustBe None
+      verify(mockExternalEntryRepository, times(1)).get(userId)
+    }
   }
 }
