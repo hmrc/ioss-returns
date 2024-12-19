@@ -18,6 +18,7 @@ package uk.gov.hmrc.iossreturns.repository
 
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
+import org.mongodb.scala.ObservableFuture
 import play.api.libs.json.Format
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.crypto.SavedUserAnswersEncryptor

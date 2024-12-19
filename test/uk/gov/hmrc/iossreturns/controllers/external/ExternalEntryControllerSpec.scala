@@ -2,7 +2,6 @@ package uk.gov.hmrc.iossreturns.controllers.external
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{doNothing, times, verify, when}
-import play.api.http.Status.{BAD_REQUEST, OK}
 import play.api.inject
 import play.api.libs.json.{JsNull, Json}
 import play.api.test.FakeRequest
@@ -10,7 +9,6 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.external.{ExternalEntryUrlResponse, ExternalRequest, ExternalResponse}
 import uk.gov.hmrc.iossreturns.services.external.ExternalEntryService
-import uk.gov.hmrc.iossreturns.controllers.external.routes
 import uk.gov.hmrc.iossreturns.services.AuditService
 import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
