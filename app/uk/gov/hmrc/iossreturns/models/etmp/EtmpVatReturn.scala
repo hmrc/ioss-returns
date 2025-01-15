@@ -75,7 +75,7 @@ object EtmpVatReturn {
         (__ \ "balanceOfVATDueForMS").write[Seq[EtmpVatReturnBalanceOfVatDue]] and
         (__ \ "totalVATAmountDueForAllMSGBP").write[BigDecimal] and
         (__ \ "paymentReference").write[String]
-      )(unlift(EtmpVatReturn.unapply))
+      )(etmpVatReturn => Tuple.fromProductTyped(etmpVatReturn))
   }
 
   implicit val format: Format[EtmpVatReturn] = Format(reads, writes)

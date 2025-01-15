@@ -1,7 +1,6 @@
 package uk.gov.hmrc.iossreturns.services
 
 import org.mockito.ArgumentMatchers.{any, eq => equalTo}
-import org.mockito.ArgumentMatchersSugar.eqTo
 import org.mockito.Mockito
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
@@ -101,9 +100,9 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
           )
         )
         verify(mockFinancialDataConnector, times(1))
-          .getFinancialData(any(), eqTo(queryParameters2021))
+          .getFinancialData(any(), equalTo(queryParameters2021))
         verify(mockFinancialDataConnector, times(1))
-          .getFinancialData(any(), eqTo(queryParameters2))
+          .getFinancialData(any(), equalTo(queryParameters2))
       }
 
       "must return None when no financialData" in {
@@ -135,7 +134,7 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
 
             val queryParameters = FinancialDataQueryParameters(fromDate = Some(period.firstDay), toDate = Some(period.lastDay))
 
-            when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Some(financialData).toFuture
+            when(mockFinancialDataConnector.getFinancialData(any(), equalTo(queryParameters))) thenReturn Some(financialData).toFuture
 
             val response = financialDataService.getCharge(iossNumber, period).futureValue
 
@@ -157,7 +156,7 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
 
             val queryParameters = FinancialDataQueryParameters(fromDate = Some(period.firstDay), toDate = Some(period.lastDay))
 
-            when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Some(financialData).toFuture
+            when(mockFinancialDataConnector.getFinancialData(any(), equalTo(queryParameters))) thenReturn Some(financialData).toFuture
 
             val response = financialDataService.getCharge(iossNumber, period).futureValue
 
@@ -182,7 +181,7 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
 
             val queryParameters = FinancialDataQueryParameters(fromDate = Some(period.firstDay), toDate = Some(period.lastDay))
 
-            when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn Some(financialData).toFuture
+            when(mockFinancialDataConnector.getFinancialData(any(), equalTo(queryParameters))) thenReturn Some(financialData).toFuture
 
             val response = financialDataService.getCharge(iossNumber, period).futureValue
 
@@ -204,7 +203,7 @@ class FinancialDataServiceSpec extends SpecBase with ScalaCheckPropertyChecks
 
           val queryParameters = FinancialDataQueryParameters(fromDate = Some(period.firstDay), toDate = Some(period.lastDay))
 
-          when(mockFinancialDataConnector.getFinancialData(any(), eqTo(queryParameters))) thenReturn None.toFuture
+          when(mockFinancialDataConnector.getFinancialData(any(), equalTo(queryParameters))) thenReturn None.toFuture
 
           val response = financialDataService.getCharge(iossNumber, period).futureValue
 

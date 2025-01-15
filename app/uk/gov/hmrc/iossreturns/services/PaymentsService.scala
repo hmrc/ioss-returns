@@ -95,6 +95,7 @@ class PaymentsService @Inject()(
         vatReturnConnector.get(iossNumber, period).map {
           case Right(vatReturn) => List(vatReturn)
           case Left(EtmpDisplayReturnError(code, _)) if code startsWith "UNEXPECTED_404" => Nil
+          case Left(_) => Nil
         }
       }
     ).map(_.flatten)

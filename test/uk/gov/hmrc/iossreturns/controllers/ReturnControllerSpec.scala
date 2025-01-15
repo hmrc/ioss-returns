@@ -61,7 +61,7 @@ class ReturnControllerSpec
     val readVatReturn = jsonVatReturn.as[CoreVatReturn]
 
     lazy val request =
-      FakeRequest(POST, routes.ReturnController.submit.url)
+      FakeRequest(POST, routes.ReturnController.submit().url)
         .withJsonBody(jsonVatReturn)
 
     "must save a VAT return, audit a success event and respond with Created" in {

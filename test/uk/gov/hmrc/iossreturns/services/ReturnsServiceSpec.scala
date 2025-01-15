@@ -30,13 +30,13 @@ import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.Period.{getNext, getPrevious, toEtmpPeriodString}
-import uk.gov.hmrc.iossreturns.models.{Period, StandardPeriod}
+import uk.gov.hmrc.iossreturns.models.{Period, PeriodYear, StandardPeriod}
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
-import uk.gov.hmrc.iossreturns.models.etmp._
+import uk.gov.hmrc.iossreturns.models.etmp.*
 import uk.gov.hmrc.iossreturns.models.youraccount.SubmissionStatus.{Complete, Due, Excluded, Next, Overdue}
 import uk.gov.hmrc.iossreturns.models.youraccount.{PeriodWithStatus, SubmissionStatus}
 
-import java.time._
+import java.time.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -213,7 +213,7 @@ class ReturnsServiceSpec
         val expectedPeriods = Seq(StandardPeriod(2021, Month.SEPTEMBER))
         val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", commencementDate, Nil)
 
-        whenReady(returnValue, Timeout(Span(2, Seconds))) { statuses: Seq[PeriodWithStatus] =>
+        whenReady(returnValue, Timeout(Span(2, Seconds))) { (statuses: Seq[PeriodWithStatus]) =>
           statuses.map(_.period) must contain theSameElementsAs expectedPeriods
         }
       }
@@ -227,7 +227,7 @@ class ReturnsServiceSpec
 
         val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", commencementDate, Nil)
 
-        whenReady(returnValue, Timeout(Span(2, Seconds))) { statuses: Seq[PeriodWithStatus] =>
+        whenReady(returnValue, Timeout(Span(2, Seconds))) { (statuses: Seq[PeriodWithStatus]) =>
           statuses.filterNot(_.status == Next).map(_.period) must contain theSameElementsAs expectedPeriods
         }
       }
@@ -245,7 +245,7 @@ class ReturnsServiceSpec
 
 
       whenReady(returnValue, Timeout(Span(2, Seconds))) {
-        statuses: Seq[PeriodWithStatus] =>
+        (statuses: Seq[PeriodWithStatus]) =>
           statuses.map(_.period) must contain theSameElementsAs expectedPeriods
       }
     }
@@ -262,9 +262,77 @@ class ReturnsServiceSpec
       val returnValue: Future[Seq[PeriodWithStatus]] = service.getStatuses("iossNumber", LocalDate.now(stubClock).minusMonths(3), Nil)
 
       whenReady(returnValue, Timeout(Span(2, Seconds))) {
-        statuses: Seq[PeriodWithStatus] =>
+        (statuses: Seq[PeriodWithStatus]) =>
           statuses.map(_.period) must contain theSameElementsAs expectedPeriods
       }
+    }
+  }
+
+  "hasSubmittedFinalReturn" - {
+
+    "when there is no final exclusion without reversal" in {
+      val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
+
+      when(mockCheckExclusionsService.getLastExclusionWithoutReversal(Nil)) thenReturn None
+
+      val periodsWithStatus = Seq(
+        PeriodWithStatus(period2022AUGUST, SubmissionStatus.Complete),
+        PeriodWithStatus(period2022SEPTEMBER, SubmissionStatus.Due)
+      )
+
+      val result = service.hasSubmittedFinalReturn(Nil, periodsWithStatus)
+
+      result mustEqual false
+    }
+
+    "when there is an exclusion, but the period doesn't match" in {
+      val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
+
+      val exclusion = EtmpExclusion(EtmpExclusionReason.FailsToComply, period2021JULY.firstDay, period2021JULY.firstDay, quarantine = false)
+
+      when(mockCheckExclusionsService.getLastExclusionWithoutReversal(Nil)) thenReturn Some(exclusion)
+
+      val periodsWithStatus = Seq(
+        PeriodWithStatus(period2022AUGUST, SubmissionStatus.Complete),
+        PeriodWithStatus(period2022SEPTEMBER, SubmissionStatus.Due)
+      )
+
+      val result = service.hasSubmittedFinalReturn(Nil, periodsWithStatus)
+
+      result mustEqual false
+    }
+  }
+
+  "getReturnsPeriods" - {
+    val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
+
+    "should return the correct periods between commencementDate and endDate" in {
+      val getReturnsPeriodsMethod = service.getClass.getDeclaredMethod("getReturnsPeriods", classOf[LocalDate], classOf[LocalDate])
+      getReturnsPeriodsMethod.setAccessible(true)
+
+      val commencementDate = LocalDate.of(2022, 1, 1)
+      val endDate = LocalDate.of(2022, 3, 31)
+
+      val result = getReturnsPeriodsMethod.invoke(service, commencementDate, endDate)
+
+      result mustBe Seq(period2022JANUARY, period2022FEBRUARY)
+    }
+  }
+
+  "getPeriodYears" - {
+    val service = new ReturnsService(stubClock, vatReturnConnector, mockCheckExclusionsService)
+
+    "should return the correct periods years between commencementDate and endDate" in {
+      val getPeriodYearsMethod = service.getClass.getDeclaredMethod("getPeriodYears", classOf[LocalDate], classOf[LocalDate])
+      getPeriodYearsMethod.setAccessible(true)
+
+      val commencementDate = LocalDate.of(2022, 1, 1)
+      val endDate = LocalDate.of(2022, 6, 30)
+
+      val result = getPeriodYearsMethod.invoke(service, commencementDate, endDate)
+
+      // Verify the result
+      result mustBe Seq(PeriodYear.fromPeriod(period2022JANUARY))
     }
   }
 }

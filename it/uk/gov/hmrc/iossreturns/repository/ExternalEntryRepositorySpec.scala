@@ -38,7 +38,7 @@ class ExternalEntryRepositorySpec
         now)
     }
 
-  override protected val repository =
+  override protected val repository: ExternalEntryRepository =
     new ExternalEntryRepository(
       mongoComponent = mongoComponent,
       appConfig = appConfig
@@ -57,8 +57,8 @@ class ExternalEntryRepositorySpec
       val insertReturn2 = repository.set(answers2).futureValue
       val databaseRecords = findAll().futureValue
 
-      insertResult1 mustBe (answers1)
-      insertReturn2 mustBe (answers2)
+      insertResult1 mustBe answers1
+      insertReturn2 mustBe answers2
 
       val expectedAnswer1 = answers1.copy(lastUpdated = answers1.lastUpdated.truncatedTo(ChronoUnit.MILLIS))
       val expectedAnswer2 = answers2.copy(lastUpdated = answers2.lastUpdated.truncatedTo(ChronoUnit.MILLIS))

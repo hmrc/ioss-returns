@@ -12,7 +12,7 @@ class SavedUserAnswersEncryptorSpec extends SpecBase {
 
   private val mockAppConfig: AppConfig = mock[AppConfig]
   private val mockEncryptionService: EncryptionService = mock[EncryptionService]
-  private val mockSecureGCMCipher: SecureGCMCipher = mock[SecureGCMCipher]
+  private val mockSecureGCMCipher: AesGCMCrypto = mock[AesGCMCrypto]
 
   private val savedUserAnswers: SavedUserAnswers = arbitrarySavedUserAnswers.arbitrary.sample.value
   private val encryptedValue: String = "encryptedValue"
