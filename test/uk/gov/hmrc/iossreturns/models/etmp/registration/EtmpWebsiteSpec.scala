@@ -16,24 +16,45 @@
 
 package uk.gov.hmrc.iossreturns.models.etmp.registration
 
-import org.scalacheck.Arbitrary.arbitrary
-import play.api.libs.json.{Json, JsSuccess}
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 
 class EtmpWebsiteSpec extends SpecBase {
 
   "EtmpWebsite" - {
 
-    "must serialise/deserialise to and from EtmpWebsite" in {
-
-      val website = arbitrary[EtmpWebsite].sample.value
+    "must serialize to JSON correctly" in {
+      val website = EtmpWebsite("http://example.com")
 
       val expectedJson = Json.obj(
-        "websiteAddress" -> s"${website.websiteAddress}"
+        "websiteAddress" -> "http://example.com"
       )
 
       Json.toJson(website) mustBe expectedJson
-      expectedJson.validate[EtmpWebsite] mustBe JsSuccess(website)
+    }
+
+    "must deserialize from JSON correctly" in {
+      val json = Json.obj(
+        "websiteAddress" -> "http://example.com"
+      )
+
+      val expectedWebsite = EtmpWebsite("http://example.com")
+
+      json.validate[EtmpWebsite] mustBe JsSuccess(expectedWebsite)
+    }
+
+    "must handle missing fields during deserialization" in {
+      val json = Json.obj()
+
+      json.validate[EtmpWebsite] mustBe a[JsError]
+    }
+
+    "must handle invalid data during deserialization" in {
+      val json = Json.obj(
+        "websiteAddress" -> 12345
+      )
+
+      json.validate[EtmpWebsite] mustBe a[JsError]
     }
   }
 }

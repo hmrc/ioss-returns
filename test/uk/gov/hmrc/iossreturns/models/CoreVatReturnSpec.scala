@@ -22,6 +22,7 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
+import java.util.UUID
 
 class CoreVatReturnSpec extends SpecBase with Matchers {
 
@@ -177,6 +178,18 @@ class CoreVatReturnSpec extends SpecBase with Matchers {
 
       result.isError mustBe true
     }
+
+    "serialize a CoreEuTraderVatId using CoreEuTraderId Writes" in {
+      val serializedJson = Json.toJson(vatId)(CoreEuTraderId.writes)
+      (serializedJson \ "vatIdNumber").as[String] mustBe "VAT123456"
+      (serializedJson \ "issuedBy").as[String] mustBe "DE"
+    }
+
+    "serialize a CoreEuTraderTaxId using CoreEuTraderId Writes" in {
+      val serializedJson = Json.toJson(taxId)(CoreEuTraderId.writes)
+      (serializedJson \ "taxRefNumber").as[String] mustBe "TAX987654"
+      (serializedJson \ "issuedBy").as[String] mustBe "FR"
+    }
   }
 
   "CoreEuTraderVatId" - {
@@ -231,6 +244,206 @@ class CoreVatReturnSpec extends SpecBase with Matchers {
       val result = emptyJson.validate[CoreEuTraderId]
 
       result.isError mustBe true
+    }
+
+    "EisErrorResponse" - {
+
+      "must serialize to JSON correctly" in {
+        val errorResponse = EisErrorResponse(
+          CoreErrorResponse(
+            timestamp = Instant.parse("2023-01-01T00:00:00Z"),
+            transactionId = Some(UUID.fromString("123e4567-e89b-12d3-a456-426614174000")),
+            errorCode = "OSS_001",
+            errorMessage = "An error occurred"
+          )
+        )
+
+        val expectedJson = Json.obj(
+          "errorDetail" -> Json.obj(
+            "timestamp" -> "2023-01-01T00:00:00Z",
+            "transactionId" -> "123e4567-e89b-12d3-a456-426614174000",
+            "errorCode" -> "OSS_001",
+            "errorMessage" -> "An error occurred"
+          )
+        )
+
+        Json.toJson(errorResponse) mustBe expectedJson
+      }
+
+      "must deserialize from JSON correctly" in {
+        val json = Json.obj(
+          "errorDetail" -> Json.obj(
+            "timestamp" -> "2023-01-01T00:00:00Z",
+            "transactionId" -> "123e4567-e89b-12d3-a456-426614174000",
+            "errorCode" -> "OSS_001",
+            "errorMessage" -> "An error occurred"
+          )
+        )
+
+        val expectedResponse = EisErrorResponse(
+          CoreErrorResponse(
+            timestamp = Instant.parse("2023-01-01T00:00:00Z"),
+            transactionId = Some(UUID.fromString("123e4567-e89b-12d3-a456-426614174000")),
+            errorCode = "OSS_001",
+            errorMessage = "An error occurred"
+          )
+        )
+
+        json.as[EisErrorResponse] mustBe expectedResponse
+      }
+
+      "must handle missing optional fields during deserialization" in {
+        val json = Json.obj(
+          "errorDetail" -> Json.obj(
+            "timestamp" -> "2023-01-01T00:00:00Z",
+            "errorCode" -> "OSS_001",
+            "errorMessage" -> "An error occurred"
+          )
+        )
+
+        val expectedResponse = EisErrorResponse(
+          CoreErrorResponse(
+            timestamp = Instant.parse("2023-01-01T00:00:00Z"),
+            transactionId = None,
+            errorCode = "OSS_001",
+            errorMessage = "An error occurred"
+          )
+        )
+
+        json.as[EisErrorResponse] mustBe expectedResponse
+      }
+
+      "must fail to deserialize when required fields are missing" in {
+        val invalidJson = Json.obj(
+          "errorDetail" -> Json.obj(
+            "transactionId" -> "123e4567-e89b-12d3-a456-426614174000",
+            "errorCode" -> "OSS_001"
+          )
+        )
+
+        val result = invalidJson.validate[EisErrorResponse]
+        result.isError mustBe true
+      }
+
+      "must fail to deserialize when field types are invalid" in {
+        val invalidJson = Json.obj(
+          "errorDetail" -> Json.obj(
+            "timestamp" -> "Invalid timestamp",
+            "transactionId" -> "123e4567-e89b-12d3-a456-426614174000",
+            "errorCode" -> 123,
+            "errorMessage" -> true
+          )
+        )
+
+        val result = invalidJson.validate[EisErrorResponse]
+        result.isError mustBe true
+      }
+    }
+
+    "CoreCorrection" - {
+
+      "must serialize to JSON correctly" in {
+        val correction = CoreCorrection(CorePeriod(2023, "01"), BigDecimal(100.50))
+        val expectedJson = Json.obj(
+          "period" -> Json.obj(
+            "year" -> 2023,
+            "month" -> "01"
+          ),
+          "totalVatAmountCorrectionGBP" -> 100.50
+        )
+
+        Json.toJson(correction) mustBe expectedJson
+      }
+
+      "must deserialize from JSON correctly" in {
+        val json = Json.obj(
+          "period" -> Json.obj(
+            "year" -> 2023,
+            "month" -> "01"
+          ),
+          "totalVatAmountCorrectionGBP" -> 100.50
+        )
+
+        val expectedCorrection = CoreCorrection(CorePeriod(2023, "01"), BigDecimal(100.50))
+        json.as[CoreCorrection] mustBe expectedCorrection
+      }
+
+      "must handle missing fields during deserialization" in {
+        val invalidJson = Json.obj(
+          "period" -> Json.obj(
+            "year" -> 2023
+          )
+        )
+
+        val result = invalidJson.validate[CoreCorrection]
+        result.isError mustBe true
+      }
+
+      "must handle invalid data during deserialization" in {
+        val invalidJson = Json.obj(
+          "period" -> Json.obj(
+            "year" -> "invalid-year",
+            "month" -> "01"
+          ),
+          "totalVatAmountCorrectionGBP" -> "invalid-value"
+        )
+
+        val result = invalidJson.validate[CoreCorrection]
+        result.isError mustBe true
+      }
+
+      "must handle boundary values for totalVatAmountCorrectionGBP" in {
+        val zeroValueJson = Json.obj(
+          "period" -> Json.obj(
+            "year" -> 2023,
+            "month" -> "01"
+          ),
+          "totalVatAmountCorrectionGBP" -> 0
+        )
+        val zeroValueCorrection = zeroValueJson.as[CoreCorrection]
+        zeroValueCorrection.totalVatAmountCorrectionGBP mustBe BigDecimal(0)
+
+        val largeValueJson = Json.obj(
+          "period" -> Json.obj(
+            "year" -> 2023,
+            "month" -> "01"
+          ),
+          "totalVatAmountCorrectionGBP" -> BigDecimal("999999999.99")
+        )
+        val largeValueCorrection = largeValueJson.as[CoreCorrection]
+        largeValueCorrection.totalVatAmountCorrectionGBP mustBe BigDecimal("999999999.99")
+
+        val negativeValueJson = Json.obj(
+          "period" -> Json.obj(
+            "year" -> 2023,
+            "month" -> "01"
+          ),
+          "totalVatAmountCorrectionGBP" -> BigDecimal("-100.50")
+        )
+        val negativeValueCorrection = negativeValueJson.as[CoreCorrection]
+        negativeValueCorrection.totalVatAmountCorrectionGBP mustBe BigDecimal("-100.50")
+      }
+
+      "must serialize and deserialize CoreCorrection with nested CorePeriod correctly" in {
+        val correction = CoreCorrection(CorePeriod(2023, "01"), BigDecimal(100.50))
+        val serializedJson = Json.toJson(correction)
+        val deserializedObject = serializedJson.as[CoreCorrection]
+
+        deserializedObject mustBe correction
+      }
+
+      "must fail deserialization when period is invalid" in {
+        val invalidJson = Json.obj(
+          "period" -> Json.obj(
+            "year" -> "invalid-year",
+            "month" -> "01"
+          ),
+          "totalVatAmountCorrectionGBP" -> 100.50
+        )
+
+        val result = invalidJson.validate[CoreCorrection]
+        result.isError mustBe true
+      }
     }
   }
 }

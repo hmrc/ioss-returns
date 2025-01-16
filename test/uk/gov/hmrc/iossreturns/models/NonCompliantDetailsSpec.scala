@@ -73,5 +73,55 @@ class NonCompliantDetailsSpec extends AnyFreeSpec with Matchers {
 
       json.as[NonCompliantDetails] mustBe expectedDetails
     }
+
+    "serialize correctly to JSON when all fields are defined" in {
+      val details = NonCompliantDetails(
+        nonCompliantReturns = Some(5),
+        nonCompliantPayments = Some(3)
+      )
+
+      val expectedJson = Json.parse(
+        """
+          |{
+          |  "nonCompliantReturns": 5,
+          |  "nonCompliantPayments": 3
+          |}
+                    """.stripMargin
+      )
+
+      Json.toJson(details) mustBe expectedJson
+    }
+
+    "serialize correctly to JSON when some fields are None" in {
+      val details = NonCompliantDetails(
+        nonCompliantReturns = Some(5),
+        nonCompliantPayments = None
+      )
+
+      val expectedJson = Json.parse(
+        """
+          |{
+          |  "nonCompliantReturns": 5
+          |}
+                    """.stripMargin
+      )
+
+      Json.toJson(details) mustBe expectedJson
+    }
+
+    "serialize correctly to JSON when all fields are None" in {
+      val details = NonCompliantDetails(
+        nonCompliantReturns = None,
+        nonCompliantPayments = None
+      )
+
+      val expectedJson = Json.parse(
+        """
+          |{}
+                    """.stripMargin
+      )
+
+      Json.toJson(details) mustBe expectedJson
+    }
   }
 }
