@@ -17,7 +17,7 @@
 package uk.gov.hmrc.iossreturns.models.etmp.registration
 
 import org.scalacheck.Arbitrary.arbitrary
-import play.api.libs.json.{Json, JsSuccess}
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 
 class EtmpTradingNameSpec extends SpecBase {
@@ -34,6 +34,30 @@ class EtmpTradingNameSpec extends SpecBase {
 
       Json.toJson(etmpTradingName) mustBe expectedJson
       expectedJson.validate[EtmpTradingName] mustBe JsSuccess(etmpTradingName)
+    }
+
+    "must deserialize from JSON correctly" in {
+      val json = Json.obj(
+        "tradingName" -> "Test Trading Name"
+      )
+
+      val expectedTradingName = EtmpTradingName("Test Trading Name")
+      json.validate[EtmpTradingName] mustBe JsSuccess(expectedTradingName)
+    }
+
+    "must handle missing fields during deserialization" in {
+      val json = Json.obj()
+
+
+      json.validate[EtmpTradingName] mustBe a[JsError]
+    }
+
+    "must handle invalid data during deserialization" in {
+      val json = Json.obj(
+        "tradingName" -> 12345
+      )
+
+      json.validate[EtmpTradingName] mustBe a[JsError]
     }
   }
 }

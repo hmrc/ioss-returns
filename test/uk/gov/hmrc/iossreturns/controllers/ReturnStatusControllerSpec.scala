@@ -149,6 +149,119 @@ class ReturnStatusControllerSpec
         }
       }
 
+      ".getCurrentReturns()" - {
+        lazy val request = FakeRequest(GET, routes.ReturnStatusController.getCurrentReturns.url)
+
+        "must respond with OK and the CurrentReturns model" - {
+
+          "with no returns in progress, due, or overdue if there are no returns due yet" in {
+            val mockReturnService = mock[ReturnsService]
+            when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(Seq.empty)
+            when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
+            when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
+
+            val app = applicationBuilder
+              .overrides(bind[ReturnsService].toInstance(mockReturnService))
+              .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
+              .build()
+
+            running(app) {
+              val result = route(app, request).value
+
+              status(result) mustEqual OK
+              contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
+                returns = Seq.empty,
+                excluded = false,
+                finalReturnsCompleted = false,
+                iossNumber = iossNumber,
+                completeOrExcludedReturns = Seq.empty
+              ))
+            }
+          }
+
+          "with one return due but no saved answers" in {
+            val mockReturnService = mock[ReturnsService]
+
+            when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(
+              Seq(PeriodWithStatus(StandardPeriod(2022, Month.SEPTEMBER), Due))
+            )
+            when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
+            when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
+
+            val app = applicationBuilder
+              .overrides(bind[ReturnsService].toInstance(mockReturnService))
+              .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
+              .build()
+
+            running(app) {
+              val result = route(app, request).value
+
+              status(result) mustEqual OK
+              contentAsJson(result) mustEqual Json.toJson(CurrentReturns(
+                returns = Seq(Return.fromPeriod(StandardPeriod(2022, Month.SEPTEMBER), Due, inProgress = false, isOldest = true)),
+                excluded = false,
+                finalReturnsCompleted = false,
+                iossNumber = iossNumber,
+                completeOrExcludedReturns = Seq.empty
+              ))
+            }
+          }
+        }
+      }
+
+      ".listStatuses()" - {
+        val commencementDate = LocalDate.of(2021, 9, 1)
+        lazy val request = FakeRequest(GET, routes.ReturnStatusController.listStatuses(commencementDate).url)
+
+        "must respond with OK and an empty array when no statuses are returned" in {
+          val mockReturnsService = mock[ReturnsService]
+
+          when(mockReturnsService.getStatuses(any(), any(), any()))
+            .thenReturn(Future.successful(Seq.empty))
+
+          val app = applicationBuilder
+            .overrides(bind[ReturnsService].toInstance(mockReturnsService))
+            .build()
+
+          running(app) {
+            val result = route(app, request).value
+
+            status(result) mustEqual OK
+            contentAsJson(result) mustEqual Json.arr()
+          }
+        }
+
+        "must respond with OK and a list of statuses when statuses are returned" in {
+          val mockReturnsService = mock[ReturnsService]
+
+          val statuses = Seq(
+            PeriodWithStatus(StandardPeriod(2022, Month.SEPTEMBER), Due),
+            PeriodWithStatus(StandardPeriod(2022, Month.JUNE), Overdue)
+          )
+
+          when(mockReturnsService.getStatuses(any(), any(), any()))
+            .thenReturn(Future.successful(statuses))
+
+          val app = applicationBuilder
+            .overrides(bind[ReturnsService].toInstance(mockReturnsService))
+            .build()
+
+          running(app) {
+            val result = route(app, request).value
+
+            status(result) mustEqual OK
+            contentAsJson(result) mustEqual Json.toJson(
+              statuses.map { case PeriodWithStatus(period, status) =>
+                Json.obj(
+                  "period" -> Json.toJson(period),
+                  "status" -> Json.toJson(status.toString)
+                )
+              }
+            )
+          }
+        }
+      }
+
       def convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses: List[PeriodWithStatus]): List[Return] = {
         val sortedPeriodsWithStatuses = periodsWithStatuses.sortBy(_.period)
 
