@@ -40,13 +40,14 @@ class FinancialDataConnector @Inject()(
 
   def getFinancialData(iossNumber: String, queryParameters: FinancialDataQueryParameters): Future[FinancialDataResponse] = {
     val url = financialDataUrl(iossNumber)
-    httpClientV2.get(url).transform(_
-      .withHttpHeaders(headers: _*)
-      .withQueryStringParameters(queryParameters.toSeqQueryParams: _*)
-    ).execute[FinancialDataResponse].recover {
-      case e: HttpException =>
-        logger.error(s"Unexpected error response getting financial data from $url, received status ${e.responseCode}, body of response was: ${e.message}")
-        None
-    }
+    httpClientV2.get(url)
+      .setHeader(headers: _*)
+      .transform(_
+        .withQueryStringParameters(queryParameters.toSeqQueryParams: _*)
+      ).execute[FinancialDataResponse].recover {
+        case e: HttpException =>
+          logger.error(s"Unexpected error response getting financial data from $url, received status ${e.responseCode}, body of response was: ${e.message}")
+          None
+      }
   }
 }
