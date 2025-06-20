@@ -21,7 +21,6 @@ lazy val microservice = Project("ioss-returns", file("."))
   .settings(inConfig(IntegrationTest)(itSettings) *)
   .configs(Test)
   .settings(inConfig(Test)(testSettings) *)
-  .settings(resolvers += Resolver.jcenterRepo)
   .settings(CodeCoverageSettings.settings *)
   // suppress flag warnings
   .settings(scalacOptions += "-Wconf:msg=Flag.*repeatedly:s")
