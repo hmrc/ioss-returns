@@ -17,11 +17,11 @@
 package uk.gov.hmrc.iossreturns.config
 
 import play.api.Configuration
-import play.api.http.HeaderNames.*
+import play.api.http.HeaderNames._
 import play.api.http.MimeTypes
 import uk.gov.hmrc.iossreturns.utils.Formatters
 
-import java.time.{Clock, LocalDateTime, ZoneOffset}
+import java.time.{Clock, LocalDateTime}
 import javax.inject.Inject
 
 class EtmpListObligationsConfig @Inject()(config: Configuration, clock: Clock) {
@@ -39,7 +39,7 @@ class EtmpListObligationsConfig @Inject()(config: Configuration, clock: Clock) {
     ACCEPT -> MimeTypes.JSON,
     AUTHORIZATION -> s"Bearer $authorizationToken",
     "Environment" -> environment,
-    DATE -> Formatters.dateTimeFormatter.format(LocalDateTime.now(clock).atOffset(ZoneOffset.UTC)),
+    DATE -> Formatters.dateTimeFormatter.format(LocalDateTime.now(clock)),
     XCorrelationId -> correlationId,
     X_FORWARDED_HOST -> "MDTP"
   )
