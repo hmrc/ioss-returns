@@ -34,16 +34,15 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-trait AuthAction extends ActionBuilder[AuthorisedRequest, AnyContent] with ActionFunction[Request, AuthorisedRequest]
-
-class AuthActionImpl @Inject()(
-                                override val authConnector: AuthConnector,
-                                val parser: BodyParsers.Default,
-                                config: AppConfig,
-                                registrationConnector: RegistrationConnector,
-                                accountService: AccountService
-                              )(implicit val executionContext: ExecutionContext)
-  extends AuthAction with AuthorisedFunctions with Logging {
+class AuthAction(
+                      override val authConnector: AuthConnector,
+                      val parser: BodyParsers.Default,
+                      config: AppConfig,
+                      registrationConnector: RegistrationConnector,
+                      accountService: AccountService,
+                      requestedMaybeIossNumber: Option[String]
+                    )(implicit val executionContext: ExecutionContext)
+  extends ActionBuilder[AuthorisedRequest, AnyContent] with ActionFunction[Request, AuthorisedRequest] with AuthorisedFunctions with Logging {
 
   override def invokeBlock[A](request: Request[A], block: AuthorisedRequest[A] => Future[Result]): Future[Result] = {
 
@@ -63,33 +62,51 @@ class AuthActionImpl @Inject()(
       case Some(credentials) ~ Some(internalId) ~ enrolments ~ Some(Organisation) ~ _ =>
 
         val futureMaybeIossNumber = findIossFromEnrolments(enrolments, credentials.providerId)
+        val maybeIntermediaryNumber = findIntermediaryNumberFromEnrolments(enrolments)
 
         futureMaybeIossNumber.flatMap { maybeIossNumber =>
 
           (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
             case (Some(vrn), Some(latestIossNumber)) =>
-              getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber)
+              getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, maybeIntermediaryNumber)
+            case (Some(vrn), _) if maybeIntermediaryNumber.nonEmpty =>
+              (maybeIntermediaryNumber, requestedMaybeIossNumber) match {
+                case (Some(intermediaryNumber), Some(iossNumber)) =>
+                  getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, iossNumber, Some(intermediaryNumber))
+                case _ =>
+                  logger.warn(s"Insufficient enrolments4 ")
+                  throw InsufficientEnrolments("Insufficient enrolments")
+              }
             case _ =>
-              logger.warn(s"Insufficient enrolments")
+              logger.warn(s"Insufficient enrolments3")
               throw InsufficientEnrolments("Insufficient enrolments")
           }
         }
 
       case Some(credentials) ~ Some(internalId) ~ enrolments ~ Some(Individual) ~ confidence =>
         val futureMaybeIossNumber = findIossFromEnrolments(enrolments, credentials.providerId)
+        val maybeIntermediaryNumber = findIntermediaryNumberFromEnrolments(enrolments)
 
         futureMaybeIossNumber.flatMap { maybeIossNumber =>
 
           (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
             case (Some(vrn), Some(latestIossNumber)) =>
               if (confidence >= ConfidenceLevel.L250) {
-                getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber)
+                getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, None)
               } else {
                 logger.warn("Insufficient confidence level")
                 throw InsufficientConfidenceLevel("Insufficient confidence level")
               }
+            case (Some(vrn), _) if maybeIntermediaryNumber.nonEmpty =>
+              (maybeIntermediaryNumber, requestedMaybeIossNumber) match {
+                case (Some(intermediaryNumber), Some(iossNumber)) =>
+                  getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, iossNumber, Some(intermediaryNumber))
+                case _ =>
+                  logger.warn(s"Insufficient enrolments1 ")
+                  throw InsufficientEnrolments("Insufficient enrolments")
+              }
             case _ =>
-              logger.warn(s"Insufficient enrolments")
+              logger.warn(s"Insufficient enrolments2")
               throw InsufficientEnrolments("Insufficient enrolments")
           }
         }
@@ -109,11 +126,12 @@ class AuthActionImpl @Inject()(
                                           internalId: String,
                                           credentialId: String,
                                           vrn: Vrn,
-                                          latestIossNumber: String
+                                          latestIossNumber: String,
+                                          maybeIntermediaryNumber: Option[String]
                                         )(implicit hc: HeaderCarrier): Future[Result] = {
     for {
-      registrationWrapper <- registrationConnector.getRegistration()
-      result <- block(AuthorisedRequest(request, internalId, credentialId, vrn, latestIossNumber, registrationWrapper.registration))
+      registrationWrapper <- registrationConnector.getRegistrationForIossNumber(latestIossNumber)
+      result <- block(AuthorisedRequest(request, internalId, credentialId, vrn, latestIossNumber, registrationWrapper.registration, maybeIntermediaryNumber))
     } yield result
   }
 
@@ -138,4 +156,21 @@ class AuthActionImpl @Inject()(
       case _ => None.toFuture
     }
   }
+
+  private def findIntermediaryNumberFromEnrolments(enrolments: Enrolments): Option[String] = {
+    enrolments.enrolments
+      .find(_.key == config.intermediaryEnrolment)
+      .flatMap(_.identifiers.find(id => id.key == "IntNumber" && id.value.nonEmpty).map(_.value))
+  }
+}
+
+class AuthActionProvider @Inject()(
+                                    authConnector: AuthConnector,
+                                    parser: BodyParsers.Default,
+                                    config: AppConfig,
+                                    registrationConnector: RegistrationConnector,
+                                    accountService: AccountService
+                                  )(implicit val executionContext: ExecutionContext) {
+  def apply(maybeIossNumber: Option[String]): AuthAction =
+    new AuthAction(authConnector, parser, config, registrationConnector, accountService, maybeIossNumber)
 }

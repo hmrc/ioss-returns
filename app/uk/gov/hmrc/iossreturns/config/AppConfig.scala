@@ -32,4 +32,7 @@ class AppConfig @Inject()(config: Configuration) {
   val externalEntryTtlDays: Long = config.get[Long]("features.externalEntry.ttlInDays")
 
   val encryptionKey: String = config.get[String]("mongodb.encryption.key")
+  
+  val intermediaryEnabled: String = config.get[String]("features.intermediary.enabled")
+  val intermediaryEnrolment: String = config.get[String]("features.intermediary.enrolment")
 }

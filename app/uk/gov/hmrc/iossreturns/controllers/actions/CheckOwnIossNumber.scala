@@ -19,6 +19,8 @@ package uk.gov.hmrc.iossreturns.controllers.actions
 import play.api.mvc.{ActionFilter, Result}
 import play.api.mvc.Results.Unauthorized
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.iossreturns.connectors.IntermediaryRegistrationConnector
+import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.services.PreviousRegistrationService
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -28,15 +30,29 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class CheckOwnIossNumberFilterImpl(
                                     iossNumber: String,
-                                    previousRegistrationService: PreviousRegistrationService
+                                    previousRegistrationService: PreviousRegistrationService,
+                                    intermediaryRegistrationConnector: IntermediaryRegistrationConnector
                                   )(implicit val executionContext: ExecutionContext)
-  extends ActionFilter[AuthorisedRequest] {
+  extends ActionFilter[AuthorisedRequest] with Logging {
 
   override protected def filter[A](request: AuthorisedRequest[A]): Future[Option[Result]] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
     if (request.iossNumber == iossNumber) {
-      None.toFuture
+      request.maybeIntermediaryNumber match {
+        case Some(intermediaryNumber) =>
+          intermediaryRegistrationConnector.get(intermediaryNumber).map { intermediaryRegistrationWrapper =>
+            val availableIossNumbers = intermediaryRegistrationWrapper.etmpDisplayRegistration.clientDetails.map(_.clientIossID)
+            if (availableIossNumbers.contains(iossNumber)) {
+              None
+            } else {
+              logger.info(s"Intermediary $intermediaryNumber doesn't have access to ioss number $iossNumber")
+              Some(Unauthorized)
+            }
+          }
+        case _ =>
+          None.toFuture
+      }
     } else {
       previousRegistrationService.getPreviousRegistrations(request.credentialId).map { previousRegistrations =>
         val validIossNumbers: Seq[String] = request.iossNumber :: previousRegistrations.map(_.iossNumber)
@@ -51,11 +67,12 @@ class CheckOwnIossNumberFilterImpl(
 }
 
 class CheckOwnIossNumberFilter @Inject()(
-                                          previousRegistrationService: PreviousRegistrationService
+                                          previousRegistrationService: PreviousRegistrationService,
+                                          intermediaryRegistrationConnector: IntermediaryRegistrationConnector
                                         )
                                         (implicit ec: ExecutionContext) {
 
   def apply(iossNumber: String): CheckOwnIossNumberFilterImpl =
-    new CheckOwnIossNumberFilterImpl(iossNumber, previousRegistrationService)
+    new CheckOwnIossNumberFilterImpl(iossNumber, previousRegistrationService, intermediaryRegistrationConnector)
 
 }

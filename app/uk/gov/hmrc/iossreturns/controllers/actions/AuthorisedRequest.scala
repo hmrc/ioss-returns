@@ -27,5 +27,6 @@ case class AuthorisedRequest[A](
                                  credentialId: String,
                                  vrn: Vrn,
                                  iossNumber: String,
-                                 registration: EtmpDisplayRegistration
+                                 registration: EtmpDisplayRegistration,
+                                 maybeIntermediaryNumber: Option[String]
                                ) extends WrappedRequest[A](request)

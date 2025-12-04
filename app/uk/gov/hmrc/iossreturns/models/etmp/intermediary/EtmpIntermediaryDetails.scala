@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.iossreturns.models.youraccount
+package uk.gov.hmrc.iossreturns.models.etmp.intermediary
 
 import play.api.libs.json.{Json, OFormat}
 
-case class CurrentReturns(
-                           returns: Seq[Return],
-                           excluded: Boolean,
-                           finalReturnsCompleted: Boolean,
-                           iossNumber: String,
-                           completeOrExcludedReturns: Seq[Return]
-                         )
+case class EtmpIntermediaryDetails(otherIossIntermediaryRegistrations: Seq[EtmpOtherIossIntermediaryRegistrations])
 
-
-case object CurrentReturns {
-
-  implicit val format: OFormat[CurrentReturns] = Json.format[CurrentReturns]
+object EtmpIntermediaryDetails {
+  implicit val format: OFormat[EtmpIntermediaryDetails] = Json.format[EtmpIntermediaryDetails]
 }
+
 
