@@ -43,12 +43,6 @@ class ReturnStatusControllerSpec
   extends SpecBase
     with ScalaCheckPropertyChecks
     with Generators {
-  protected def applicationBuilder: GuiceApplicationBuilder =
-    new GuiceApplicationBuilder()
-      .overrides(
-        bind[AuthAction].to[FakeAuthAction],
-        bind[CheckOwnIossNumberFilter].to[FakeCheckOwnIossNumberFilterProvider]
-      )
 
   private val completeOrExcludedStatuses: Seq[SubmissionStatus] = Seq(Complete, Excluded)
 
@@ -98,10 +92,9 @@ class ReturnStatusControllerSpec
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
-        val app = applicationBuilder
+        val app = applicationBuilder(clock = Some(stubClock))
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
-          .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
         running(app) {
@@ -128,10 +121,9 @@ class ReturnStatusControllerSpec
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
-        val app = applicationBuilder
+        val app = applicationBuilder(clock = Some(stubClock))
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
-          .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
         running(app) {
@@ -160,7 +152,7 @@ class ReturnStatusControllerSpec
             when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
             when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
-            val app = applicationBuilder
+            val app = applicationBuilder()
               .overrides(bind[ReturnsService].toInstance(mockReturnService))
               .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
               .build()
@@ -188,7 +180,7 @@ class ReturnStatusControllerSpec
             when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
             when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
-            val app = applicationBuilder
+            val app = applicationBuilder()
               .overrides(bind[ReturnsService].toInstance(mockReturnService))
               .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
               .build()
@@ -219,7 +211,7 @@ class ReturnStatusControllerSpec
           when(mockReturnsService.getStatuses(any(), any(), any()))
             .thenReturn(Future.successful(Seq.empty))
 
-          val app = applicationBuilder
+          val app = applicationBuilder()
             .overrides(bind[ReturnsService].toInstance(mockReturnsService))
             .build()
 
@@ -242,7 +234,7 @@ class ReturnStatusControllerSpec
           when(mockReturnsService.getStatuses(any(), any(), any()))
             .thenReturn(Future.successful(statuses))
 
-          val app = applicationBuilder
+          val app = applicationBuilder()
             .overrides(bind[ReturnsService].toInstance(mockReturnsService))
             .build()
 
@@ -285,10 +277,9 @@ class ReturnStatusControllerSpec
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
-        val app = applicationBuilder
+        val app = applicationBuilder(clock = Some(stubClock))
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
-          .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
         running(app) {
@@ -315,10 +306,9 @@ class ReturnStatusControllerSpec
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
-        val app = applicationBuilder
+        val app = applicationBuilder(clock = Some(stubClock))
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
-          .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
         val returns = Return.fromPeriod(periods.head, Overdue, inProgress = false, isOldest = true) ::
@@ -347,10 +337,9 @@ class ReturnStatusControllerSpec
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn None
 
-        val app = applicationBuilder
+        val app = applicationBuilder(clock = Some(stubClock))
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
-          .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
         running(app) {
@@ -389,10 +378,9 @@ class ReturnStatusControllerSpec
         val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
         completeOfExcludedReturns.size mustBe 1
 
-        val app = applicationBuilder
+        val app = applicationBuilder(clock = Some(stubClock))
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
-          .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
         running(app) {
@@ -424,10 +412,9 @@ class ReturnStatusControllerSpec
         val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
         completeOfExcludedReturns.size mustBe 2
 
-        val app = applicationBuilder
+        val app = applicationBuilder(clock = Some(stubClock))
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
-          .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
         running(app) {
@@ -469,11 +456,10 @@ class ReturnStatusControllerSpec
         val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
         completeOfExcludedReturns.size mustBe 2
 
-        val app = applicationBuilder
+        val app = applicationBuilder(clock = Some(stubClock))
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[SaveForLaterRepository].toInstance(mockSaveForLaterRepository))
-          .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
         running(app) {
@@ -518,11 +504,10 @@ class ReturnStatusControllerSpec
         val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
         completeOfExcludedReturns.size mustBe 2
 
-        val app = applicationBuilder
+        val app = applicationBuilder(clock = Some(stubClock))
           .overrides(bind[ReturnsService].toInstance(mockReturnService))
           .overrides(bind[CheckExclusionsService].toInstance(mockCheckExclusionsService))
           .overrides(bind[SaveForLaterRepository].toInstance(mockSaveForLaterRepository))
-          .overrides(bind[Clock].toInstance(stubClock))
           .build()
 
         running(app) {
