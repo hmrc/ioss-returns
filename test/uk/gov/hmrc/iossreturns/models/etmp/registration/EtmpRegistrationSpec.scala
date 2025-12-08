@@ -25,7 +25,7 @@ class EtmpRegistrationSpec extends SpecBase {
 
   private val tradingNames: Seq[EtmpTradingName] = etmpRegistration.tradingNames
   private val schemeDetails: EtmpDisplaySchemeDetails = etmpRegistration.schemeDetails
-  private val bankDetails: EtmpBankDetails = etmpRegistration.bankDetails
+  private val bankDetails: EtmpBankDetails = etmpRegistration.bankDetails.get
   private val exclusions: Seq[EtmpExclusion] = etmpRegistration.exclusions
   private val adminUse: EtmpAdminUse = etmpRegistration.adminUse
 
@@ -44,7 +44,7 @@ class EtmpRegistrationSpec extends SpecBase {
       val expectedResult = EtmpDisplayRegistration(
         tradingNames = tradingNames,
         schemeDetails = schemeDetails,
-        bankDetails = bankDetails,
+        bankDetails = Some(bankDetails),
         exclusions = exclusions,
         adminUse = adminUse
       )
