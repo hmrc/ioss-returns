@@ -53,7 +53,7 @@ class FinancialDataController @Inject()(
     }
   }
 
-  def prepareFinancialDataForIossNumber(iossNumber: String): Action[AnyContent] = cc.auth().async {
+  def prepareFinancialDataForIossNumber(iossNumber: String): Action[AnyContent] = cc.auth(Some(iossNumber)).async {
     implicit request =>
       prepare(iossNumber)
   }
