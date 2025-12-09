@@ -168,6 +168,120 @@ class ReturnControllerSpec
     }
   }
 
+  ".submitAsIntermediary" - {
+
+    val vatReturn = arbitrary[CoreVatReturn].sample.value
+    val jsonVatReturn = Json.toJson(vatReturn)
+    val readVatReturn = jsonVatReturn.as[CoreVatReturn]
+
+    lazy val request =
+      FakeRequest(POST, routes.ReturnController.submitAsIntermediary(iossNumber).url)
+        .withJsonBody(jsonVatReturn)
+
+    "must save a VAT return, audit a success event and respond with Created" in {
+
+      when(mockCoreVatReturnConnector.submit(any()))
+        .thenReturn(Future.successful(Right(())))
+
+      val app = applicationBuilder().overrides(
+        bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
+        bind[AuditService].toInstance(mockAuditService)
+      ).build()
+
+      running(app) {
+
+        val result = route(app, request).value
+
+        val expectedAuditEvent = CoreVatReturnAuditModel(
+          "id",
+          "",
+          vrn.vrn,
+          readVatReturn,
+          SubmissionResult.Success,
+          None
+        )
+
+        status(result) mustEqual CREATED
+        verify(mockCoreVatReturnConnector, times(1)).submit(eqTo(readVatReturn))
+        verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
+      }
+    }
+
+    "must audit a failure event and respond with NotFound when registration is not in core" in {
+      val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, REGISTRATION_NOT_FOUND, "There was an error")
+      val eisErrorResponse = EisErrorResponse(coreErrorResponse)
+
+      when(mockCoreVatReturnConnector.submit(any()))
+        .thenReturn(Future.successful(Left(eisErrorResponse)))
+
+      val app = applicationBuilder().overrides(
+        bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
+        bind[AuditService].toInstance(mockAuditService)
+      ).build()
+
+      running(app) {
+
+        val result = route(app, request).value
+
+        val expectedAuditEvent = CoreVatReturnAuditModel(
+          "id",
+          "",
+          vrn.vrn,
+          readVatReturn,
+          SubmissionResult.Failure,
+          Some(coreErrorResponse)
+        )
+
+        status(result) mustEqual NOT_FOUND
+        verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
+      }
+    }
+
+    "must audit a failure event and respond with ServiceUnavailable(coreError) when error received from core" in {
+      val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, "OSS_111", "There was an error")
+      val eisErrorResponse = EisErrorResponse(coreErrorResponse)
+
+      when(mockCoreVatReturnConnector.submit(any()))
+        .thenReturn(Future.successful(Left(eisErrorResponse)))
+
+      val app = applicationBuilder().overrides(
+        bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
+        bind[AuditService].toInstance(mockAuditService)
+      ).build()
+
+      running(app) {
+
+        val result = route(app, request).value
+
+        val expectedAuditEvent = CoreVatReturnAuditModel(
+          "id",
+          "",
+          vrn.vrn,
+          readVatReturn,
+          SubmissionResult.Failure,
+          Some(coreErrorResponse)
+        )
+
+        status(result) mustEqual SERVICE_UNAVAILABLE
+        verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
+      }
+    }
+
+    "must respond with Unauthorized when the user is not authorised" in {
+
+      val app =
+        new GuiceApplicationBuilder()
+          .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
+          .build()
+
+      running(app) {
+
+        val result = route(app, request).value
+        status(result) mustEqual UNAUTHORIZED
+      }
+    }
+  }
+
   ".get" - {
     val period = StandardPeriod(2023, Month.NOVEMBER)
 
