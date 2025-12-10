@@ -74,11 +74,11 @@ class AuthAction(
                 case (Some(intermediaryNumber), Some(iossNumber)) =>
                   getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, iossNumber, Some(intermediaryNumber))
                 case _ =>
-                  logger.warn(s"Insufficient enrolments4 ")
+                  logger.warn(s"Insufficient enrolments for Organisation who didn't int number $maybeIntermediaryNumber or requested ioss number $requestedMaybeIossNumber")
                   throw InsufficientEnrolments("Insufficient enrolments")
               }
             case _ =>
-              logger.warn(s"Insufficient enrolments3")
+              logger.warn(s"Insufficient enrolments for Organisation who didn't have ioss or int enrolment")
               throw InsufficientEnrolments("Insufficient enrolments")
           }
         }
@@ -102,11 +102,11 @@ class AuthAction(
                 case (Some(intermediaryNumber), Some(iossNumber)) =>
                   getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, iossNumber, Some(intermediaryNumber))
                 case _ =>
-                  logger.warn(s"Insufficient enrolments1 ")
+                  logger.warn(s"Insufficient enrolments for Individual who didn't int number $maybeIntermediaryNumber or requested ioss number $requestedMaybeIossNumber")
                   throw InsufficientEnrolments("Insufficient enrolments")
               }
             case _ =>
-              logger.warn(s"Insufficient enrolments2")
+              logger.warn(s"Insufficient enrolments for Individual who didn't have ioss or int enrolment")
               throw InsufficientEnrolments("Insufficient enrolments")
           }
         }
