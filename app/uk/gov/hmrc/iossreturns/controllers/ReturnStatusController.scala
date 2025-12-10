@@ -42,7 +42,7 @@ class ReturnStatusController @Inject()(
     .withLocale(Locale.UK)
     .withZone(ZoneId.systemDefault())
 
-  def listStatuses(commencementDate: LocalDate): Action[AnyContent] = cc.auth().async {
+  def listStatuses(iossNumber: String, commencementDate: LocalDate): Action[AnyContent] = cc.auth(Some(iossNumber)).async {
     implicit request =>
       val excludedTrader = request.registration.exclusions.toList
       val periodWithStatuses = returnsService.getStatuses(request.iossNumber, commencementDate, excludedTrader)

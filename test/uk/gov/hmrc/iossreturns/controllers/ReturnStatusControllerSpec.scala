@@ -203,7 +203,7 @@ class ReturnStatusControllerSpec
 
       ".listStatuses()" - {
         val commencementDate = LocalDate.of(2021, 9, 1)
-        lazy val request = FakeRequest(GET, routes.ReturnStatusController.listStatuses(commencementDate).url)
+        lazy val request = FakeRequest(GET, routes.ReturnStatusController.listStatuses(iossNumber, commencementDate).url)
 
         "must respond with OK and an empty array when no statuses are returned" in {
           val mockReturnsService = mock[ReturnsService]
