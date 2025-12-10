@@ -19,7 +19,7 @@ package uk.gov.hmrc.iossreturns.controllers
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.iossreturns.controllers.actions.{AuthAction, AuthenticatedControllerComponents}
+import uk.gov.hmrc.iossreturns.controllers.actions.AuthenticatedControllerComponents
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.models.requests.SaveForLaterRequest
 import uk.gov.hmrc.iossreturns.services.SaveForLaterService
@@ -29,29 +29,29 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class SaveForLaterController @Inject()(
-                                      cc: AuthenticatedControllerComponents,
-                                      saveForLaterService: SaveForLaterService,
-                                      auth: AuthAction
+                                        cc: AuthenticatedControllerComponents,
+                                        saveForLaterService: SaveForLaterService,
                                       )(implicit ec: ExecutionContext)
   extends BackendController(cc) {
 
-  def post(): Action[SaveForLaterRequest] = auth(parse.json[SaveForLaterRequest]).async {
+  def post(): Action[SaveForLaterRequest] = cc.auth()(parse.json[SaveForLaterRequest]).async {
     implicit request =>
       saveForLaterService.saveAnswers(request.body).map {
-         answers => Created(Json.toJson(answers))
+        answers => Created(Json.toJson(answers))
       }
   }
 
-  def get(): Action[AnyContent] = auth.async {
+  def get(): Action[AnyContent] = cc.auth().async {
     implicit request =>
       saveForLaterService.get(request.iossNumber).map {
-        value => value.sortBy(_.lastUpdated).lastOption
-          .map(savedUserAnswers => Ok(Json.toJson(savedUserAnswers)))
-          .getOrElse(NotFound)
+        value =>
+          value.sortBy(_.lastUpdated).lastOption
+            .map(savedUserAnswers => Ok(Json.toJson(savedUserAnswers)))
+            .getOrElse(NotFound)
       }
   }
 
-  def delete(period: Period): Action[AnyContent] = auth.async {
+  def delete(period: Period): Action[AnyContent] = cc.auth().async {
     implicit request =>
       saveForLaterService.delete(request.iossNumber, period).map(
         result => Ok(Json.toJson(result)))

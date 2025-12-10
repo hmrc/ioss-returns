@@ -18,13 +18,15 @@ package uk.gov.hmrc.iossreturns.controllers.actions
 
 import org.scalatestplus.mockito.MockitoSugar.mock
 import play.api.mvc.Result
+import uk.gov.hmrc.iossreturns.connectors.IntermediaryRegistrationConnector
 import uk.gov.hmrc.iossreturns.services.PreviousRegistrationService
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class FakeCheckOwnIossNumberFilter(iossNumber: String) extends CheckOwnIossNumberFilterImpl(
   iossNumber,
-  mock[PreviousRegistrationService]
+  mock[PreviousRegistrationService],
+  mock[IntermediaryRegistrationConnector]
 )(ExecutionContext.Implicits.global) {
   override protected def filter[A](request: AuthorisedRequest[A]): Future[Option[Result]] = {
     Future.successful(None)
@@ -32,7 +34,7 @@ class FakeCheckOwnIossNumberFilter(iossNumber: String) extends CheckOwnIossNumbe
 }
 
 class FakeCheckOwnIossNumberFilterProvider
-  extends CheckOwnIossNumberFilter(mock[PreviousRegistrationService])(ExecutionContext.Implicits.global) {
+  extends CheckOwnIossNumberFilter(mock[PreviousRegistrationService], mock[IntermediaryRegistrationConnector])(ExecutionContext.Implicits.global) {
 
   override def apply(iossNumber: String): CheckOwnIossNumberFilterImpl =
     new FakeCheckOwnIossNumberFilter(iossNumber)

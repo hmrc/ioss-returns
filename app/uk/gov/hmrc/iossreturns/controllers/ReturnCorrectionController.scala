@@ -32,7 +32,7 @@ class ReturnCorrectionController @Inject()(
                                             returnCorrectionConnector: ReturnCorrectionConnector
                                           )(implicit ec: ExecutionContext) extends BackendController(cc) {
 
-  def getReturnCorrection(iossNumber: String, countryCode: String, period: Period): Action[AnyContent] = cc.auth().async {
+  def getReturnCorrection(iossNumber: String, countryCode: String, period: Period): Action[AnyContent] = cc.auth(Some(iossNumber)).async {
     returnCorrectionConnector.getMaximumCorrectionValue(iossNumber, countryCode, toEtmpPeriodString(period)).map {
       case Right(returnCorrection) =>
         Ok(Json.toJson(returnCorrection))

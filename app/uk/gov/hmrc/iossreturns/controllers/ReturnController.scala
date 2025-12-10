@@ -53,6 +53,21 @@ class ReturnController @Inject()(
           ServiceUnavailable(Json.toJson(errorResponse.errorDetail))
       }
   }
+  
+  def submitAsIntermediary(iossNumber: String): Action[CoreVatReturn] = cc.auth(Some(iossNumber))(parse.json[CoreVatReturn]).async {
+    implicit request =>
+      coreVatReturnConnector.submit(request.body).map {
+        case Right(_) =>
+          auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
+          Created
+        case Left(errorResponse) if errorResponse.errorDetail.errorCode == CoreErrorResponse.REGISTRATION_NOT_FOUND =>
+          auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
+          NotFound(Json.toJson(errorResponse.errorDetail))
+        case Left(errorResponse) =>
+          auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
+          ServiceUnavailable(Json.toJson(errorResponse.errorDetail))
+      }
+  }
 
   def get(period: Period): Action[AnyContent] = cc.auth().async { implicit request =>
     get(period, request.iossNumber)
