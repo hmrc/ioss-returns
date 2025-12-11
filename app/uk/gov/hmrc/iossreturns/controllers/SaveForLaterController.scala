@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.iossreturns.controllers
 
-
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.iossreturns.controllers.actions.AuthenticatedControllerComponents
@@ -51,13 +50,10 @@ class SaveForLaterController @Inject()(
       }
   }
 
-  // TODO -> Create new endpoint for post that will use new action to identify intermediary
-  // TODO -> Create new endpoint for get that will use new action to identify intermediary and retrieve all iossNumbers for intermediary
-
   def postForIntermediary(): Action[SaveForLaterRequest] = cc.authIntermediary()(parse.json[SaveForLaterRequest]).async {
     implicit request =>
-      saveForLaterService.saveAnswers(request.body).map {
-        answers => Created(Json.toJson(answers))
+      saveForLaterService.saveAnswers(request.body).map { answers =>
+        Created(Json.toJson(answers))
       }
   }
 
