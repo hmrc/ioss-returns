@@ -1,15 +1,15 @@
 package uk.gov.hmrc.iossreturns.base
 
-import org.scalatest.{EitherValues, OptionValues, TryValues}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.{EitherValues, OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.domain.Vrn
-import uk.gov.hmrc.iossreturns.controllers.actions.{AuthActionProvider, CheckOwnIossNumberFilter, FakeAuthActionProvider, FakeCheckOwnIossNumberFilterProvider}
+import uk.gov.hmrc.iossreturns.controllers.actions.*
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.{Period, *}
 
@@ -29,6 +29,7 @@ trait SpecBase
   protected val vrn: Vrn = Vrn("123456789")
 
   val iossNumber = "IM9001234567"
+
   def period: Period = StandardPeriod(2021, Month.NOVEMBER)
 
   val userAnswersId: String = "12345-credId"
@@ -66,13 +67,16 @@ trait SpecBase
     changeDate = Some(LocalDateTime.now(stubClockAtArbitraryDate))
   )
 
-  protected def applicationBuilder(clock: Option[Clock] = None): GuiceApplicationBuilder = {
+  protected def applicationBuilder(
+                                    clock: Option[Clock] = None
+                                  ): GuiceApplicationBuilder = {
     val clockToBind = clock.getOrElse(stubClockAtArbitraryDate)
 
     new GuiceApplicationBuilder()
       .overrides(
         bind[Clock].toInstance(clockToBind),
         bind[AuthActionProvider].to[FakeAuthActionProvider],
+        bind[IntermediaryIdentifierActionImpl].to[FakeIntermediaryIdentifierAction],
         bind[CheckOwnIossNumberFilter].to[FakeCheckOwnIossNumberFilterProvider]
       )
   }

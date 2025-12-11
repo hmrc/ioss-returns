@@ -16,148 +16,244 @@
 
 package controllers
 
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, anyString, eq as eqTo}
 import org.mockito.Mockito.{times, verify, when}
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
 import uk.gov.hmrc.iossreturns.controllers.routes
-import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.requests.SaveForLaterRequest
 import uk.gov.hmrc.iossreturns.models.{Period, SavedUserAnswers}
 import uk.gov.hmrc.iossreturns.services.SaveForLaterService
+import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
 import scala.concurrent.Future
 
 class SaveForLaterControllerSpec
   extends SpecBase
-    with ScalaCheckPropertyChecks
-    with Generators {
+    with ScalaCheckPropertyChecks {
 
-  ".post" - {
+  "SaveForLaterController" - {
 
-    val s4lRequest = arbitrary[SaveForLaterRequest].sample.value
-    val savedAnswers        = arbitrary[SavedUserAnswers].sample.value
+    ".post" - {
 
-    lazy val request =
-      FakeRequest(POST, routes.SaveForLaterController.post().url)
-        .withJsonBody(Json.toJson(s4lRequest))
+      val s4lRequest = arbitrary[SaveForLaterRequest].sample.value
+      val savedAnswers = arbitrary[SavedUserAnswers].sample.value
 
-    "must save a VAT return and respond with Created" in {
-      val mockService = mock[SaveForLaterService]
+      lazy val request =
+        FakeRequest(POST, routes.SaveForLaterController.post().url)
+          .withJsonBody(Json.toJson(s4lRequest))
 
-      when(mockService.saveAnswers(any()))
-        .thenReturn(Future.successful(savedAnswers))
+      "must save a VAT return and respond with Created" in {
+        val mockService = mock[SaveForLaterService]
 
-      val app =
-        applicationBuilder()
-          .overrides(bind[SaveForLaterService].toInstance(mockService))
-          .build()
+        when(mockService.saveAnswers(any()))
+          .thenReturn(Future.successful(savedAnswers))
 
-      running(app) {
+        val app =
+          applicationBuilder()
+            .overrides(bind[SaveForLaterService].toInstance(mockService))
+            .build()
 
-        val result = route(app, request).value
+        running(app) {
 
-        status(result) mustEqual CREATED
-        contentAsJson(result) mustBe Json.toJson(savedAnswers)
-        verify(mockService, times(1)).saveAnswers(eqTo(s4lRequest))
+          val result = route(app, request).value
+
+          status(result) mustEqual CREATED
+          contentAsJson(result) mustBe Json.toJson(savedAnswers)
+          verify(mockService, times(1)).saveAnswers(eqTo(s4lRequest))
+        }
+      }
+
+      "must respond with Unauthorized when the user is not authorised" in {
+
+        val app =
+          new GuiceApplicationBuilder()
+            .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
+            .build()
+
+        running(app) {
+
+          val result = route(app, request).value
+          status(result) mustEqual UNAUTHORIZED
+        }
       }
     }
 
-    "must respond with Unauthorized when the user is not authorised" in {
+    ".get" - {
+      val savedAnswers = arbitrary[SavedUserAnswers].sample.value
+      lazy val request =
+        FakeRequest(GET, routes.SaveForLaterController.get().url)
 
-      val app =
-        new GuiceApplicationBuilder()
-          .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
-          .build()
+      "must return OK and a response when Saved User Answers are found for the vrn and period" in {
+        val mockService = mock[SaveForLaterService]
 
-      running(app) {
+        when(mockService.get(anyString()))
+          .thenReturn(Future.successful(Seq(savedAnswers)))
 
-        val result = route(app, request).value
-        status(result) mustEqual UNAUTHORIZED
+        val app =
+          applicationBuilder()
+            .overrides(bind[SaveForLaterService].toInstance(mockService))
+            .build()
+
+        running(app) {
+
+          val result = route(app, request).value
+
+          status(result) mustEqual OK
+          contentAsJson(result) mustBe Json.toJson(savedAnswers)
+          verify(mockService, times(1)).get(anyString())
+        }
+      }
+
+      "must return NOT_FOUND when no answers are found" in {
+        val mockService = mock[SaveForLaterService]
+
+        when(mockService.get(anyString()))
+          .thenReturn(Future.successful(Seq()))
+
+        val app =
+          applicationBuilder()
+            .overrides(bind[SaveForLaterService].toInstance(mockService))
+            .build()
+
+        running(app) {
+
+          val result = route(app, request).value
+
+          status(result) mustEqual NOT_FOUND
+          verify(mockService, times(1)).get(anyString())
+        }
+      }
+    }
+
+    ".postForIntermediary" - {
+
+      val s4lRequest = arbitrary[SaveForLaterRequest].sample.value
+      val savedAnswers = arbitrary[SavedUserAnswers].sample.value
+
+      lazy val request =
+        FakeRequest(POST, routes.SaveForLaterController.postForIntermediary().url)
+          .withJsonBody(Json.toJson(s4lRequest))
+
+      "must save a VAT return and respond with Created" in {
+
+        val mockService = mock[SaveForLaterService]
+
+        when(mockService.saveAnswers(any())) thenReturn savedAnswers.toFuture
+
+        val application =
+          applicationBuilder()
+            .overrides(bind[SaveForLaterService].toInstance(mockService))
+            .build()
+
+        running(application) {
+
+          val result = route(application, request).value
+
+          status(result) `mustBe` CREATED
+          contentAsJson(result) `mustBe` Json.toJson(savedAnswers)
+          verify(mockService, times(1)).saveAnswers(eqTo(s4lRequest))
+        }
+      }
+
+      "must respond with Unauthorized when the user is not authorised" in {
+
+        val application =
+          new GuiceApplicationBuilder()
+            .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
+            .build()
+
+        running(application) {
+
+          val result = route(application, request).value
+          status(result) `mustBe` UNAUTHORIZED
+        }
+      }
+    }
+
+    ".getForIntermediary" - {
+
+      val savedAnswers: Seq[SavedUserAnswers] = Gen.listOfN(3, arbitrary[SavedUserAnswers]).sample.value
+
+      lazy val request = FakeRequest(GET, routes.SaveForLaterController.getForIntermediary().url)
+
+      "must return OK and a response when Saved User Answers are found for the intermediaries clients" in {
+
+        val mockService = mock[SaveForLaterService]
+
+        when(mockService.get(any[Seq[String]]())) thenReturn savedAnswers.toFuture
+
+        val application =
+          applicationBuilder()
+            .overrides(bind[SaveForLaterService].toInstance(mockService))
+            .build()
+
+        running(application) {
+
+          val result = route(application, request).value
+
+          status(result) `mustBe` OK
+          contentAsJson(result) `mustBe` Json.toJson(savedAnswers)
+          verify(mockService, times(1)).get(any[Seq[String]]())
+        }
+      }
+
+      "must return Seq.empty when no answers are found" in {
+
+        val mockService = mock[SaveForLaterService]
+
+        when(mockService.get(any[Seq[String]]())) thenReturn Seq().toFuture
+
+        val application =
+          applicationBuilder()
+            .overrides(bind[SaveForLaterService].toInstance(mockService))
+            .build()
+
+        running(application) {
+
+          val result = route(application, request).value
+
+          status(result) `mustBe` OK
+          contentAsJson(result) `mustBe` Json.arr()
+          verify(mockService, times(1)).get(any[Seq[String]]())
+        }
+      }
+    }
+
+    ".delete" - {
+      val period = arbitrary[Period].sample.value
+      lazy val request =
+        FakeRequest(GET, routes.SaveForLaterController.delete(period).url)
+
+      "must return OK" in {
+        val mockService = mock[SaveForLaterService]
+
+        when(mockService.delete(any(), any()))
+          .thenReturn(Future.successful(true))
+
+        val app =
+          applicationBuilder()
+            .overrides(bind[SaveForLaterService].toInstance(mockService))
+            .build()
+
+        running(app) {
+
+          val result = route(app, request).value
+
+          status(result) mustEqual OK
+          contentAsJson(result) mustBe Json.toJson(true)
+          verify(mockService, times(1)).delete(any(), any())
+        }
       }
     }
   }
-
-  ".get" - {
-    val savedAnswers        = arbitrary[SavedUserAnswers].sample.value
-    lazy val request =
-      FakeRequest(GET, routes.SaveForLaterController.get().url)
-
-    "must return OK and a response when Saved User Answers are found for the vrn and period" in {
-      val mockService = mock[SaveForLaterService]
-
-      when(mockService.get(any()))
-        .thenReturn(Future.successful(Seq(savedAnswers)))
-
-      val app =
-        applicationBuilder()
-          .overrides(bind[SaveForLaterService].toInstance(mockService))
-          .build()
-
-      running(app) {
-
-        val result = route(app, request).value
-
-        status(result) mustEqual OK
-        contentAsJson(result) mustBe Json.toJson(savedAnswers)
-        verify(mockService, times(1)).get(any())
-      }
-    }
-
-    "must return NOT_FOUND when no answers are found" in {
-      val mockService = mock[SaveForLaterService]
-
-      when(mockService.get(any()))
-        .thenReturn(Future.successful(Seq()))
-
-      val app =
-        applicationBuilder()
-          .overrides(bind[SaveForLaterService].toInstance(mockService))
-          .build()
-
-      running(app) {
-
-        val result = route(app, request).value
-
-        status(result) mustEqual NOT_FOUND
-        verify(mockService, times(1)).get(any())
-      }
-    }
-  }
-
-  ".delete" - {
-    val period = arbitrary[Period].sample.value
-    lazy val request =
-      FakeRequest(GET, routes.SaveForLaterController.delete(period).url)
-
-    "must return OK" in {
-      val mockService = mock[SaveForLaterService]
-
-      when(mockService.delete(any(), any()))
-        .thenReturn(Future.successful(true))
-
-      val app =
-        applicationBuilder()
-          .overrides(bind[SaveForLaterService].toInstance(mockService))
-          .build()
-
-      running(app) {
-
-        val result = route(app, request).value
-
-        status(result) mustEqual OK
-        contentAsJson(result) mustBe Json.toJson(true)
-        verify(mockService, times(1)).delete(any(), any())
-      }
-    }
-  }
-
 }

@@ -7,8 +7,6 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.models.RegistrationWrapper
-import uk.gov.hmrc.iossreturns.models.enrolments.EACDEnrolments
 import uk.gov.hmrc.iossreturns.models.etmp.intermediary.IntermediaryRegistrationWrapper
 
 class IntermediaryRegistrationConnectorSpec extends SpecBase with WireMockHelper {

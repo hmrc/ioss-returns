@@ -51,6 +51,28 @@ class SaveForLaterController @Inject()(
       }
   }
 
+  // TODO -> Create new endpoint for post that will use new action to identify intermediary
+  // TODO -> Create new endpoint for get that will use new action to identify intermediary and retrieve all iossNumbers for intermediary
+
+  def postForIntermediary(): Action[SaveForLaterRequest] = cc.authIntermediary()(parse.json[SaveForLaterRequest]).async {
+    implicit request =>
+      saveForLaterService.saveAnswers(request.body).map {
+        answers => Created(Json.toJson(answers))
+      }
+  }
+
+  def getForIntermediary: Action[AnyContent] = cc.authIntermediary().async {
+    implicit request =>
+
+      val intermediariesClients: Seq[String] = request
+        .intermediaryRegistrationWrapper.etmpDisplayRegistration.clientDetails
+        .map(_.clientIossID)
+
+      saveForLaterService.get(intermediariesClients).map { allSavedUserAnswers =>
+        Ok(Json.toJson(allSavedUserAnswers))
+      }
+  }
+
   def delete(period: Period): Action[AnyContent] = cc.auth().async {
     implicit request =>
       saveForLaterService.delete(request.iossNumber, period).map(

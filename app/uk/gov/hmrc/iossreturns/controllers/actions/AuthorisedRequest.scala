@@ -20,7 +20,6 @@ import play.api.mvc.{Request, WrappedRequest}
 import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpDisplayRegistration
 
-
 case class AuthorisedRequest[A](
                                  request: Request[A],
                                  userId: String,

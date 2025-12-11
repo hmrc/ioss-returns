@@ -18,7 +18,8 @@ package uk.gov.hmrc.iossreturns.controllers.actions
 
 import play.api.http.FileMimeTypes
 import play.api.i18n.{Langs, MessagesApi}
-import play.api.mvc._
+import play.api.mvc.*
+import uk.gov.hmrc.iossreturns.models.requests.IntermediaryIdentifierRequest
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -28,10 +29,16 @@ trait AuthenticatedControllerComponents extends ControllerComponents {
   def actionBuilder: DefaultActionBuilder
 
   def identify: AuthActionProvider
+  
+  def identifyIntermediary: IntermediaryIdentifierActionImpl
 
   def auth(maybeIossNumber: Option[String] = None): ActionBuilder[AuthorisedRequest, AnyContent] =
     actionBuilder andThen
       identify(maybeIossNumber)
+      
+  def authIntermediary(): ActionBuilder[IntermediaryIdentifierRequest, AnyContent] =
+    actionBuilder andThen
+      identifyIntermediary
 
   def checkOwnIossNumber: CheckOwnIossNumberFilter
 
@@ -49,5 +56,6 @@ case class DefaultAuthenticatedControllerComponents @Inject()(
                                                                fileMimeTypes: FileMimeTypes,
                                                                executionContext: ExecutionContext,
                                                                identify: AuthActionProvider,
+                                                               identifyIntermediary: IntermediaryIdentifierActionImpl,
                                                                checkOwnIossNumber: CheckOwnIossNumberFilter
                                                              ) extends AuthenticatedControllerComponents

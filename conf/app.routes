@@ -26,4 +26,7 @@ POST        /save-for-later                                            uk.gov.hm
 GET         /save-for-later                                            uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.get()
 GET         /save-for-later/delete/:period                             uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.delete(period:Period)
 
+POST        /intermediary-save-for-later                              uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.postForIntermediary()
+GET         /intermediary-save-for-later                              uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.getForIntermediary()
+
 GET         /max-correction-value/:iossNumber/:country/:period         uk.gov.hmrc.iossreturns.controllers.ReturnCorrectionController.getReturnCorrection(iossNumber: String, country: String, period: Period)

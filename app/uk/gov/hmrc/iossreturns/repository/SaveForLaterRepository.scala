@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,19 @@ class SaveForLaterRepository @Inject()(
         case l: LegacyEncryptedSavedUserAnswers =>
           encryptor.decryptLegacyAnswers(l, l.iossNumber)
       })
+  
+  def get(iossNumbers: Seq[String]): Future[Seq[SavedUserAnswers]] = {
+    collection
+      .find(
+        Filters.in("iossNumber", iossNumbers: _*)
+    ).toFuture()
+      .map(_.map {
+      case n: NewEncryptedSavedUserAnswers =>
+        encryptor.decryptAnswers(n, n.iossNumber)
+      case l: LegacyEncryptedSavedUserAnswers =>
+        encryptor.decryptLegacyAnswers(l, l.iossNumber)
+    })
+  }
 
   def clear(iossNumber: String, period: Period): Future[Boolean] =
     collection
