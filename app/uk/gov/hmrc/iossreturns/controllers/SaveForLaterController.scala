@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,13 @@ class SaveForLaterController @Inject()(
       }
   }
 
+  def delete(period: Period): Action[AnyContent] = cc.auth().async {
+    implicit request =>
+      saveForLaterService.delete(request.iossNumber, period).map { result =>
+        Ok(Json.toJson(result))
+      }
+  }
+
   def postForIntermediary(): Action[SaveForLaterRequest] = cc.authIntermediary()(parse.json[SaveForLaterRequest]).async {
     implicit request =>
       saveForLaterService.saveAnswers(request.body).map { answers =>
@@ -68,10 +75,11 @@ class SaveForLaterController @Inject()(
         Ok(Json.toJson(allSavedUserAnswers))
       }
   }
-
-  def delete(period: Period): Action[AnyContent] = cc.auth().async {
+  
+  def deleteForIntermediary(iossNumber: String, period: Period): Action[AnyContent] = cc.authIntermediary().async {
     implicit request =>
-      saveForLaterService.delete(request.iossNumber, period).map(
-        result => Ok(Json.toJson(result)))
+      saveForLaterService.delete(iossNumber, period).map { result =>
+        Ok(Json.toJson(result))
+      }
   }
 }
