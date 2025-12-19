@@ -23,8 +23,9 @@ import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControlle
 import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
-import uk.gov.hmrc.iossreturns.services.AuditService
+import uk.gov.hmrc.iossreturns.services.{AuditService, SaveForLaterService}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
+import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.{Clock, LocalDate}
@@ -34,6 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ReturnController @Inject()(
                                   cc: DefaultAuthenticatedControllerComponents,
                                   coreVatReturnConnector: VatReturnConnector,
+                                  saveForLaterService: SaveForLaterService,
                                   auditService: AuditService,
                                   clock: Clock
                                 )(implicit ec: ExecutionContext)
@@ -41,16 +43,20 @@ class ReturnController @Inject()(
 
   def submit(): Action[CoreVatReturn] = cc.auth()(parse.json[CoreVatReturn]).async {
     implicit request =>
-      coreVatReturnConnector.submit(request.body).map {
+      coreVatReturnConnector.submit(request.body).flatMap {
         case Right(_) =>
+          Period.fromString(request.body.period.toString).map { period =>
+            saveForLaterService.delete(request.iossNumber, period).map { worked =>
+            }
+          }
           auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
-          Created
+          Created.toFuture
         case Left(errorResponse) if errorResponse.errorDetail.errorCode == CoreErrorResponse.REGISTRATION_NOT_FOUND =>
           auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
-          NotFound(Json.toJson(errorResponse.errorDetail))
+          NotFound(Json.toJson(errorResponse.errorDetail)).toFuture
         case Left(errorResponse) =>
           auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
-          ServiceUnavailable(Json.toJson(errorResponse.errorDetail))
+          ServiceUnavailable(Json.toJson(errorResponse.errorDetail)).toFuture
       }
   }
   
@@ -58,6 +64,9 @@ class ReturnController @Inject()(
     implicit request =>
       coreVatReturnConnector.submit(request.body).map {
         case Right(_) =>
+          Period.fromString(request.body.period.toString).map { period =>
+            saveForLaterService.delete(request.iossNumber, period)
+          }
           auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
           Created
         case Left(errorResponse) if errorResponse.errorDetail.errorCode == CoreErrorResponse.REGISTRATION_NOT_FOUND =>

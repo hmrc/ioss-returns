@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.iossreturns.controllers
 
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito
 import org.mockito.Mockito.{times, verify, when}
 import org.scalacheck.Arbitrary.arbitrary
@@ -26,13 +26,13 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
+import uk.gov.hmrc.iossreturns.models.*
 import uk.gov.hmrc.iossreturns.models.CoreErrorResponse.REGISTRATION_NOT_FOUND
-import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
 import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpVatReturn}
 import uk.gov.hmrc.iossreturns.services.AuditService
@@ -94,6 +94,7 @@ class ReturnControllerSpec
     }
 
     "must audit a failure event and respond with NotFound when registration is not in core" in {
+
       val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, REGISTRATION_NOT_FOUND, "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
@@ -124,6 +125,7 @@ class ReturnControllerSpec
     }
 
     "must audit a failure event and respond with ServiceUnavailable(coreError) when error received from core" in {
+
       val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, "OSS_111", "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
@@ -208,6 +210,7 @@ class ReturnControllerSpec
     }
 
     "must audit a failure event and respond with NotFound when registration is not in core" in {
+
       val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, REGISTRATION_NOT_FOUND, "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
@@ -238,6 +241,7 @@ class ReturnControllerSpec
     }
 
     "must audit a failure event and respond with ServiceUnavailable(coreError) when error received from core" in {
+
       val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, "OSS_111", "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 

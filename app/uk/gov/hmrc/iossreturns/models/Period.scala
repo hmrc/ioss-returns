@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.iossreturns.models
 
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
 import play.api.mvc.{PathBindable, QueryStringBindable}
 
-import java.time.Month._
+import java.time.Month.*
 import java.time.{LocalDate, Month, YearMonth}
 import scala.util.Try
 import scala.util.matching.Regex
