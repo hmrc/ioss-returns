@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControllerComponents
+import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
 import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
@@ -39,18 +40,26 @@ class ReturnController @Inject()(
                                   auditService: AuditService,
                                   clock: Clock
                                 )(implicit ec: ExecutionContext)
-  extends BackendController(cc) {
+  extends BackendController(cc) with Logging {
 
   def submit(): Action[CoreVatReturn] = cc.auth()(parse.json[CoreVatReturn]).async {
     implicit request =>
       coreVatReturnConnector.submit(request.body).flatMap {
         case Right(_) =>
-          Period.fromString(request.body.period.toString).map { period =>
-            saveForLaterService.delete(request.iossNumber, period).map { worked =>
-            }
+          Period.fromString(request.body.period.toString) match {
+            case Some(period) =>
+              saveForLaterService.delete(request.iossNumber, period).map { _ =>
+                auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
+                Created
+              }
+
+            case _ =>
+              val message: String = "There was an error converting Core period to Period."
+              logger.error(message)
+              val exception = new Exception(message)
+              throw exception
           }
-          auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
-          Created.toFuture
+
         case Left(errorResponse) if errorResponse.errorDetail.errorCode == CoreErrorResponse.REGISTRATION_NOT_FOUND =>
           auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
           NotFound(Json.toJson(errorResponse.errorDetail)).toFuture
@@ -59,22 +68,32 @@ class ReturnController @Inject()(
           ServiceUnavailable(Json.toJson(errorResponse.errorDetail)).toFuture
       }
   }
-  
+
   def submitAsIntermediary(iossNumber: String): Action[CoreVatReturn] = cc.auth(Some(iossNumber))(parse.json[CoreVatReturn]).async {
     implicit request =>
-      coreVatReturnConnector.submit(request.body).map {
+      coreVatReturnConnector.submit(request.body).flatMap {
         case Right(_) =>
-          Period.fromString(request.body.period.toString).map { period =>
-            saveForLaterService.delete(request.iossNumber, period)
+          // TODO -> TEST DELETE
+          Period.fromString(request.body.period.toString) match {
+            case Some(period) =>
+              saveForLaterService.delete(request.iossNumber, period).map { _ =>
+                auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
+                Created
+              }
+
+            case _ =>
+              val message: String = "There was an error converting Core period to Period."
+              logger.error(message)
+              val exception = new Exception(message)
+              throw exception
           }
-          auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
-          Created
+
         case Left(errorResponse) if errorResponse.errorDetail.errorCode == CoreErrorResponse.REGISTRATION_NOT_FOUND =>
           auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
-          NotFound(Json.toJson(errorResponse.errorDetail))
+          NotFound(Json.toJson(errorResponse.errorDetail)).toFuture
         case Left(errorResponse) =>
           auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
-          ServiceUnavailable(Json.toJson(errorResponse.errorDetail))
+          ServiceUnavailable(Json.toJson(errorResponse.errorDetail)).toFuture
       }
   }
 
@@ -107,8 +126,8 @@ class ReturnController @Inject()(
 
       coreVatReturnConnector
         .getObligations(idNumber = iossNumber, queryParameters = queryParameters).map {
-        case Right(etmpObligations) => Ok(Json.toJson(etmpObligations))
-        case Left(errorResponse) => InternalServerError(Json.toJson(errorResponse.body))
-      }
+          case Right(etmpObligations) => Ok(Json.toJson(etmpObligations))
+          case Left(errorResponse) => InternalServerError(Json.toJson(errorResponse.body))
+        }
   }
 }

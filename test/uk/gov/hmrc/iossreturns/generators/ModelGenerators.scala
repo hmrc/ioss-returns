@@ -62,8 +62,8 @@ trait ModelGenerators {
   implicit val arbitraryCorePeriod: Arbitrary[CorePeriod] =
     Arbitrary {
       for {
-        year <- arbitrary[Int]
-        month <- arbitrary[Int]
+        year <- arbitraryPeriod.arbitrary.map(_.year)
+        month <- arbitraryPeriod.arbitrary.map(_.month.getValue)
       } yield CorePeriod(year, month.toString)
     }
 
