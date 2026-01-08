@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,4 +154,29 @@ class PeriodSpec
     }
   }
 
+  ".convertFromCorePeriodString" - {
+
+   "must convert CorePeriod string to Period for a single digit month" in {
+
+     val testString: String = "2025-M03"
+     val expectedValue = Period("2025", "3")
+
+     Period.convertFromCorePeriodString(testString) `mustBe` expectedValue.toOption
+   }
+
+    "must convert CorePeriod string to Period for a double digit month" in {
+
+      val testString: String = "2025-M10"
+      val expectedValue = Period("2025", "10")
+
+      Period.convertFromCorePeriodString(testString) `mustBe` expectedValue.toOption
+    }
+
+    "must return None for an invalid string" in {
+
+      val testString: String = "2025-M13"
+
+      Period.convertFromCorePeriodString(testString) `mustBe` None
+    }
+  }
 }

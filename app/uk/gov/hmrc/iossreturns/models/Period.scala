@@ -59,14 +59,14 @@ object StandardPeriod {
     (
       (__ \ "year").read[Int] and
         (__ \ "month").read[String].map(m => Month.of(m.substring(1).toInt))
-    )((year, month) => StandardPeriod(year, month))
+      )((year, month) => StandardPeriod(year, month))
   }
 
   val writes: OWrites[StandardPeriod] = {
     (
       (__ \ "year").write[Int] and
         (__ \ "month").write[String].contramap[Month](m => s"M${m.getValue}")
-    )(standardPeriod => Tuple.fromProductTyped(standardPeriod))
+      )(standardPeriod => Tuple.fromProductTyped(standardPeriod))
   }
 
   implicit val format: Format[StandardPeriod] = Format(reads, writes)
@@ -83,13 +83,24 @@ object Period {
       month <- Try(Month.of(monthString.toInt))
     } yield StandardPeriod(year, month)
 
-  def fromString(string: String): Option[Period] =
+  def fromString(string: String): Option[Period] = {
     string match {
       case pattern(yearString, monthString) =>
         Period(yearString, monthString).toOption
       case _ =>
         None
     }
+  }
+
+  def convertFromCorePeriodString(string: String): Option[Period] = {
+    val stringCheck = if (string.split("M")(1).substring(0, 1) == "0") {
+      string.take(6) + string.drop(7)
+    } else {
+      string
+    }
+
+    fromString(stringCheck)
+  }
 
   def toEtmpPeriodString(currentPeriod: Period): String = {
     val standardPeriod = StandardPeriod(currentPeriod.year, currentPeriod.month)

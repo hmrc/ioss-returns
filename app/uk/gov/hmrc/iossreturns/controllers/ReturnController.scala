@@ -23,7 +23,7 @@ import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControlle
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
-import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
+import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CorePeriod, CoreVatReturn, Period}
 import uk.gov.hmrc.iossreturns.services.{AuditService, SaveForLaterService}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
@@ -46,7 +46,7 @@ class ReturnController @Inject()(
     implicit request =>
       coreVatReturnConnector.submit(request.body).flatMap {
         case Right(_) =>
-          Period.fromString(request.body.period.toString) match {
+          Period.convertFromCorePeriodString(request.body.period.toString) match {
             case Some(period) =>
               saveForLaterService.delete(request.iossNumber, period).map { _ =>
                 auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
@@ -73,8 +73,7 @@ class ReturnController @Inject()(
     implicit request =>
       coreVatReturnConnector.submit(request.body).flatMap {
         case Right(_) =>
-          // TODO -> TEST DELETE
-          Period.fromString(request.body.period.toString) match {
+          Period.convertFromCorePeriodString(request.body.period.toString) match {
             case Some(period) =>
               saveForLaterService.delete(request.iossNumber, period).map { _ =>
                 auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Success, None))
