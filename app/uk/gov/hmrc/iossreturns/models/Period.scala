@@ -93,13 +93,16 @@ object Period {
   }
 
   def convertFromCorePeriodString(string: String): Option[Period] = {
-    val stringCheck = if (string.split("M")(1).substring(0, 1) == "0") {
-      string.take(6) + string.drop(7)
-    } else {
-      string
-    }
 
-    fromString(stringCheck)
+    val pattern: Regex = """(\d{4})-M(0[1-9]|1[0-2]|[1-9])""".r.anchored
+
+    string match {
+      case pattern(yearString, monthString) =>
+        Period(yearString, monthString).toOption
+
+      case _ =>
+        None
+    }
   }
 
   def toEtmpPeriodString(currentPeriod: Period): String = {
