@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.iossreturns.models
 
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
 import play.api.mvc.{PathBindable, QueryStringBindable}
 
-import java.time.Month._
+import java.time.Month.*
 import java.time.{LocalDate, Month, YearMonth}
 import scala.util.Try
 import scala.util.matching.Regex
@@ -59,14 +59,14 @@ object StandardPeriod {
     (
       (__ \ "year").read[Int] and
         (__ \ "month").read[String].map(m => Month.of(m.substring(1).toInt))
-    )((year, month) => StandardPeriod(year, month))
+      )((year, month) => StandardPeriod(year, month))
   }
 
   val writes: OWrites[StandardPeriod] = {
     (
       (__ \ "year").write[Int] and
         (__ \ "month").write[String].contramap[Month](m => s"M${m.getValue}")
-    )(standardPeriod => Tuple.fromProductTyped(standardPeriod))
+      )(standardPeriod => Tuple.fromProductTyped(standardPeriod))
   }
 
   implicit val format: Format[StandardPeriod] = Format(reads, writes)
@@ -83,13 +83,27 @@ object Period {
       month <- Try(Month.of(monthString.toInt))
     } yield StandardPeriod(year, month)
 
-  def fromString(string: String): Option[Period] =
+  def fromString(string: String): Option[Period] = {
     string match {
       case pattern(yearString, monthString) =>
         Period(yearString, monthString).toOption
       case _ =>
         None
     }
+  }
+
+  def convertFromCorePeriodString(string: String): Option[Period] = {
+
+    val pattern: Regex = """(\d{4})-M(0[1-9]|1[0-2]|[1-9])""".r.anchored
+
+    string match {
+      case pattern(yearString, monthString) =>
+        Period(yearString, monthString).toOption
+
+      case _ =>
+        None
+    }
+  }
 
   def toEtmpPeriodString(currentPeriod: Period): String = {
     val standardPeriod = StandardPeriod(currentPeriod.year, currentPeriod.month)

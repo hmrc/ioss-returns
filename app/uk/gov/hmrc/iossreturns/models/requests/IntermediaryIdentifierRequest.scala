@@ -16,15 +16,14 @@
 
 package uk.gov.hmrc.iossreturns.models.requests
 
-import play.api.libs.json.{JsObject, Json, OFormat}
-import uk.gov.hmrc.iossreturns.models.Period
+import play.api.mvc.{Request, WrappedRequest}
+import uk.gov.hmrc.domain.Vrn
+import uk.gov.hmrc.iossreturns.models.etmp.intermediary.IntermediaryRegistrationWrapper
 
-case class SaveForLaterRequest(
-                                iossNumber: String,
-                                period: Period,
-                                data: JsObject
-                              )
-
-object SaveForLaterRequest {
-  implicit val format: OFormat[SaveForLaterRequest] = Json.format[SaveForLaterRequest]
-}
+case class IntermediaryIdentifierRequest[A](
+                                             request: Request[A],
+                                             userId: String,
+                                             vrn: Vrn,
+                                             intermediaryNumber: String,
+                                             intermediaryRegistrationWrapper: IntermediaryRegistrationWrapper
+                                           ) extends WrappedRequest[A](request)

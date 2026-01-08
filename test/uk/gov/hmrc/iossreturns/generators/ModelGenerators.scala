@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,8 @@ trait ModelGenerators {
   implicit val arbitraryCorePeriod: Arbitrary[CorePeriod] =
     Arbitrary {
       for {
-        year <- arbitrary[Int]
-        month <- arbitrary[Int]
+        year <- arbitraryPeriod.arbitrary.map(_.year)
+        month <- arbitraryPeriod.arbitrary.map(_.month.getValue)
       } yield CorePeriod(year, month.toString)
     }
 

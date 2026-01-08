@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.iossreturns.controllers
 
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito
-import org.mockito.Mockito.{times, verify, when}
+import org.mockito.Mockito.{times, verify, verifyNoInteractions, when}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -26,16 +26,16 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.controllers.actions.FakeFailingAuthConnector
+import uk.gov.hmrc.iossreturns.models.*
 import uk.gov.hmrc.iossreturns.models.CoreErrorResponse.REGISTRATION_NOT_FOUND
-import uk.gov.hmrc.iossreturns.models._
 import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
 import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpVatReturn}
-import uk.gov.hmrc.iossreturns.services.AuditService
+import uk.gov.hmrc.iossreturns.services.{AuditService, SaveForLaterService}
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps
 
 import java.time.{Instant, Month}
@@ -48,10 +48,14 @@ class ReturnControllerSpec
 
   private val mockCoreVatReturnConnector = mock[VatReturnConnector]
   private val mockAuditService: AuditService = mock[AuditService]
+  private val mockSaveForLaterService: SaveForLaterService = mock[SaveForLaterService]
 
   override def beforeEach(): Unit = {
-    Mockito.reset(mockCoreVatReturnConnector)
-    Mockito.reset(mockAuditService)
+    Mockito.reset(
+      mockCoreVatReturnConnector,
+      mockAuditService,
+      mockSaveForLaterService
+    )
   }
 
   ".submit" - {
@@ -64,14 +68,18 @@ class ReturnControllerSpec
       FakeRequest(POST, routes.ReturnController.submit().url)
         .withJsonBody(jsonVatReturn)
 
-    "must save a VAT return, audit a success event and respond with Created" in {
+    "must save a VAT return, delete any saved return that exists for that client and period and audit a success event and respond with Created" in {
 
-      when(mockCoreVatReturnConnector.submit(any()))
-        .thenReturn(Future.successful(Right(())))
+      val period: Period = Period.fromString(readVatReturn.period.toString).value
+
+      when(mockCoreVatReturnConnector.submit(any())) thenReturn Right(()).toFuture
+
+      when(mockSaveForLaterService.delete(any(), any())) thenReturn true.toFuture
 
       val app = applicationBuilder().overrides(
         bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
-        bind[AuditService].toInstance(mockAuditService)
+        bind[AuditService].toInstance(mockAuditService),
+        bind[SaveForLaterService].toInstance(mockSaveForLaterService)
       ).build()
 
       running(app) {
@@ -90,10 +98,45 @@ class ReturnControllerSpec
         status(result) mustEqual CREATED
         verify(mockCoreVatReturnConnector, times(1)).submit(eqTo(readVatReturn))
         verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
+        verify(mockSaveForLaterService, times(1)).delete(eqTo(iossNumber), eqTo(period))
+      }
+    }
+
+    "must throw an Exception if there's an error converting the Core period to a Period" in {
+
+      val vatReturn = arbitrary[CoreVatReturn].sample.value
+        .copy(period = CorePeriod(arbitrary[Int].sample.value, arbitrary[String].sample.value))
+      val jsonVatReturn = Json.toJson(vatReturn)
+      val readVatReturn = jsonVatReturn.as[CoreVatReturn]
+
+      lazy val request =
+        FakeRequest(POST, routes.ReturnController.submit().url)
+          .withJsonBody(jsonVatReturn)
+
+      when(mockCoreVatReturnConnector.submit(any())) thenReturn Right(()).toFuture
+
+      val app = applicationBuilder().overrides(
+        bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
+        bind[AuditService].toInstance(mockAuditService)
+      ).build()
+
+      running(app) {
+
+        val result = route(app, request).value
+
+        whenReady(result.failed) { exp =>
+          exp mustBe a[Exception]
+          exp.getMessage mustBe "There was an error converting Core period to Period."
+        }
+
+        verify(mockCoreVatReturnConnector, times(1)).submit(eqTo(readVatReturn))
+        verifyNoInteractions(mockAuditService)
+        verifyNoInteractions(mockSaveForLaterService)
       }
     }
 
     "must audit a failure event and respond with NotFound when registration is not in core" in {
+
       val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, REGISTRATION_NOT_FOUND, "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
@@ -124,6 +167,7 @@ class ReturnControllerSpec
     }
 
     "must audit a failure event and respond with ServiceUnavailable(coreError) when error received from core" in {
+
       val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, "OSS_111", "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
@@ -178,14 +222,18 @@ class ReturnControllerSpec
       FakeRequest(POST, routes.ReturnController.submitAsIntermediary(iossNumber).url)
         .withJsonBody(jsonVatReturn)
 
-    "must save a VAT return, audit a success event and respond with Created" in {
+    "must save a VAT return, delete any saved return that exists for that client and period and audit a success event and respond with Created" in {
 
-      when(mockCoreVatReturnConnector.submit(any()))
-        .thenReturn(Future.successful(Right(())))
+      val period: Period = Period.fromString(readVatReturn.period.toString).value
+
+      when(mockCoreVatReturnConnector.submit(any())) thenReturn Right(()).toFuture
+
+      when(mockSaveForLaterService.delete(any(), any())) thenReturn true.toFuture
 
       val app = applicationBuilder().overrides(
         bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
-        bind[AuditService].toInstance(mockAuditService)
+        bind[AuditService].toInstance(mockAuditService),
+        bind[SaveForLaterService].toInstance(mockSaveForLaterService)
       ).build()
 
       running(app) {
@@ -204,10 +252,45 @@ class ReturnControllerSpec
         status(result) mustEqual CREATED
         verify(mockCoreVatReturnConnector, times(1)).submit(eqTo(readVatReturn))
         verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
+        verify(mockSaveForLaterService, times(1)).delete(eqTo(iossNumber), eqTo(period))
+      }
+    }
+
+    "must throw an Exception if there's an error converting the Core period to a Period" in {
+
+      val vatReturn = arbitrary[CoreVatReturn].sample.value
+        .copy(period = CorePeriod(arbitrary[Int].sample.value, arbitrary[String].sample.value))
+      val jsonVatReturn = Json.toJson(vatReturn)
+      val readVatReturn = jsonVatReturn.as[CoreVatReturn]
+
+      lazy val request =
+        FakeRequest(POST, routes.ReturnController.submitAsIntermediary(iossNumber).url)
+          .withJsonBody(jsonVatReturn)
+
+      when(mockCoreVatReturnConnector.submit(any())) thenReturn Right(()).toFuture
+
+      val app = applicationBuilder().overrides(
+        bind[VatReturnConnector].toInstance(mockCoreVatReturnConnector),
+        bind[AuditService].toInstance(mockAuditService)
+      ).build()
+
+      running(app) {
+
+        val result = route(app, request).value
+
+        whenReady(result.failed) { exp =>
+          exp mustBe a[Exception]
+          exp.getMessage mustBe "There was an error converting Core period to Period."
+        }
+
+        verify(mockCoreVatReturnConnector, times(1)).submit(eqTo(readVatReturn))
+        verifyNoInteractions(mockAuditService)
+        verifyNoInteractions(mockSaveForLaterService)
       }
     }
 
     "must audit a failure event and respond with NotFound when registration is not in core" in {
+
       val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, REGISTRATION_NOT_FOUND, "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 
@@ -238,6 +321,7 @@ class ReturnControllerSpec
     }
 
     "must audit a failure event and respond with ServiceUnavailable(coreError) when error received from core" in {
+
       val coreErrorResponse = CoreErrorResponse(Instant.now(stubClockAtArbitraryDate), None, "OSS_111", "There was an error")
       val eisErrorResponse = EisErrorResponse(coreErrorResponse)
 

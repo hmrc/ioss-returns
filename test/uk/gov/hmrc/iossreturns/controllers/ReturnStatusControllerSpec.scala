@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package uk.gov.hmrc.iossreturns.controllers
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, anyString}
 import org.mockito.Mockito.when
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.controllers.actions._
+import uk.gov.hmrc.iossreturns.controllers.actions.*
 import uk.gov.hmrc.iossreturns.generators.Generators
 import uk.gov.hmrc.iossreturns.models.StandardPeriod
 import uk.gov.hmrc.iossreturns.models.etmp.registration.{EtmpExclusion, EtmpExclusionReason}
@@ -451,7 +451,7 @@ class ReturnStatusControllerSpec
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
-        when(mockSaveForLaterRepository.get(any())) thenReturn Seq(arbitrarySavedUserAnswers.arbitrary.sample.value).toFuture
+        when(mockSaveForLaterRepository.get(anyString())) thenReturn Seq(arbitrarySavedUserAnswers.arbitrary.sample.value).toFuture
 
         val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
         completeOfExcludedReturns.size mustBe 2
@@ -499,7 +499,7 @@ class ReturnStatusControllerSpec
         when(mockReturnService.getStatuses(any(), any(), any())) thenReturn Future.successful(periodsWithStatuses)
         when(mockReturnService.hasSubmittedFinalReturn(any(), any())) thenReturn false
         when(mockCheckExclusionsService.getLastExclusionWithoutReversal(any())) thenReturn exclusion
-        when(mockSaveForLaterRepository.get(any())) thenReturn Seq(arbitrarySavedUserAnswers.arbitrary.sample.value).toFuture
+        when(mockSaveForLaterRepository.get(anyString())) thenReturn Seq(arbitrarySavedUserAnswers.arbitrary.sample.value).toFuture
 
         val completeOfExcludedReturns = convertPeriodsWithStatusesToCompleteOrExcludedReturns(periodsWithStatuses)
         completeOfExcludedReturns.size mustBe 2

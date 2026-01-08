@@ -9,9 +9,9 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.iossreturns.config.AppConfig
-import uk.gov.hmrc.iossreturns.crypto.{SavedUserAnswersEncryptor, AesGCMCrypto}
+import uk.gov.hmrc.iossreturns.crypto.{AesGCMCrypto, SavedUserAnswersEncryptor}
 import uk.gov.hmrc.iossreturns.generators.Generators
-import uk.gov.hmrc.iossreturns.models._
+import uk.gov.hmrc.iossreturns.models.*
 import uk.gov.hmrc.iossreturns.services.crypto.EncryptionService
 import uk.gov.hmrc.iossreturns.utils.StringUtils
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, DefaultPlayMongoRepositorySupport}
@@ -158,6 +158,99 @@ class SaveForLaterRepositorySpec
       val result = repository.get(iossNumber, period).futureValue
 
       result must not be defined
+    }
+  }
+
+  ".get (Multiple IossNumbers)" - {
+
+    "must return all records for all the given IOSS numbers" in {
+
+      // IossNumber 1 with multiple saved returns
+      val iossNumber1answers1: SavedUserAnswers = arbitrary[SavedUserAnswers].sample.value
+        .copy(lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
+
+      val iossNumber1Answers2Period: StandardPeriod =
+        StandardPeriod(year = iossNumber1answers1.period.year + 1, month = iossNumber1answers1.period.month)
+
+      val iossNumber1answers2: SavedUserAnswers = iossNumber1answers1
+        .copy(
+          period = iossNumber1Answers2Period,
+          lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS)
+        )
+
+      val iossNumber1Answers3Period: StandardPeriod =
+        StandardPeriod(year = iossNumber1answers2.period.year + 1, month = iossNumber1answers2.period.month)
+
+      val iossNumber1answers3: SavedUserAnswers = iossNumber1answers2
+        .copy(
+          period = iossNumber1Answers3Period,
+          lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS)
+        )
+
+      // IossNumber 2 with multiple saved returns
+      val iossNumber2answers1: SavedUserAnswers = arbitrary[SavedUserAnswers].sample.value
+        .copy(lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
+
+      val iossNumber2Answers2Period: StandardPeriod =
+        StandardPeriod(year = iossNumber2answers1.period.year + 1, month = iossNumber2answers1.period.month)
+
+      val iossNumber2answers2: SavedUserAnswers = iossNumber2answers1
+        .copy(
+          period = iossNumber2Answers2Period,
+          lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS)
+        )
+
+      // IossNumber 3 with 1 saved return
+      val iossNumber3answers1: SavedUserAnswers = arbitrary[SavedUserAnswers].sample.value
+        .copy(lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
+
+      insert(encryptor.encryptAnswers(iossNumber1answers1, iossNumber1answers1.iossNumber)).futureValue
+      insert(encryptor.encryptAnswers(iossNumber1answers2, iossNumber1answers1.iossNumber)).futureValue
+      insert(encryptor.encryptAnswers(iossNumber1answers3, iossNumber1answers1.iossNumber)).futureValue
+
+      insert(encryptor.encryptAnswers(iossNumber2answers1, iossNumber2answers1.iossNumber)).futureValue
+      insert(encryptor.encryptAnswers(iossNumber2answers2, iossNumber2answers1.iossNumber)).futureValue
+
+      insert(encryptor.encryptAnswers(iossNumber3answers1, iossNumber3answers1.iossNumber)).futureValue
+
+      val allIossNumbers: Seq[String] = Seq(
+        iossNumber1answers1.iossNumber,
+        iossNumber2answers1.iossNumber,
+        iossNumber3answers1.iossNumber
+      )
+
+      val allSavedAnswers: Seq[SavedUserAnswers] = Seq(
+        iossNumber1answers1, iossNumber1answers2, iossNumber1answers3,
+        iossNumber2answers1, iossNumber2answers2,
+        iossNumber3answers1
+      )
+
+      val returns = repository.get(allIossNumbers).futureValue
+
+      returns must contain theSameElementsAs allSavedAnswers
+    }
+
+    "must return Seq.empty when no returns exist for any given IOSS number" in {
+
+      val iossNumber1answers1: SavedUserAnswers = arbitrary[SavedUserAnswers].sample.value
+        .copy(lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
+
+      val iossNumber2answers1: SavedUserAnswers = arbitrary[SavedUserAnswers].sample.value
+        .copy(lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
+
+      val iossNumber3answers1: SavedUserAnswers = arbitrary[SavedUserAnswers].sample.value
+        .copy(lastUpdated = Instant.now(stubClock).truncatedTo(ChronoUnit.MILLIS))
+
+      insert(encryptor.encryptAnswers(iossNumber3answers1, iossNumber3answers1.iossNumber)).futureValue
+
+      val allIossNumbers: Seq[String] = Seq(
+        iossNumber1answers1.iossNumber,
+        iossNumber2answers1.iossNumber
+      )
+
+      val returns = repository.get(allIossNumbers).futureValue
+
+      returns must contain theSameElementsAs Seq.empty
     }
   }
 

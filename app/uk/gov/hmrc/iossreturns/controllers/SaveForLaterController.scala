@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 
 package uk.gov.hmrc.iossreturns.controllers
-
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
@@ -53,7 +52,34 @@ class SaveForLaterController @Inject()(
 
   def delete(period: Period): Action[AnyContent] = cc.auth().async {
     implicit request =>
-      saveForLaterService.delete(request.iossNumber, period).map(
-        result => Ok(Json.toJson(result)))
+      saveForLaterService.delete(request.iossNumber, period).map { result =>
+        Ok(Json.toJson(result))
+      }
+  }
+
+  def postForIntermediary(): Action[SaveForLaterRequest] = cc.authIntermediary()(parse.json[SaveForLaterRequest]).async {
+    implicit request =>
+      saveForLaterService.saveAnswers(request.body).map { answers =>
+        Created(Json.toJson(answers))
+      }
+  }
+
+  def getForIntermediary: Action[AnyContent] = cc.authIntermediary().async {
+    implicit request =>
+
+      val intermediariesClients: Seq[String] = request
+        .intermediaryRegistrationWrapper.etmpDisplayRegistration.clientDetails
+        .map(_.clientIossID)
+
+      saveForLaterService.get(intermediariesClients).map { allSavedUserAnswers =>
+        Ok(Json.toJson(allSavedUserAnswers))
+      }
+  }
+  
+  def deleteForIntermediary(iossNumber: String, period: Period): Action[AnyContent] = cc.authIntermediary().async {
+    implicit request =>
+      saveForLaterService.delete(iossNumber, period).map { result =>
+        Ok(Json.toJson(result))
+      }
   }
 }
