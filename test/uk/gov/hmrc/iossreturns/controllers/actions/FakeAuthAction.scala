@@ -2,7 +2,7 @@ package uk.gov.hmrc.iossreturns.controllers.actions
 
 import org.scalatestplus.mockito.MockitoSugar.mock
 import play.api.mvc.*
-import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, Enrolments}
 import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.connectors.RegistrationConnector
@@ -24,7 +24,7 @@ class FakeAuthAction(bodyParsers: BodyParsers.Default)
   ) {
 
   override def invokeBlock[A](request: Request[A], block: AuthorisedRequest[A] => Future[Result]): Future[Result] =
-    block(AuthorisedRequest(request, "id", "credId", Vrn("123456789"), "IM9001234567", etmpRegistration, None))
+    block(AuthorisedRequest(request, "id", "credId", Vrn("123456789"), "IM9001234567", etmpRegistration, None, Enrolments(Set(Enrolment("HMRC-IOSS-ORG", Seq.empty, "test", None)))))
 }
 class FakeAuthActionProvider @Inject()(bodyParsers: BodyParsers.Default)
   extends AuthActionProvider(

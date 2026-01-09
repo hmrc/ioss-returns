@@ -61,7 +61,7 @@ class CheckOwnIossNumberFilterSpec extends SpecBase with MockitoSugar with Befor
         List(PreviousRegistration(iossNumber = iossNumber, startPeriod = period, endPeriod = period)).toFuture
 
       running(application) {
-        val request = AuthorisedRequest(FakeRequest(), userAnswersId, testCredentials.providerId, vrn, iossNumber, registration, None)
+        val request = AuthorisedRequest(FakeRequest(), userAnswersId, testCredentials.providerId, vrn, iossNumber, registration, None, enrolments)
         val controller = new Harness(iossNumber, mockPreviousRegistrationService, mockIntermediaryRegistrationConnector)
 
         val result = controller.callFilter(request).futureValue
@@ -77,7 +77,7 @@ class CheckOwnIossNumberFilterSpec extends SpecBase with MockitoSugar with Befor
         List.empty.toFuture
 
       running(application) {
-        val request = AuthorisedRequest(FakeRequest(), userAnswersId, testCredentials.providerId, vrn, iossNumber, registration, None)
+        val request = AuthorisedRequest(FakeRequest(), userAnswersId, testCredentials.providerId, vrn, iossNumber, registration, None, enrolments)
         val controller = new Harness("IM9005444747", mockPreviousRegistrationService, mockIntermediaryRegistrationConnector)
 
         val result = controller.callFilter(request).futureValue

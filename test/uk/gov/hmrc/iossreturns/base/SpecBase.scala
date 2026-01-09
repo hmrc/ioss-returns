@@ -7,6 +7,7 @@ import org.scalatest.{EitherValues, OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.auth.core.{Enrolment, Enrolments}
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.controllers.actions.*
@@ -31,6 +32,8 @@ trait SpecBase
   val iossNumber = "IM9001234567"
 
   def period: Period = StandardPeriod(2021, Month.NOVEMBER)
+  val iossEnrolmentKey = "HMRC-IOSS-ORG"
+  val enrolments: Enrolments = Enrolments(Set(Enrolment(iossEnrolmentKey, Seq.empty, "test", None)))
 
   val userAnswersId: String = "12345-credId"
   val testCredentials: Credentials = Credentials(userAnswersId, "GGW")
