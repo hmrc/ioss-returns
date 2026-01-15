@@ -68,11 +68,11 @@ class AuthAction(
 
           (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
             case (Some(vrn), Some(latestIossNumber)) =>
-              getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, maybeIntermediaryNumber)
+              getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, maybeIntermediaryNumber, enrolments)
             case (Some(vrn), _) if maybeIntermediaryNumber.nonEmpty =>
               (maybeIntermediaryNumber, requestedMaybeIossNumber) match {
                 case (Some(intermediaryNumber), Some(iossNumber)) =>
-                  getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, iossNumber, Some(intermediaryNumber))
+                  getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, iossNumber, Some(intermediaryNumber), enrolments)
                 case _ =>
                   logger.warn(s"Insufficient enrolments for Organisation who didn't int number $maybeIntermediaryNumber or requested ioss number $requestedMaybeIossNumber")
                   throw InsufficientEnrolments("Insufficient enrolments")
@@ -92,7 +92,7 @@ class AuthAction(
           (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
             case (Some(vrn), Some(latestIossNumber)) =>
               if (confidence >= ConfidenceLevel.L250) {
-                getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, None)
+                getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, None, enrolments)
               } else {
                 logger.warn("Insufficient confidence level")
                 throw InsufficientConfidenceLevel("Insufficient confidence level")
@@ -100,7 +100,7 @@ class AuthAction(
             case (Some(vrn), _) if maybeIntermediaryNumber.nonEmpty =>
               (maybeIntermediaryNumber, requestedMaybeIossNumber) match {
                 case (Some(intermediaryNumber), Some(iossNumber)) =>
-                  getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, iossNumber, Some(intermediaryNumber))
+                  getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, iossNumber, Some(intermediaryNumber), enrolments)
                 case _ =>
                   logger.warn(s"Insufficient enrolments for Individual who didn't int number $maybeIntermediaryNumber or requested ioss number $requestedMaybeIossNumber")
                   throw InsufficientEnrolments("Insufficient enrolments")
@@ -127,11 +127,12 @@ class AuthAction(
                                           credentialId: String,
                                           vrn: Vrn,
                                           latestIossNumber: String,
-                                          maybeIntermediaryNumber: Option[String]
+                                          maybeIntermediaryNumber: Option[String],
+                                          enrolments: Enrolments
                                         )(implicit hc: HeaderCarrier): Future[Result] = {
     for {
       registrationWrapper <- registrationConnector.getRegistrationForIossNumber(latestIossNumber)
-      result <- block(AuthorisedRequest(request, internalId, credentialId, vrn, latestIossNumber, registrationWrapper.registration, maybeIntermediaryNumber))
+      result <- block(AuthorisedRequest(request, internalId, credentialId, vrn, latestIossNumber, registrationWrapper.registration, maybeIntermediaryNumber, enrolments))
     } yield result
   }
 

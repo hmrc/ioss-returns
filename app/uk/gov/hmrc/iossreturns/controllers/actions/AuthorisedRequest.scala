@@ -17,6 +17,7 @@
 package uk.gov.hmrc.iossreturns.controllers.actions
 
 import play.api.mvc.{Request, WrappedRequest}
+import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpDisplayRegistration
 
@@ -27,5 +28,6 @@ case class AuthorisedRequest[A](
                                  vrn: Vrn,
                                  iossNumber: String,
                                  registration: EtmpDisplayRegistration,
-                                 maybeIntermediaryNumber: Option[String]
+                                 maybeIntermediaryNumber: Option[String],
+                                 enrolments: Enrolments
                                ) extends WrappedRequest[A](request)

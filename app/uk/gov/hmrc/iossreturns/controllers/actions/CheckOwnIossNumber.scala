@@ -18,6 +18,7 @@ package uk.gov.hmrc.iossreturns.controllers.actions
 
 import play.api.mvc.{ActionFilter, Result}
 import play.api.mvc.Results.Unauthorized
+import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.iossreturns.connectors.IntermediaryRegistrationConnector
 import uk.gov.hmrc.iossreturns.logging.Logging
@@ -41,15 +42,7 @@ class CheckOwnIossNumberFilterImpl(
     if (request.iossNumber == iossNumber) {
       request.maybeIntermediaryNumber match {
         case Some(intermediaryNumber) =>
-          intermediaryRegistrationConnector.get(intermediaryNumber).map { intermediaryRegistrationWrapper =>
-            val availableIossNumbers = intermediaryRegistrationWrapper.etmpDisplayRegistration.clientDetails.map(_.clientIossID)
-            if (availableIossNumbers.contains(iossNumber)) {
-              None
-            } else {
-              logger.info(s"Intermediary $intermediaryNumber doesn't have access to ioss number $iossNumber")
-              Some(Unauthorized)
-            }
-          }
+          checkIntermediaryAccessAndFormRequest(intermediaryNumber, iossNumber, request)
         case _ =>
           None.toFuture
       }
@@ -63,6 +56,41 @@ class CheckOwnIossNumberFilterImpl(
         }
       }
     }
+  }
+
+  private def checkIntermediaryAccessAndFormRequest(intermediaryNumber: String, iossNumber: String, request: AuthorisedRequest[_])
+                                                   (implicit hc: HeaderCarrier) = {
+
+    def isAuthorisedToAccessIossClient(intermediaryNumber: String): Future[Boolean] =
+      intermediaryRegistrationConnector.get(intermediaryNumber).map { registration =>
+        registration.etmpDisplayRegistration.clientDetails.map(_.clientIossID).contains(iossNumber)
+      }
+
+    intermediaryRegistrationConnector.get(intermediaryNumber).flatMap { currentRegistration =>
+
+      val hasDirectAccess = currentRegistration.etmpDisplayRegistration.clientDetails.map(_.clientIossID).contains(iossNumber)
+
+      if (hasDirectAccess) {
+        None.toFuture
+      } else {
+        val allIntermediaryEnrolments = findIntermediaryNumbersFromEnrolments(request.enrolments)
+
+        Future.sequence(allIntermediaryEnrolments.map(isAuthorisedToAccessIossClient))
+          .map(_.exists(identity))
+          .map {
+            case true => None
+            case false =>
+              logger.warn(s"Intermediary ${intermediaryNumber} doesn't have access to ioss number $iossNumber")
+              Some(Unauthorized)
+          }
+      }
+    }
+  }
+  
+  private def findIntermediaryNumbersFromEnrolments(enrolments: Enrolments): Seq[String] = {
+    enrolments.enrolments
+      .filter(_.key == "HMRC-IOSS-INT")
+      .flatMap(_.identifiers.find(id => id.key == "IntNumber" && id.value.nonEmpty).map(_.value)).toSeq
   }
 }
 
