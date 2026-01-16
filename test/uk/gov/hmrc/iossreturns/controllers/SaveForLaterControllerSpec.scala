@@ -96,7 +96,7 @@ class SaveForLaterControllerSpec
     ".get" - {
 
       lazy val request =
-        FakeRequest(GET, routes.SaveForLaterController.get().url)
+        FakeRequest(GET, routes.SaveForLaterController.get(iossNumber).url)
 
       "must return OK and a response when Saved User Answers are found for the vrn and period" in {
 

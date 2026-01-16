@@ -40,9 +40,9 @@ class SaveForLaterController @Inject()(
       }
   }
 
-  def get(): Action[AnyContent] = cc.auth().async {
+  def get(iossNumber: String): Action[AnyContent] = cc.auth(Some(iossNumber)).async {
     implicit request =>
-      saveForLaterService.get(request.iossNumber).map {
+      saveForLaterService.get(iossNumber).map {
         value =>
           value.sortBy(_.lastUpdated).lastOption
             .map(savedUserAnswers => Ok(Json.toJson(savedUserAnswers)))
