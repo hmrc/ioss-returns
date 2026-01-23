@@ -50,9 +50,9 @@ class SaveForLaterController @Inject()(
       }
   }
 
-  def delete(period: Period): Action[AnyContent] = cc.auth().async {
+  def delete(iossNumber: String, period: Period): Action[AnyContent] = cc.auth(Some(iossNumber)).async {
     implicit request =>
-      saveForLaterService.delete(request.iossNumber, period).map { result =>
+      saveForLaterService.delete(iossNumber, period).map { result =>
         Ok(Json.toJson(result))
       }
   }
