@@ -139,7 +139,7 @@ class SaveForLaterControllerSpec
     ".delete" - {
 
       lazy val request =
-        FakeRequest(GET, routes.SaveForLaterController.delete(period).url)
+        FakeRequest(GET, routes.SaveForLaterController.delete(iossNumber, period).url)
 
       "must return OK" in {
 

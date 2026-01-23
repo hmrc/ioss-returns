@@ -24,7 +24,7 @@ GET         /financial-data/charge/:period/:iossNumber                     uk.go
 
 POST        /save-for-later                                                uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.post()
 GET         /save-for-later/:iossNumber                                    uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.get(iossNumber: String)
-GET         /save-for-later/delete/:period                                 uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.delete(period: Period)
+GET         /save-for-later/delete/:iossNumber/:period                     uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.delete(iossNumber: String, period: Period)
 
 POST        /intermediary-save-for-later                                   uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.postForIntermediary()
 GET         /intermediary-save-for-later                                   uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.getForIntermediary()
