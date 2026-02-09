@@ -32,3 +32,5 @@ GET         /intermediary-save-for-later                                   uk.go
 GET         /intermediary-save-for-later/delete/:iossNumber/:period        uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.deleteForIntermediary(iossNumber: String, period: Period)
 
 GET         /max-correction-value/:iossNumber/:country/:period             uk.gov.hmrc.iossreturns.controllers.ReturnCorrectionController.getReturnCorrection(iossNumber: String, country: String, period: Period)
+
+POST        /upscan/callback                                               uk.gov.hmrc.iossreturns.controllers.UpscanCallbackController.callback
