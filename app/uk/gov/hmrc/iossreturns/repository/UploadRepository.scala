@@ -16,13 +16,11 @@
 
 package uk.gov.hmrc.iossreturns.repository
 
-import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
 import play.api.libs.json.Format
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.external.ExternalEntry
 import uk.gov.hmrc.iossreturns.models.fileUpload.UploadDocument
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -43,12 +41,6 @@ class UploadRepository @Inject()(
     mongoComponent = mongoComponent,
     domainFormat = UploadDocument.format,
     indexes = Seq(
-      IndexModel(
-        Indexes.ascending("_id"),
-        IndexOptions()
-          .name("uploadReferenceIdx")
-          .unique(true)
-      ),
       IndexModel(
         Indexes.ascending("lastUpdated"),
         IndexOptions()
