@@ -66,7 +66,7 @@ class UploadRepository @Inject()(
                              ): Future[Unit] =
     collection
       .updateOne(
-        filter = Filters.equal("_id", reference),
+        filter = byReferenceId(reference),
         update = Updates.combine(
           Updates.set("status", "UPLOADED"),
           Updates.set("checksum", checksum),
@@ -83,7 +83,7 @@ class UploadRepository @Inject()(
                            ): Future[Unit] =
     collection
       .updateOne(
-        filter = Filters.equal("_id", reference),
+        filter = byReferenceId(reference),
         update = Updates.combine(
           Updates.set("status", "FAILED"),
           Updates.set("failureReason", reason)
@@ -91,5 +91,8 @@ class UploadRepository @Inject()(
       )
       .toFuture()
       .map(_ => ())
+
+  private def byReferenceId(reference: String) =
+    Filters.equal("_id", reference)
 }
 
