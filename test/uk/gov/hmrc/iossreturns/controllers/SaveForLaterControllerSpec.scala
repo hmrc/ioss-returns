@@ -56,7 +56,7 @@ class SaveForLaterControllerSpec
     ".post" - {
 
       lazy val request =
-        FakeRequest(POST, routes.SaveForLaterController.post().url)
+        FakeRequest(POST, routes.SaveForLaterController.post(iossNumber).url)
           .withJsonBody(Json.toJson(s4lRequest))
 
       "must save a VAT return and respond with Created" in {
@@ -157,46 +157,6 @@ class SaveForLaterControllerSpec
           status(result) `mustBe` OK
           contentAsJson(result) mustBe Json.toJson(true)
           verify(mockSaveForLaterService, times(1)).delete(any(), any())
-        }
-      }
-    }
-
-    ".postForIntermediary" - {
-
-      lazy val request =
-        FakeRequest(POST, routes.SaveForLaterController.postForIntermediary().url)
-          .withJsonBody(Json.toJson(s4lRequest))
-
-      "must save a VAT return and respond with Created" in {
-
-        when(mockSaveForLaterService.saveAnswers(any())) thenReturn savedAnswers.toFuture
-
-        val application =
-          applicationBuilder()
-            .overrides(bind[SaveForLaterService].toInstance(mockSaveForLaterService))
-            .build()
-
-        running(application) {
-
-          val result = route(application, request).value
-
-          status(result) `mustBe` CREATED
-          contentAsJson(result) `mustBe` Json.toJson(savedAnswers)
-          verify(mockSaveForLaterService, times(1)).saveAnswers(eqTo(s4lRequest))
-        }
-      }
-
-      "must respond with Unauthorized when the user is not authorised" in {
-
-        val application =
-          new GuiceApplicationBuilder()
-            .overrides(bind[AuthConnector].toInstance(new FakeFailingAuthConnector(new MissingBearerToken)))
-            .build()
-
-        running(application) {
-
-          val result = route(application, request).value
-          status(result) `mustBe` UNAUTHORIZED
         }
       }
     }
