@@ -67,8 +67,8 @@ class AuthAction(
         futureMaybeIossNumber.flatMap { maybeIossNumber =>
 
           (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
-            case (Some(vrn), Some(latestIossNumber)) =>
-              getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, maybeIntermediaryNumber, enrolments)
+            case (Some(vrn), Some(latestIossNumber)) if requestedMaybeIossNumber.contains(latestIossNumber) =>
+              getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, None, enrolments)
             case (Some(vrn), _) if maybeIntermediaryNumber.nonEmpty =>
               (maybeIntermediaryNumber, requestedMaybeIossNumber) match {
                 case (Some(intermediaryNumber), Some(iossNumber)) =>
@@ -77,6 +77,8 @@ class AuthAction(
                   logger.warn(s"Insufficient enrolments for Organisation who didn't int number $maybeIntermediaryNumber or requested ioss number $requestedMaybeIossNumber")
                   throw InsufficientEnrolments("Insufficient enrolments")
               }
+            case (Some(vrn), Some(latestIossNumber)) =>
+              getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, maybeIntermediaryNumber, enrolments)
             case _ =>
               logger.warn(s"Insufficient enrolments for Organisation who didn't have ioss or int enrolment")
               throw InsufficientEnrolments("Insufficient enrolments")
