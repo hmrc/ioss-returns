@@ -22,7 +22,7 @@ GET         /external-entry                                                uk.go
 GET         /financial-data/charge/:period                                 uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getCharge(period: Period)
 GET         /financial-data/charge/:period/:iossNumber                     uk.gov.hmrc.iossreturns.controllers.FinancialDataController.getChargeForIossNumber(period: Period, iossNumber: String)
 
-POST        /save-for-later                                                uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.post()
+POST        /save-for-later/:iossNumber                                    uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.post(iossNumber: String)
 GET         /save-for-later/:iossNumber                                    uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.get(iossNumber: String)
 GET         /save-for-later/delete/:iossNumber/:period                     uk.gov.hmrc.iossreturns.controllers.SaveForLaterController.delete(iossNumber: String, period: Period)
 
