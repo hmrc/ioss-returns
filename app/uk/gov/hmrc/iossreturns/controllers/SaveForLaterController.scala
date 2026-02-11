@@ -33,7 +33,7 @@ class SaveForLaterController @Inject()(
                                       )(implicit ec: ExecutionContext)
   extends BackendController(cc) {
 
-  def post(): Action[SaveForLaterRequest] = cc.auth()(parse.json[SaveForLaterRequest]).async {
+  def post(iossNumber: String): Action[SaveForLaterRequest] = cc.auth(Some(iossNumber))(parse.json[SaveForLaterRequest]).async {
     implicit request =>
       saveForLaterService.saveAnswers(request.body).map {
         answers => Created(Json.toJson(answers))
@@ -54,13 +54,6 @@ class SaveForLaterController @Inject()(
     implicit request =>
       saveForLaterService.delete(iossNumber, period).map { result =>
         Ok(Json.toJson(result))
-      }
-  }
-
-  def postForIntermediary(): Action[SaveForLaterRequest] = cc.authIntermediary()(parse.json[SaveForLaterRequest]).async {
-    implicit request =>
-      saveForLaterService.saveAnswers(request.body).map { answers =>
-        Created(Json.toJson(answers))
       }
   }
 
