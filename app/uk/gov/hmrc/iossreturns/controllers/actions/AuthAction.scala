@@ -69,18 +69,18 @@ class AuthAction(
           (findVrnFromEnrolments(enrolments), maybeIossNumber) match {
             case (Some(vrn), Some(latestIossNumber)) if requestedMaybeIossNumber.contains(latestIossNumber) =>
               getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, None, enrolments)
-            case (Some(vrn), _) if maybeIntermediaryNumber.nonEmpty =>
+            case (Some(vrn), _) if maybeIntermediaryNumber.nonEmpty && requestedMaybeIossNumber.nonEmpty =>
               (maybeIntermediaryNumber, requestedMaybeIossNumber) match {
                 case (Some(intermediaryNumber), Some(iossNumber)) =>
                   getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, iossNumber, Some(intermediaryNumber), enrolments)
                 case _ =>
-                  logger.warn(s"Insufficient enrolments for Organisation who didn't int number $maybeIntermediaryNumber or requested ioss number $requestedMaybeIossNumber")
+                  logger.warn(s"Insufficient enrolments for Organisation who didn't request an ioss Number. Int number $maybeIntermediaryNumber with requested ioss number $requestedMaybeIossNumber")
                   throw InsufficientEnrolments("Insufficient enrolments")
               }
             case (Some(vrn), Some(latestIossNumber)) =>
               getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, maybeIntermediaryNumber, enrolments)
             case _ =>
-              logger.warn(s"Insufficient enrolments for Organisation who didn't have ioss or int enrolment")
+              logger.warn(s"Insufficient enrolments for Organisation who didn't have ioss or int enrolment $maybeIntermediaryNumber $maybeIossNumber")
               throw InsufficientEnrolments("Insufficient enrolments")
           }
         }
