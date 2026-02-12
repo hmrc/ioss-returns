@@ -21,7 +21,7 @@ import org.mongodb.scala.model.*
 import play.api.libs.json.Format
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.fileUpload.UploadDocument
+import uk.gov.hmrc.iossreturns.models.fileUpload.{FailureReason, UploadDocument}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -42,9 +42,9 @@ class UploadRepository @Inject()(
     domainFormat = UploadDocument.format,
     indexes = Seq(
       IndexModel(
-        Indexes.ascending("lastUpdated"),
+        Indexes.ascending("createdAt"),
         IndexOptions()
-          .name("lastUpdatedIdx")
+          .name("createdAtIdx")
           .expireAfter(appConfig.externalEntryTtlDays, TimeUnit.DAYS)
       )
     )
@@ -59,14 +59,14 @@ class UploadRepository @Inject()(
       .map(_ => ())
 
   def markAsUploaded(
-                               reference: String,
-                               checksum: String,
-                               fileName: String,
-                               size: Long
-                             ): Future[Unit] =
+                      reference: String,
+                      checksum: String,
+                      fileName: String,
+                      size: Long
+                    ): Future[Unit] =
     collection
       .updateOne(
-        filter = byReferenceId(reference),
+        filter = byReferenceId(reference, "INITIATED"),
         update = Updates.combine(
           Updates.set("status", "UPLOADED"),
           Updates.set("checksum", checksum),
@@ -78,21 +78,24 @@ class UploadRepository @Inject()(
       .map(_ => ())
 
   def markAsFailed(
-                             reference: String,
-                             reason: String
-                           ): Future[Unit] =
+                    reference: String,
+                    reason: FailureReason
+                  ): Future[Unit] =
     collection
       .updateOne(
-        filter = byReferenceId(reference),
+        filter = byReferenceId(reference, "INITIATED"),
         update = Updates.combine(
           Updates.set("status", "FAILED"),
-          Updates.set("failureReason", reason)
+          Updates.set("failureReason", reason.asString)
         )
       )
       .toFuture()
       .map(_ => ())
 
-  private def byReferenceId(reference: String) =
-    Filters.equal("_id", reference)
+  private def byReferenceId(reference: String, status: String) =
+    Filters.and(
+      Filters.equal("_id", reference),
+      Filters.equal("status", status)
+    )
 }
 

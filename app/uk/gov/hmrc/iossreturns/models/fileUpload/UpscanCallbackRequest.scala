@@ -48,7 +48,7 @@ object UpscanCallbackSuccess {
 }
 
 final case class FailureDetails(
-                                 failureReason: String
+                                 failureReason: FailureReason
                                )
 
 object FailureDetails {

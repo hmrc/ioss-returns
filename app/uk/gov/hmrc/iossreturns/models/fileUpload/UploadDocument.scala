@@ -27,7 +27,7 @@ final case class UploadDocument(
                                  fileName: Option[String] = None,
                                  checksum: Option[String] = None,
                                  size: Option[Long] = None,
-                                 failureReason: Option[String] = None,
+                                 failureReason: Option[FailureReason] = None,
                                  createdAt: Instant = Instant.now()
                                )
 

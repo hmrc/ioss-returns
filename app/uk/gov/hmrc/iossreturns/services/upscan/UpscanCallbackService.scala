@@ -39,7 +39,7 @@ class UpscanCallbackService @Inject()(uploadRepository: UploadRepository)(implic
         )
 
       case failure: UpscanCallbackFailure =>
-        logger.warn(s"Upscan FAILURE for reference ${failure.reference}, reason=${failure.failureDetails.failureReason}")
+        logger.warn(s"Upscan FAILURE for reference ${failure.reference}, reason=${failure.failureDetails.failureReason.asString}")
         uploadRepository.markAsFailed(
           reference = failure.reference,
           reason = failure.failureDetails.failureReason
