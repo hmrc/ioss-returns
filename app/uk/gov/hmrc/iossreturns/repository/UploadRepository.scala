@@ -66,16 +66,20 @@ class UploadRepository @Inject()(
                     ): Future[Unit] =
     collection
       .updateOne(
-        filter = byReferenceId(reference, "INITIATED"),
+        Filters.equal("_id", reference),
         update = Updates.combine(
           Updates.set("status", "UPLOADED"),
           Updates.set("checksum", checksum),
           Updates.set("fileName", fileName),
           Updates.set("size", size)
-        )
+        ),
+        new UpdateOptions().upsert(true)
       )
       .toFuture()
-      .map(_ => ())
+      .map { result =>
+        logger.info(s"Modified count: ${result.getModifiedCount}")
+        ()
+      }
 
   def markAsFailed(
                     reference: String,
@@ -83,19 +87,17 @@ class UploadRepository @Inject()(
                   ): Future[Unit] =
     collection
       .updateOne(
-        filter = byReferenceId(reference, "INITIATED"),
+        Filters.equal("_id", reference),
         update = Updates.combine(
           Updates.set("status", "FAILED"),
           Updates.set("failureReason", reason.asString)
-        )
+        ),
+        new UpdateOptions().upsert(true)
       )
       .toFuture()
       .map(_ => ())
 
-  private def byReferenceId(reference: String, status: String) =
-    Filters.and(
-      Filters.equal("_id", reference),
-      Filters.equal("status", status)
-    )
+  def getUpload(reference: String): Future[Option[UploadDocument]] =
+    collection.find(Filters.equal("_id", reference)).first().toFutureOption()
 }
 
