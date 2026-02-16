@@ -65,7 +65,7 @@ object UpscanCallbackFailure {
   implicit val format: OFormat[UpscanCallbackFailure] = Json.format[UpscanCallbackFailure]
 }
 
-final case class FileUploadOutcome(fileName: String)
+final case class FileUploadOutcome(fileName: Option[String], status: String, failureReason: Option[String] = None)
 
 object FileUploadOutcome {
   implicit val format: OFormat[FileUploadOutcome] = Json.format[FileUploadOutcome]

@@ -58,7 +58,7 @@ class FileUploadOutcomeResponseControllerSpec extends SpecBase with ScalaCheckPr
         val result = route(app, request).value
 
         status(result) mustEqual OK
-        contentAsJson(result) mustEqual Json.toJson(FileUploadOutcome("test.csv"))
+        contentAsJson(result) mustEqual Json.toJson(FileUploadOutcome(Some("test.csv"), "UPLOADED", None))
 
       }
     }

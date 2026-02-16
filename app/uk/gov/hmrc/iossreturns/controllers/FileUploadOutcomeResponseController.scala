@@ -36,7 +36,7 @@ class FileUploadOutcomeResponseController @Inject()(
     implicit request =>
     uploadRepository.getUpload(reference).map {
       case Some(doc) if doc.fileName.nonEmpty =>
-        Ok(Json.toJson(FileUploadOutcome(doc.fileName.get)))
+        Ok(Json.toJson(FileUploadOutcome(doc.fileName, doc.status)))
       case Some(_) =>
         NotFound(Json.obj("error" -> s"No file name recorded for reference $reference"))
       case None =>
