@@ -59,7 +59,7 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
 
     "mark upload as failed on failure callback" in {
       val mockRepo = mock[UploadRepository]
-      when(mockRepo.markAsFailed(any(), any()))
+      when(mockRepo.markAsFailed(any(), any(), any()))
         .thenReturn(Future.successful(()))
 
       val service = new UpscanCallbackService(mockRepo)
@@ -74,6 +74,29 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
         verify(mockRepo).markAsFailed("123", FailureReason.Quarantine)
       }
     }
-  }
 
+    "mark upload as failed when file is not a CSV" in {
+
+      val mockRepo = mock[UploadRepository]
+      when(mockRepo.markAsFailed(any(), any(), any())).thenReturn(Future.successful(()))
+
+      val service = new UpscanCallbackService(mockRepo)
+
+      val callback = UpscanCallbackSuccess(
+        reference = "456",
+        fileStatus = "READY",
+        uploadDetails = UploadDetails(
+          fileName = "test.pdf",
+          fileMimeType = "text/pdf",
+          uploadTimestamp = Instant.now(),
+          checksum = "abc123",
+          size = 1024
+        )
+      )
+
+      whenReady(service.handleUpscanCallback(callback)) { _ =>
+        verify(mockRepo).markAsFailed("456", FailureReason.InvalidArgument, Some("test.pdf"))
+      }
+    }
+  }
 }

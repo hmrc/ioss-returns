@@ -35,10 +35,14 @@ class FileUploadOutcomeResponseController @Inject()(
   def get(reference: String): Action[AnyContent] = Action.async {
     implicit request =>
     uploadRepository.getUpload(reference).map {
-      case Some(doc) if doc.fileName.nonEmpty =>
-        Ok(Json.toJson(FileUploadOutcome(doc.fileName, doc.status)))
-      case Some(_) =>
-        NotFound(Json.obj("error" -> s"No file name recorded for reference $reference"))
+      case Some(doc) =>
+        Ok(Json.toJson(
+          FileUploadOutcome(
+            fileName = doc.fileName,
+            status = doc.status,
+            failureReason = doc.failureReason.map(_.asString)
+          )
+        ))
       case None =>
         NotFound(Json.obj("error" -> s"No upload found for reference $reference"))
     }

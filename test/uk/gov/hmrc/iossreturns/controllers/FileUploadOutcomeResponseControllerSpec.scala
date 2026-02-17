@@ -35,7 +35,7 @@ class FileUploadOutcomeResponseControllerSpec extends SpecBase with ScalaCheckPr
 
   "FileUploadOutcomeResponseController" - {
 
-    "return 200 and the file name if upload exists and has a fileName" in {
+    "return 200 and the file name if upload exists" in {
 
       val mockRepo = mock[UploadRepository]
       val reference = "abc123"
@@ -59,32 +59,6 @@ class FileUploadOutcomeResponseControllerSpec extends SpecBase with ScalaCheckPr
 
         status(result) mustEqual OK
         contentAsJson(result) mustEqual Json.toJson(FileUploadOutcome(Some("test.csv"), "UPLOADED", None))
-
-      }
-    }
-
-    "return 404 if upload exists but fileName is empty" in {
-
-      val mockRepo = mock[UploadRepository]
-      val reference = "abc123"
-      val doc = UploadDocument(
-        _id = reference,
-        status = "UPLOADED",
-        fileName = None,
-      )
-      when(mockRepo.getUpload(reference)).thenReturn(Future.successful(Some(doc)))
-
-      val app = applicationBuilder()
-        .overrides(bind[UploadRepository].toInstance(mockRepo))
-        .build()
-
-      running(app) {
-
-        val request = FakeRequest(GET, routes.FileUploadOutcomeResponseController.get(reference).url)
-        val result = route(app, request).value
-
-        status(result) mustEqual NOT_FOUND
-        (contentAsJson(result) \ "error").as[String] must include("No file name recorded")
 
       }
     }

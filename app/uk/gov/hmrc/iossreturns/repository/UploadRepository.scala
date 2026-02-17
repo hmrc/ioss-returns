@@ -83,14 +83,16 @@ class UploadRepository @Inject()(
 
   def markAsFailed(
                     reference: String,
-                    reason: FailureReason
+                    reason: FailureReason,
+                    fileName: Option[String] = None
                   ): Future[Unit] =
     collection
       .updateOne(
         Filters.equal("_id", reference),
         update = Updates.combine(
           Updates.set("status", "FAILED"),
-          Updates.set("failureReason", reason.asString)
+          Updates.set("failureReason", reason.asString),
+          fileName.map(fn => Updates.set("fileName", fn)).getOrElse(Updates.unset("fileName"))
         ),
         new UpdateOptions().upsert(true)
       )

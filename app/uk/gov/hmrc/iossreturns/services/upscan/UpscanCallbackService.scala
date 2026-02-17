@@ -17,7 +17,7 @@
 package uk.gov.hmrc.iossreturns.services.upscan
 
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.fileUpload.{UpscanCallbackFailure, UpscanCallbackRequest, UpscanCallbackSuccess}
+import uk.gov.hmrc.iossreturns.models.fileUpload.{FailureReason, UpscanCallbackFailure, UpscanCallbackRequest, UpscanCallbackSuccess}
 import uk.gov.hmrc.iossreturns.repository.UploadRepository
 
 import javax.inject.Inject
@@ -30,13 +30,25 @@ class UpscanCallbackService @Inject()(uploadRepository: UploadRepository)(implic
     callback match {
 
       case success: UpscanCallbackSuccess =>
-        logger.info(s"Upscan SUCCESS for reference ${success.reference}")
-        uploadRepository.markAsUploaded(
-          reference = success.reference,
-          checksum = success.uploadDetails.checksum,
-          fileName = success.uploadDetails.fileName,
-          size = success.uploadDetails.size
-        )
+        val fileName = success.uploadDetails.fileName.toLowerCase
+        val isCsv = fileName.endsWith(".csv")
+        if (!isCsv) {
+          logger.warn(s"Invalid file type received for reference ${success.reference}: ${success.uploadDetails.fileName}")
+          uploadRepository.markAsFailed(
+            reference = success.reference,
+            reason = FailureReason.InvalidArgument,
+            fileName = Some(success.uploadDetails.fileName)
+          )
+        } else {
+          logger.info(s"Upscan SUCCESS for reference ${success.reference}")
+          uploadRepository.markAsUploaded(
+            reference = success.reference,
+            checksum = success.uploadDetails.checksum,
+            fileName = success.uploadDetails.fileName,
+            size = success.uploadDetails.size
+          )
+        }
+
 
       case failure: UpscanCallbackFailure =>
         logger.warn(s"Upscan FAILURE for reference ${failure.reference}, reason=${failure.failureDetails.failureReason.asString}")
