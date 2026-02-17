@@ -17,7 +17,7 @@
 package uk.gov.hmrc.iossreturns.services.upscan
 
 import uk.gov.hmrc.iossreturns.logging.Logging
-import uk.gov.hmrc.iossreturns.models.fileUpload.{FailureReason, UpscanCallbackFailure, UpscanCallbackRequest, UpscanCallbackSuccess}
+import uk.gov.hmrc.iossreturns.models.fileUpload.{FailureReason, UpscanCallbackFailure, UpscanCallbackRequest, UpscanCallbackSuccess, UpscanCallbackUploading}
 import uk.gov.hmrc.iossreturns.repository.UploadRepository
 
 import javax.inject.Inject
@@ -56,5 +56,9 @@ class UpscanCallbackService @Inject()(uploadRepository: UploadRepository)(implic
           reference = failure.reference,
           reason = failure.failureDetails.failureReason
         )
+
+      case uploading: UpscanCallbackUploading =>
+        logger.info(s"File is still uploading for reference ${uploading.reference}")
+        Future.successful(())
     }
 }

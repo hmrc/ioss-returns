@@ -65,6 +65,15 @@ object UpscanCallbackFailure {
   implicit val format: OFormat[UpscanCallbackFailure] = Json.format[UpscanCallbackFailure]
 }
 
+case class UpscanCallbackUploading(
+                                  reference: String,
+                                  fileStatus: String
+                                ) extends UpscanCallbackRequest
+
+object UpscanCallbackUploading {
+  implicit val format: OFormat[UpscanCallbackUploading] = Json.format[UpscanCallbackUploading]
+}
+
 final case class FileUploadOutcome(fileName: Option[String], status: String, failureReason: Option[String] = None)
 
 object FileUploadOutcome {
@@ -76,6 +85,7 @@ object UpscanCallbackRequest {
     (json \ "fileStatus").asOpt[String] match {
       case Some("READY") => Json.fromJson[UpscanCallbackSuccess](json)
       case Some("FAILED") => Json.fromJson[UpscanCallbackFailure](json)
+      case Some("UPLOADING") => Json.fromJson[UpscanCallbackUploading](json)
       case _ => JsError("Invalid or missing fileStatus. Expected 'READY' or 'FAILED'")
     }
   }
