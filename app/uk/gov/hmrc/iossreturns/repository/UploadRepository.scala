@@ -18,13 +18,11 @@ package uk.gov.hmrc.iossreturns.repository
 
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
-import play.api.libs.json.Format
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.fileUpload.{FailureReason, UploadDocument}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -49,8 +47,6 @@ class UploadRepository @Inject()(
       )
     )
   ) with Logging {
-
-  implicit val instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
   def insert(reference: String): Future[Unit] =
     collection
