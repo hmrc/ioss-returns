@@ -67,11 +67,18 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
       val callback = UpscanCallbackFailure(
         reference = "123",
         fileStatus = "FAILED",
-        failureDetails = FailureDetails(FailureReason.Quarantine)
+        failureDetails = FailureDetails(FailureReason.Quarantine),
+        uploadDetails = Some(UploadDetails(
+          fileName = "test.csv",
+          fileMimeType = "text/csv",
+          uploadTimestamp = Instant.now(),
+          checksum = "abc123",
+          size = 1024
+        ))
       )
 
       whenReady(service.handleUpscanCallback(callback)) { _ =>
-        verify(mockRepo).markAsFailed("123", FailureReason.Quarantine)
+        verify(mockRepo).markAsFailed("123", FailureReason.Quarantine, Some("test.csv"))
       }
     }
 
@@ -95,7 +102,7 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
       )
 
       whenReady(service.handleUpscanCallback(callback)) { _ =>
-        verify(mockRepo).markAsFailed("456", FailureReason.InvalidArgument, Some("test.pdf"))
+        verify(mockRepo).markAsFailed("456", FailureReason.NotCSV, Some("test.pdf"))
       }
     }
   }

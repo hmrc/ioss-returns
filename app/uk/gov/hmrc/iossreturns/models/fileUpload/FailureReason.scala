@@ -37,27 +37,44 @@ object FailureReason {
     val asString = "INVALID_ARGUMENT"
   }
 
+  case object NotCSV extends FailureReason {
+    val asString = "NOT_CSV"
+  }
+
   case object Unknown extends FailureReason {
     val asString = "UNKNOWN"
   }
 
+  case object TooLarge extends FailureReason {
+    val asString = "TOO_LARGE"
+  }
+  
+  case object InvalidFileType extends FailureReason {
+    val asString = "INVALID_FILE_TYPE"
+  }
+
+
   def fromString(value: String): FailureReason =
     value match {
-      case "QUARANTINE"       => Quarantine
-      case "REJECTED"         => Rejected
-      case "INVALID_ARGUMENT" => InvalidArgument
-      case _                  => Unknown
+      case "QUARANTINE"         => Quarantine
+      case "REJECTED"           => Rejected
+      case "INVALID_ARGUMENT"   => InvalidArgument
+      case "NOT_CSV"            => NotCSV
+      case "TOO_LARGE"          => TooLarge
+      case "INVALID_FILE_TYPE"  => InvalidFileType
+      case _                    => Unknown
     }
 
   implicit val reads: Reads[FailureReason] =
     Reads {
-      case JsString("QUARANTINE")       => JsSuccess(Quarantine)
-      case JsString("REJECTED")         => JsSuccess(Rejected)
-      case JsString("INVALID_ARGUMENT") => JsSuccess(InvalidArgument)
-      case JsString(value) =>
-        JsError(s"Unknown failure reason from Upscan: $value")
-      case _ =>
-        JsError("Failure reason must be a string")
+      case JsString("QUARANTINE")         => JsSuccess(Quarantine)
+      case JsString("REJECTED")           => JsSuccess(Rejected)
+      case JsString("INVALID_ARGUMENT")   => JsSuccess(InvalidArgument)
+      case JsString("NOT_CSV")            => JsSuccess(NotCSV)
+      case JsString("TOO_LARGE")          => JsSuccess(TooLarge)
+      case JsString("INVALID_FILE_TYPE")  => JsSuccess(InvalidFileType)
+      case JsString(_)                    => JsSuccess(Unknown)
+      case _                              => JsError("Failure reason must be a string")
     }
 
   implicit val writes: Writes[FailureReason] =

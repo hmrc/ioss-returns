@@ -71,7 +71,8 @@ class UploadRepository @Inject()(
           Updates.set("status", "UPLOADED"),
           Updates.set("checksum", checksum),
           Updates.set("fileName", fileName),
-          Updates.set("size", size)
+          Updates.set("size", size),
+          Updates.setOnInsert("createdAt", Instant.now())
         ),
         new UpdateOptions().upsert(true)
       )
@@ -92,7 +93,8 @@ class UploadRepository @Inject()(
         update = Updates.combine(
           Updates.set("status", "FAILED"),
           Updates.set("failureReason", reason.asString),
-          fileName.map(fn => Updates.set("fileName", fn)).getOrElse(Updates.unset("fileName"))
+          fileName.map(fn => Updates.set("fileName", fn)).getOrElse(Updates.unset("fileName")),
+          Updates.setOnInsert("createdAt", Instant.now())
         ),
         new UpdateOptions().upsert(true)
       )

@@ -58,7 +58,8 @@ object FailureDetails {
 case class UpscanCallbackFailure(
                                   reference: String,
                                   fileStatus: String,
-                                  failureDetails: FailureDetails
+                                  failureDetails: FailureDetails,
+                                  uploadDetails: Option[UploadDetails] = None
                                 ) extends UpscanCallbackRequest
 
 object UpscanCallbackFailure {

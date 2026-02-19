@@ -26,27 +26,42 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class UpscanCallbackService @Inject()(uploadRepository: UploadRepository)(implicit ec: ExecutionContext) extends Logging {
 
+  private val maxFileSize: Long = 2 * 1024 * 1024 // 2MB
+
   def handleUpscanCallback(callback: UpscanCallbackRequest): Future[Unit] =
     callback match {
 
       case success: UpscanCallbackSuccess =>
         val fileName = success.uploadDetails.fileName.toLowerCase
         val isCsv = fileName.endsWith(".csv")
-        if (!isCsv) {
-          logger.warn(s"Invalid file type received for reference ${success.reference}: ${success.uploadDetails.fileName}")
-          uploadRepository.markAsFailed(
-            reference = success.reference,
-            reason = FailureReason.InvalidArgument,
-            fileName = Some(success.uploadDetails.fileName)
-          )
-        } else {
-          logger.info(s"Upscan SUCCESS for reference ${success.reference}")
-          uploadRepository.markAsUploaded(
-            reference = success.reference,
-            checksum = success.uploadDetails.checksum,
-            fileName = success.uploadDetails.fileName,
-            size = success.uploadDetails.size
-          )
+        val failureReasonOption: Option[FailureReason] = {
+          if (fileName.endsWith(".ods")) {
+            Some(FailureReason.InvalidFileType)
+          } else if (!isCsv) {
+            Some(FailureReason.NotCSV)
+          } else if (success.uploadDetails.size > maxFileSize) {
+            Some(FailureReason.TooLarge)
+          } else {
+            None
+          }
+        }
+
+        failureReasonOption match {
+          case Some(reason) =>
+            logger.warn(s"Invalid upload for reference ${success.reference}: ${reason.asString}")
+            uploadRepository.markAsFailed(
+              reference = success.reference,
+              reason = reason,
+              fileName = Some(success.uploadDetails.fileName)
+            )
+          case None =>
+            logger.info(s"Upscan SUCCESS for reference ${success.reference}")
+            uploadRepository.markAsUploaded(
+              reference = success.reference,
+              checksum = success.uploadDetails.checksum,
+              fileName = success.uploadDetails.fileName,
+              size = success.uploadDetails.size
+            )
         }
 
 
@@ -54,7 +69,8 @@ class UpscanCallbackService @Inject()(uploadRepository: UploadRepository)(implic
         logger.warn(s"Upscan FAILURE for reference ${failure.reference}, reason=${failure.failureDetails.failureReason.asString}")
         uploadRepository.markAsFailed(
           reference = failure.reference,
-          reason = failure.failureDetails.failureReason
+          reason = failure.failureDetails.failureReason,
+          fileName = failure.uploadDetails.map(_.fileName)
         )
 
       case uploading: UpscanCallbackUploading =>

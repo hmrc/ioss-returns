@@ -21,7 +21,6 @@ import org.mockito.Mockito
 import org.mockito.Mockito.{verify, verifyNoInteractions, when}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
