@@ -18,15 +18,13 @@ package uk.gov.hmrc.iossreturns.repository
 
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
-import play.api.libs.json.Format
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.fileUpload.{FailureReason, UploadDocument}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,7 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class UploadRepository @Inject()(
                                   val mongoComponent: MongoComponent,
-                                  appConfig: AppConfig
+                                  appConfig: AppConfig,
+                                  clock: Clock
                                 )(implicit ec: ExecutionContext)
   extends PlayMongoRepository[UploadDocument](
     collectionName = "upload-files",
@@ -50,11 +49,9 @@ class UploadRepository @Inject()(
     )
   ) with Logging {
 
-  implicit val instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
-
   def insert(reference: String): Future[Unit] =
     collection
-      .insertOne(UploadDocument(_id = reference, status = "INITIATED"))
+      .insertOne(UploadDocument(_id = reference, status = "INITIATED", createdAt = Instant.now(clock)))
       .toFuture()
       .map(_ => ())
 
@@ -66,36 +63,42 @@ class UploadRepository @Inject()(
                     ): Future[Unit] =
     collection
       .updateOne(
-        filter = byReferenceId(reference, "INITIATED"),
+        Filters.equal("_id", reference),
         update = Updates.combine(
           Updates.set("status", "UPLOADED"),
           Updates.set("checksum", checksum),
           Updates.set("fileName", fileName),
-          Updates.set("size", size)
-        )
+          Updates.set("size", size),
+          Updates.setOnInsert("createdAt", Instant.now(clock))
+        ),
+        new UpdateOptions().upsert(true)
       )
       .toFuture()
-      .map(_ => ())
+      .map { result =>
+        logger.info(s"Modified count: ${result.getModifiedCount}")
+        ()
+      }
 
   def markAsFailed(
                     reference: String,
-                    reason: FailureReason
+                    reason: FailureReason,
+                    fileName: Option[String] = None
                   ): Future[Unit] =
     collection
       .updateOne(
-        filter = byReferenceId(reference, "INITIATED"),
+        Filters.equal("_id", reference),
         update = Updates.combine(
           Updates.set("status", "FAILED"),
-          Updates.set("failureReason", reason.asString)
-        )
+          Updates.set("failureReason", reason.asString),
+          fileName.map(fn => Updates.set("fileName", fn)).getOrElse(Updates.unset("fileName")),
+          Updates.setOnInsert("createdAt", Instant.now(clock))
+        ),
+        new UpdateOptions().upsert(true)
       )
       .toFuture()
       .map(_ => ())
 
-  private def byReferenceId(reference: String, status: String) =
-    Filters.and(
-      Filters.equal("_id", reference),
-      Filters.equal("status", status)
-    )
+  def getUpload(reference: String): Future[Option[UploadDocument]] =
+    collection.find(Filters.equal("_id", reference)).first().toFutureOption()
 }
 

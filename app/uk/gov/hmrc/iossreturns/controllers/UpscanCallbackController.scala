@@ -35,13 +35,22 @@ class UpscanCallbackController @Inject()(
 
   def callback: Action[JsValue] = Action(parse.json).async { 
     implicit request =>
+
+      logger.info(s"Upscan callback received: ${Json.prettyPrint(request.body)}")
+      
       request.body
         .validate[UpscanCallbackRequest] match {
 
         case JsSuccess(callback, _) =>
-          callbackService.handleUpscanCallback(callback).map(_ => Ok)
+          logger.info(s"Upscan callback parsed successfully: reference=${callback.reference}")
+          callbackService.handleUpscanCallback(callback).map {
+            _ =>
+              logger.info(s"Upscan callback processed successfully for reference=${callback.reference}")
+              Ok
+          }
 
         case JsError(errors) =>
+          logger.error(s"Failed to parse Upscan callback JSON: ${JsError.toJson(errors)}")
           Future.successful(BadRequest(JsError.toJson(errors)))
       }
       

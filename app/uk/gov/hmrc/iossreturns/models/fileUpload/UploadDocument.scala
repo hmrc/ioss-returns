@@ -17,8 +17,10 @@
 package uk.gov.hmrc.iossreturns.models.fileUpload
 
 import play.api.libs.json.*
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
+
 
 
 final case class UploadDocument(
@@ -28,9 +30,10 @@ final case class UploadDocument(
                                  checksum: Option[String] = None,
                                  size: Option[Long] = None,
                                  failureReason: Option[FailureReason] = None,
-                                 createdAt: Instant = Instant.now()
+                                 createdAt: Instant
                                )
 
 object UploadDocument {
+  implicit val instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
   implicit val format: OFormat[UploadDocument] = Json.format[UploadDocument]
 }
