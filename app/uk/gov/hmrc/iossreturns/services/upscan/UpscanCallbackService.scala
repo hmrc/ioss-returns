@@ -33,7 +33,8 @@ class UpscanCallbackService @Inject()(uploadRepository: UploadRepository)(implic
 
       case success: UpscanCallbackSuccess =>
         val fileName = success.uploadDetails.fileName.toLowerCase
-        val isCsv = fileName.endsWith(".csv")
+        val fileType = success.uploadDetails.fileMimeType
+        val isCsv = fileName.endsWith(".csv") && fileType == "text/csv"
         val failureReasonOption: Option[FailureReason] = {
           if (fileName.endsWith(".ods")) {
             Some(FailureReason.InvalidFileType)
