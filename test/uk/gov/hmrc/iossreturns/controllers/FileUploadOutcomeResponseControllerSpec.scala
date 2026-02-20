@@ -27,11 +27,13 @@ import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.fileUpload.{FileUploadOutcome, UploadDocument}
 import uk.gov.hmrc.iossreturns.repository.UploadRepository
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileUploadOutcomeResponseControllerSpec extends SpecBase with ScalaCheckPropertyChecks {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
+  private val now: Instant = Instant.parse("2025-01-01T00:00:00Z")
 
   "FileUploadOutcomeResponseController" - {
 
@@ -44,7 +46,8 @@ class FileUploadOutcomeResponseControllerSpec extends SpecBase with ScalaCheckPr
         status = "UPLOADED",
         fileName = Some("test.csv"),
         checksum = Some("abc123"),
-        size = Some(1024L)
+        size = Some(1024L),
+        createdAt = now
       )
       when(mockRepo.getUpload(reference)).thenReturn(Future.successful(Some(doc)))
 

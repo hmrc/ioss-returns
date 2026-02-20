@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.iossreturns.services.upscan
 
+import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.fileUpload.{FailureReason, UpscanCallbackFailure, UpscanCallbackRequest, UpscanCallbackSuccess, UpscanCallbackUploading}
 import uk.gov.hmrc.iossreturns.repository.UploadRepository
@@ -24,9 +25,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class UpscanCallbackService @Inject()(uploadRepository: UploadRepository)(implicit ec: ExecutionContext) extends Logging {
-
-  private val maxFileSize: Long = 2 * 1024 * 1024 // 2MB
+class UpscanCallbackService @Inject()(appConfig: AppConfig, uploadRepository: UploadRepository)(implicit ec: ExecutionContext) extends Logging {
 
   def handleUpscanCallback(callback: UpscanCallbackRequest): Future[Unit] =
     callback match {
@@ -40,7 +39,7 @@ class UpscanCallbackService @Inject()(uploadRepository: UploadRepository)(implic
             Some(FailureReason.InvalidFileType)
           } else if (!isCsv) {
             Some(FailureReason.NotCSV)
-          } else if (success.uploadDetails.size > maxFileSize) {
+          } else if (success.uploadDetails.size > appConfig.maxFileSize) {
             Some(FailureReason.TooLarge)
           } else {
             None

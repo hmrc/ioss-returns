@@ -36,4 +36,5 @@ class AppConfig @Inject()(config: Configuration) {
   val intermediaryEnabled: String = config.get[String]("features.intermediary.enabled")
   val intermediaryEnrolment: String = config.get[String]("features.intermediary.enrolment")
   val intermediaryEnrolmentIdentifierName: String = config.get[String]("features.intermediary.identifier-name")
+  val maxFileSize: Long = config.get[Long]("features.upscan.maxUploadFileSizeMb") * 1024 * 1024
 }

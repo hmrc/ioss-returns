@@ -21,6 +21,7 @@ import org.mockito.Mockito.{verify, when}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.iossreturns.base.SpecBase
+import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.models.fileUpload.*
 import uk.gov.hmrc.iossreturns.repository.UploadRepository
 
@@ -36,9 +37,11 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
     "mark upload as uploaded on success callback" in {
 
       val mockRepo = mock[UploadRepository]
+      val mockAppConfig = mock[AppConfig]
+      when(mockAppConfig.maxFileSize).thenReturn(2L * 1024L * 1024L)
       when(mockRepo.markAsUploaded(any(), any(), any(), any())).thenReturn(Future.successful(()))
 
-      val service = new UpscanCallbackService(mockRepo)
+      val service = new UpscanCallbackService(mockAppConfig, mockRepo)
 
       val callback = UpscanCallbackSuccess(
         reference = "123",
@@ -48,21 +51,22 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
           fileMimeType = "text/csv",
           uploadTimestamp = Instant.now(),
           checksum = "abc123",
-          size = 1024
+          size = 1024L
         )
       )
 
       whenReady(service.handleUpscanCallback(callback)) { _ =>
-        verify(mockRepo).markAsUploaded("123", "abc123", "test.csv", 1024)
+        verify(mockRepo).markAsUploaded("123", "abc123", "test.csv", 1024L)
       }
     }
 
     "mark upload as failed on failure callback" in {
       val mockRepo = mock[UploadRepository]
+      val mockAppConfig = mock[AppConfig]
       when(mockRepo.markAsFailed(any(), any(), any()))
         .thenReturn(Future.successful(()))
 
-      val service = new UpscanCallbackService(mockRepo)
+      val service = new UpscanCallbackService(mockAppConfig, mockRepo)
 
       val callback = UpscanCallbackFailure(
         reference = "123",
@@ -85,9 +89,10 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
     "mark upload as failed when file is not a CSV" in {
 
       val mockRepo = mock[UploadRepository]
+      val mockAppConfig = mock[AppConfig]
       when(mockRepo.markAsFailed(any(), any(), any())).thenReturn(Future.successful(()))
 
-      val service = new UpscanCallbackService(mockRepo)
+      val service = new UpscanCallbackService(mockAppConfig, mockRepo)
 
       val callback = UpscanCallbackSuccess(
         reference = "456",

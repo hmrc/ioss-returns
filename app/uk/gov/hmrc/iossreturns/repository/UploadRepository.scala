@@ -24,7 +24,7 @@ import uk.gov.hmrc.iossreturns.models.fileUpload.{FailureReason, UploadDocument}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,7 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class UploadRepository @Inject()(
                                   val mongoComponent: MongoComponent,
-                                  appConfig: AppConfig
+                                  appConfig: AppConfig,
+                                  clock: Clock
                                 )(implicit ec: ExecutionContext)
   extends PlayMongoRepository[UploadDocument](
     collectionName = "upload-files",
@@ -50,7 +51,7 @@ class UploadRepository @Inject()(
 
   def insert(reference: String): Future[Unit] =
     collection
-      .insertOne(UploadDocument(_id = reference, status = "INITIATED"))
+      .insertOne(UploadDocument(_id = reference, status = "INITIATED", createdAt = Instant.now(clock)))
       .toFuture()
       .map(_ => ())
 
@@ -68,7 +69,7 @@ class UploadRepository @Inject()(
           Updates.set("checksum", checksum),
           Updates.set("fileName", fileName),
           Updates.set("size", size),
-          Updates.setOnInsert("createdAt", Instant.now())
+          Updates.setOnInsert("createdAt", Instant.now(clock))
         ),
         new UpdateOptions().upsert(true)
       )
@@ -90,7 +91,7 @@ class UploadRepository @Inject()(
           Updates.set("status", "FAILED"),
           Updates.set("failureReason", reason.asString),
           fileName.map(fn => Updates.set("fileName", fn)).getOrElse(Updates.unset("fileName")),
-          Updates.setOnInsert("createdAt", Instant.now())
+          Updates.setOnInsert("createdAt", Instant.now(clock))
         ),
         new UpdateOptions().upsert(true)
       )
