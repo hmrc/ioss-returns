@@ -47,12 +47,12 @@ class PaymentsServiceSpec extends SpecBase
 
   private val mockCheckExclusionService: CheckExclusionsService = mock[CheckExclusionsService]
   private val mockVatReturnConnector: VatReturnConnector = mock[VatReturnConnector]
-  private val mockFinancialDataConnector: FinancialDataConnector = mock[FinancialDataConnector]
+  private val mockFinancialService: FinancialDataService = mock[FinancialDataService]
 
   override def beforeEach(): Unit = {
     Mockito.reset(mockCheckExclusionService)
     Mockito.reset(mockVatReturnConnector)
-    Mockito.reset(mockFinancialDataConnector)
+    Mockito.reset(mockFinancialService)
   }
 
   "PaymentsService" - {
@@ -92,7 +92,7 @@ class PaymentsServiceSpec extends SpecBase
         .thenReturn(Future.successful(Right(vatReturnOverdue)))
       when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodDueKey)))
         .thenReturn(Future.successful(Right(vatReturnDue)))
-      when(mockFinancialDataConnector.getFinancialData(any(), any()))
+      when(mockFinancialService.getFinancialData(any(), any(), any()))
         .thenReturn(Future.successful[FinancialDataResponse](Some(inputFinancialData)))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
@@ -106,7 +106,7 @@ class PaymentsServiceSpec extends SpecBase
 
       when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
 
-      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+      val service = new PaymentsService(mockFinancialService, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
       val result = service.getUnpaidPayments(iossNumber, someCommencementDate, List.empty)
 
@@ -141,7 +141,7 @@ class PaymentsServiceSpec extends SpecBase
       when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodKey1)))
         .thenReturn(Future.successful(Right(vatReturn1)))
 
-      when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Some(inputFinancialData)))
+      when(mockFinancialService.getFinancialData(any(), any(), any())).thenReturn(Future.successful(Some(inputFinancialData)))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodKey1)
@@ -153,7 +153,7 @@ class PaymentsServiceSpec extends SpecBase
 
       when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
 
-      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+      val service = new PaymentsService(mockFinancialService, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
       val payment = service.calculatePayment(vatReturn1, Some(inputFinancialData), List.empty)
 
@@ -196,7 +196,7 @@ class PaymentsServiceSpec extends SpecBase
         .thenReturn(Future.successful(Right(vatReturn1)))
       when(mockVatReturnConnector.get(iossNumber, Period.fromKey(periodKey2)))
         .thenReturn(Future.successful(Right(vatReturn2)))
-      when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful[FinancialDataResponse](Some(inputFinancialData)))
+      when(mockFinancialService.getFinancialData(any(), any(), any())).thenReturn(Future.successful[FinancialDataResponse](Some(inputFinancialData)))
 
       val obligationsDetails = obligationsResponse.obligations.head.obligationDetails
       val obligationsDetail1: EtmpObligationDetails = obligationsDetails(0).copy(periodKey = periodKey1)
@@ -209,7 +209,7 @@ class PaymentsServiceSpec extends SpecBase
 
       when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
 
-      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+      val service = new PaymentsService(mockFinancialService, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
       val result = service.getUnpaidPayments(iossNumber, someCommencementDate, List.empty)
 
@@ -247,7 +247,7 @@ class PaymentsServiceSpec extends SpecBase
 
       when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
 
-      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+      val service = new PaymentsService(mockFinancialService, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
       val inputFinancialDataWithTransactionsNone = financialData.copy(financialTransactions = None)
       val inputFinancialDataWithTransactionsSomeNil = financialData.copy(financialTransactions = Some(Nil))
@@ -258,7 +258,7 @@ class PaymentsServiceSpec extends SpecBase
       )
 
       forAll(scenarios) { (inputFinancialData, title) => {
-        when(mockFinancialDataConnector.getFinancialData(any(), any())).thenReturn(Future.successful(Some(inputFinancialData)))
+        when(mockFinancialService.getFinancialData(any(), any(), any())).thenReturn(Future.successful(Some(inputFinancialData)))
 
         val result = service.getUnpaidPayments(iossNumber, someCommencementDate, List.empty)
 
@@ -289,12 +289,12 @@ class PaymentsServiceSpec extends SpecBase
 
         when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
         when(mockVatReturnConnector.get(any(), any())) thenReturn Right(vatReturn).toFuture
-        when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Some(updatedFinancialData).toFuture
+        when(mockFinancialService.getFinancialData(any(), any(), any())) thenReturn Some(updatedFinancialData).toFuture
 
         val period: Period = Period.fromKey(vatReturn.periodKey)
         val chargeForPeriod: Charge = updatedFinancialData.getChargeForPeriod(period).get
 
-        val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+        val service = new PaymentsService(mockFinancialService, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
         val expectedResult = Payment(
           period = period,
@@ -313,7 +313,7 @@ class PaymentsServiceSpec extends SpecBase
 
         val period: Period = Period.fromKey(vatReturn.periodKey)
 
-        val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+        val service = new PaymentsService(mockFinancialService, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
         val expectedResult = Payment(
           period = period,
@@ -330,11 +330,11 @@ class PaymentsServiceSpec extends SpecBase
 
         when(mockCheckExclusionService.isPeriodExpired(any(), any())) thenReturn false
         when(mockVatReturnConnector.get(any(), any())) thenReturn Right(vatReturn).toFuture
-        when(mockFinancialDataConnector.getFinancialData(any(), any())) thenReturn Future.failed(new Exception("Some exception"))
+        when(mockFinancialService.getFinancialData(any(), any(), any())) thenReturn Future.failed(new Exception("Some exception"))
 
         val period: Period = Period.fromKey(vatReturn.periodKey)
 
-        val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+        val service = new PaymentsService(mockFinancialService, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
         val expectedResult = Payment(
           period = period,
@@ -360,7 +360,7 @@ class PaymentsServiceSpec extends SpecBase
       val nilVatReturn = vatReturn.copy(
         periodKey = periodKey1, goodsSupplied = Nil, totalVATAmountDueForAllMSGBP = BigDecimal(0))
 
-      val service = new PaymentsService(mockFinancialDataConnector, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
+      val service = new PaymentsService(mockFinancialService, mockVatReturnConnector, mockCheckExclusionService, stubClockAtArbitraryDate)
 
       val vatCorrectionAmount = 50
 
