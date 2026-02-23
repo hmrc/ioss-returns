@@ -30,7 +30,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class PaymentsService @Inject()(
-                                 financialDataConnector: FinancialDataConnector,
+                                 financialDataService: FinancialDataService,
                                  vatReturnConnector: VatReturnConnector,
                                  checkExclusionsService: CheckExclusionsService,
                                  clock: Clock
@@ -67,13 +67,8 @@ class PaymentsService @Inject()(
       status = None
     )
 
-    val financialDataQueryParameters: FinancialDataQueryParameters = FinancialDataQueryParameters(
-      fromDate = Some(startTime),
-      toDate = Some(now)
-    )
-
     for {
-      financialData <- financialDataConnector.getFinancialData(iossNumber, financialDataQueryParameters)
+      financialData <- financialDataService.getFinancialData(iossNumber, fromDate = Some(startTime), toDate = Some(now))
       obligations <- getObligations(iossNumber, queryParameters)
       vatReturns <- getVatReturnsForObligations(iossNumber, obligations)
     } yield {
