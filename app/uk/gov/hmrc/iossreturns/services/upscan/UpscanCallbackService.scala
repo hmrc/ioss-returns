@@ -33,7 +33,8 @@ class UpscanCallbackService @Inject()(appConfig: AppConfig, uploadRepository: Up
       case success: UpscanCallbackSuccess =>
         val fileName = success.uploadDetails.fileName.toLowerCase
         val fileType = success.uploadDetails.fileMimeType
-        val isCsv = fileName.endsWith(".csv") && fileType == "text/csv"
+        val allowedTypes = Set("text/csv", "application/csv")
+        val isCsv = fileName.endsWith(".csv") && allowedTypes.contains(fileType)
         val failureReasonOption: Option[FailureReason] = {
           if (fileName.endsWith(".ods")) {
             Some(FailureReason.InvalidFileType)
@@ -60,7 +61,8 @@ class UpscanCallbackService @Inject()(appConfig: AppConfig, uploadRepository: Up
               reference = success.reference,
               checksum = success.uploadDetails.checksum,
               fileName = success.uploadDetails.fileName,
-              size = success.uploadDetails.size
+              size = success.uploadDetails.size,
+              downloadUrl = success.downloadUrl
             )
         }
 

@@ -30,7 +30,8 @@ final case class UploadDocument(
                                  checksum: Option[String] = None,
                                  size: Option[Long] = None,
                                  failureReason: Option[FailureReason] = None,
-                                 createdAt: Instant
+                                 createdAt: Instant,
+                                 downloadUrl: Option[String] = None
                                )
 
 object UploadDocument {

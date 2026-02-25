@@ -59,7 +59,8 @@ class UploadRepository @Inject()(
                       reference: String,
                       checksum: String,
                       fileName: String,
-                      size: Long
+                      size: Long,
+                      downloadUrl: String
                     ): Future[Unit] =
     collection
       .updateOne(
@@ -69,7 +70,8 @@ class UploadRepository @Inject()(
           Updates.set("checksum", checksum),
           Updates.set("fileName", fileName),
           Updates.set("size", size),
-          Updates.setOnInsert("createdAt", Instant.now(clock))
+          Updates.setOnInsert("createdAt", Instant.now(clock)),
+          Updates.set("downloadUrl", downloadUrl)
         ),
         new UpdateOptions().upsert(true)
       )
