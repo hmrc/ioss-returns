@@ -56,7 +56,8 @@ class UpscanCallbackControllerSpec extends SpecBase with ScalaCheckPropertyCheck
                     "uploadTimestamp": "2026-02-09T12:00:00Z",
                     "checksum": "abc123",
                     "size": 1024
-                  }
+                  },
+                  "downloadUrl": "https://s3.test/download/123"
                 }
               """)
 

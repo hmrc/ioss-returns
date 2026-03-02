@@ -40,7 +40,8 @@ sealed trait UpscanCallbackRequest {
 case class UpscanCallbackSuccess(
                                  reference: String,
                                  fileStatus: String,
-                                 uploadDetails: UploadDetails
+                                 uploadDetails: UploadDetails,
+                                 downloadUrl: String
                                ) extends UpscanCallbackRequest
 
 object UpscanCallbackSuccess {

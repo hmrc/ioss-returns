@@ -55,8 +55,9 @@ class UploadRepositorySpec
       val checksum = "abc123"
       val fileName = "test.csv"
       val size = 1234L
+      val downloadUrl = "https://s3.test/download/123"
 
-      repository.markAsUploaded(ref, checksum, fileName, size).futureValue
+      repository.markAsUploaded(ref, checksum, fileName, size, downloadUrl).futureValue
 
       val saved = repository.getUpload(ref).futureValue.value
 

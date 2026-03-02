@@ -39,7 +39,7 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
       val mockRepo = mock[UploadRepository]
       val mockAppConfig = mock[AppConfig]
       when(mockAppConfig.maxFileSize).thenReturn(2L * 1024L * 1024L)
-      when(mockRepo.markAsUploaded(any(), any(), any(), any())).thenReturn(Future.successful(()))
+      when(mockRepo.markAsUploaded(any(), any(), any(), any(), any())).thenReturn(Future.successful(()))
 
       val service = new UpscanCallbackService(mockAppConfig, mockRepo)
 
@@ -52,11 +52,12 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
           uploadTimestamp = Instant.now(),
           checksum = "abc123",
           size = 1024L
-        )
+        ),
+        downloadUrl = "https://s3.test/download/123"
       )
 
       whenReady(service.handleUpscanCallback(callback)) { _ =>
-        verify(mockRepo).markAsUploaded("123", "abc123", "test.csv", 1024L)
+        verify(mockRepo).markAsUploaded("123", "abc123", "test.csv", 1024L, "https://s3.test/download/123")
       }
     }
 
@@ -103,7 +104,8 @@ class UpscanCallbackServiceSpec extends SpecBase with MockitoSugar with BeforeAn
           uploadTimestamp = Instant.now(),
           checksum = "abc123",
           size = 1024
-        )
+        ),
+        downloadUrl = "https://s3.test/download/456"
       )
 
       whenReady(service.handleUpscanCallback(callback)) { _ =>
