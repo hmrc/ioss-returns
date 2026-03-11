@@ -5,7 +5,7 @@ import org.mockito.Mockito._
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.external._
 import uk.gov.hmrc.iossreturns.repository.ExternalEntryRepository
-import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
+import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global

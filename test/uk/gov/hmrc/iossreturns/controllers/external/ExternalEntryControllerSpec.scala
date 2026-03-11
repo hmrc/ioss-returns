@@ -10,7 +10,7 @@ import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.external.{ExternalEntryUrlResponse, ExternalRequest, ExternalResponse}
 import uk.gov.hmrc.iossreturns.services.external.ExternalEntryService
 import uk.gov.hmrc.iossreturns.services.AuditService
-import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
+import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 
 import scala.concurrent.Future
 

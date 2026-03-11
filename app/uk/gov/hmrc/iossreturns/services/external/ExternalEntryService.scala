@@ -20,7 +20,7 @@ import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.external._
 import uk.gov.hmrc.iossreturns.models.Period
 import uk.gov.hmrc.iossreturns.repository.ExternalEntryRepository
-import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
+import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 
 import java.time.{Clock, Instant}
 import javax.inject.Inject
