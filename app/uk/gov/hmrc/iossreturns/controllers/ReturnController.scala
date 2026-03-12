@@ -23,7 +23,7 @@ import uk.gov.hmrc.iossreturns.controllers.actions.DefaultAuthenticatedControlle
 import uk.gov.hmrc.iossreturns.logging.Logging
 import uk.gov.hmrc.iossreturns.models.audit.{CoreVatReturnAuditModel, SubmissionResult}
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligationsQueryParameters
-import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CorePeriod, CoreVatReturn, Period}
+import uk.gov.hmrc.iossreturns.models.{CoreErrorResponse, CoreVatReturn, Period}
 import uk.gov.hmrc.iossreturns.services.{AuditService, SaveForLaterService}
 import uk.gov.hmrc.iossreturns.utils.Formatters.etmpDateFormatter
 import uk.gov.hmrc.iossreturns.utils.FutureSyntax.FutureOps

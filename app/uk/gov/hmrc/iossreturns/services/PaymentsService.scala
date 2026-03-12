@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.iossreturns.services
 
-import uk.gov.hmrc.iossreturns.connectors.{FinancialDataConnector, VatReturnConnector}
+import uk.gov.hmrc.iossreturns.connectors.VatReturnConnector
 import uk.gov.hmrc.iossreturns.models.etmp.EtmpObligations._
 import uk.gov.hmrc.iossreturns.models.etmp.registration.EtmpExclusion
 import uk.gov.hmrc.iossreturns.models.etmp.{EtmpObligations, EtmpObligationsQueryParameters, EtmpVatReturn}
-import uk.gov.hmrc.iossreturns.models.financialdata.{FinancialData, FinancialDataQueryParameters}
+import uk.gov.hmrc.iossreturns.models.financialdata.FinancialData
 import uk.gov.hmrc.iossreturns.models.payments.{Payment, PaymentStatus}
 import uk.gov.hmrc.iossreturns.models.{EtmpDisplayReturnError, Period}
 import uk.gov.hmrc.iossreturns.utils.Formatters._
