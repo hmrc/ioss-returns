@@ -33,10 +33,6 @@ object FailureReason {
     val asString = "REJECTED"
   }
 
-  case object InvalidArgument extends FailureReason {
-    val asString = "INVALID_ARGUMENT"
-  }
-
   case object NotCSV extends FailureReason {
     val asString = "NOT_CSV"
   }
@@ -58,7 +54,6 @@ object FailureReason {
     value match {
       case "QUARANTINE"         => Quarantine
       case "REJECTED"           => Rejected
-      case "INVALID_ARGUMENT"   => InvalidArgument
       case "NOT_CSV"            => NotCSV
       case "TOO_LARGE"          => TooLarge
       case "INVALID_FILE_TYPE"  => InvalidFileType
@@ -69,7 +64,6 @@ object FailureReason {
     Reads {
       case JsString("QUARANTINE")         => JsSuccess(Quarantine)
       case JsString("REJECTED")           => JsSuccess(Rejected)
-      case JsString("INVALID_ARGUMENT")   => JsSuccess(InvalidArgument)
       case JsString("NOT_CSV")            => JsSuccess(NotCSV)
       case JsString("TOO_LARGE")          => JsSuccess(TooLarge)
       case JsString("INVALID_FILE_TYPE")  => JsSuccess(InvalidFileType)
