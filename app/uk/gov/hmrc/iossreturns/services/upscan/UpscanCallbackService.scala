@@ -108,6 +108,9 @@ class UpscanCallbackService @Inject()(appConfig: AppConfig, uploadRepository: Up
           case Some(name) if !name.endsWith(".csv") && !message.contains("text/csv") && !message.contains("application/csv") =>
             FailureReason.NotCSV
 
+          case None if message.contains("application/vnd.oasis.opendocument.spreadsheet") =>
+            FailureReason.InvalidFileType
+
           case _ if !message.contains("text/csv") && !message.contains("application/csv") =>
             FailureReason.NotCSV
 
