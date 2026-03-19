@@ -18,6 +18,7 @@ package uk.gov.hmrc.iossreturns.services.upscan
 
 import uk.gov.hmrc.iossreturns.config.AppConfig
 import uk.gov.hmrc.iossreturns.logging.Logging
+import uk.gov.hmrc.iossreturns.models.fileUpload.FailureReason.InvalidArgument
 import uk.gov.hmrc.iossreturns.models.fileUpload.{FailureReason, UpscanCallbackFailure, UpscanCallbackRequest, UpscanCallbackSuccess, UpscanCallbackUploading}
 import uk.gov.hmrc.iossreturns.repository.UploadRepository
 
@@ -27,7 +28,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class UpscanCallbackService @Inject()(appConfig: AppConfig, uploadRepository: UploadRepository)(implicit ec: ExecutionContext) extends Logging {
 
-  def handleUpscanCallback(callback: UpscanCallbackRequest): Future[Unit] =
+  def handleUpscanCallback(callback: UpscanCallbackRequest): Future[Unit] = {
     callback match {
 
       case success: UpscanCallbackSuccess =>
@@ -68,10 +69,15 @@ class UpscanCallbackService @Inject()(appConfig: AppConfig, uploadRepository: Up
 
 
       case failure: UpscanCallbackFailure =>
-        logger.warn(s"Upscan FAILURE for reference ${failure.reference}, reason=${failure.failureDetails.failureReason.asString}")
+        val mappedReason = mapFailureReason(failure)
+
+        logger.warn(s"Upscan FAILURE for reference ${failure.reference}, " +
+          s"reason=${failure.failureDetails.failureReason.asString}, " +
+          s"mappedReason=${mappedReason.asString}")
+
         uploadRepository.markAsFailed(
           reference = failure.reference,
-          reason = failure.failureDetails.failureReason,
+          reason = mappedReason,
           fileName = failure.uploadDetails.map(_.fileName)
         )
 
@@ -79,4 +85,47 @@ class UpscanCallbackService @Inject()(appConfig: AppConfig, uploadRepository: Up
         logger.info(s"File is still uploading for reference ${uploading.reference}")
         Future.successful(())
     }
+  }
+
+
+  private def mapFailureReason(failure: UpscanCallbackFailure): FailureReason = {
+    val upscanReason = failure.failureDetails.failureReason
+    val maybeFileName = failure.uploadDetails.map(_.fileName.toLowerCase)
+    val message = failure.failureDetails.message.getOrElse("").toLowerCase
+
+    upscanReason match {
+      case FailureReason.Quarantine =>
+        FailureReason.Quarantine
+
+      case FailureReason.Unknown =>
+        FailureReason.Unknown
+
+      case FailureReason.Rejected =>
+        maybeFileName match {
+          case Some(name) if name.endsWith(".ods") =>
+            FailureReason.InvalidFileType
+
+          case Some(name) if !name.endsWith(".csv") && !message.contains("text/csv") && !message.contains("application/csv") =>
+            FailureReason.NotCSV
+
+          case _ if !message.contains("text/csv") && !message.contains("application/csv") =>
+            FailureReason.NotCSV
+
+          case _ =>
+            FailureReason.Rejected
+        }
+
+      case FailureReason.NotCSV =>
+        FailureReason.NotCSV
+
+      case FailureReason.TooLarge =>
+        FailureReason.TooLarge
+
+      case FailureReason.InvalidFileType =>
+        FailureReason.InvalidFileType
+
+      case InvalidArgument =>
+        FailureReason.InvalidArgument
+    }
+  }
 }
