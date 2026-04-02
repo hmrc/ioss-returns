@@ -29,7 +29,11 @@ sealed trait ParameterlessUrl {
 }
 
 sealed trait UrlWithPeriod {
-  def url(period: Period) : String
+  def url(iossNumber: String, period: Period) : String
+}
+
+sealed trait UrlWithOutPeriod {
+  def url(iossNumber: String) : String
 }
 
 case object YourAccount extends ExternalTargetPage with ParameterlessUrl {
@@ -37,32 +41,29 @@ case object YourAccount extends ExternalTargetPage with ParameterlessUrl {
   override val url: String = s"$prependUrl/your-account"
 }
 
-case object ReturnsHistory extends ExternalTargetPage with ParameterlessUrl {
+case object ReturnsHistory extends ExternalTargetPage with UrlWithOutPeriod {
   override val name: String = "returns-history"
-  override val url: String = s"$prependUrl/past-returns"
+  override def url(iossNumber: String): String = s"$prependUrl/$iossNumber/past-returns"
 }
 
 case object StartReturn extends ExternalTargetPage with UrlWithPeriod {
   override val name: String = "start-your-return"
-
-  override def url(period: Period): String = s"$prependUrl/$period/start-return"
+  override def url(iossNumber: String, period: Period): String = s"$prependUrl/$iossNumber/$period/start-return"
 }
 
 case object ContinueReturn extends ExternalTargetPage with UrlWithPeriod {
   override val name: String = "continue-your-return"
-
-  override def url(period: Period): String = s"$prependUrl/$period/return-continue"
+  override def url(iossNumber: String,period: Period): String = s"$prependUrl/$iossNumber/$period/return-continue"
 }
 
 case object NoMoreWelsh extends ExternalTargetPage {
   override val name: String = "no-more-welsh"
-
   def url(targetUrl: String): String = s"$prependUrl/no-welsh-service?redirectUrl=${helper.urlEncode(targetUrl)}"
 }
 
-case object Payment extends ExternalTargetPage with ParameterlessUrl {
+case object Payment extends ExternalTargetPage with UrlWithOutPeriod {
   override val name: String = "make-payment"
-  override val url: String = s"$prependUrl/outstanding-payments"
+  override def url(iossNumber: String): String = s"$prependUrl/$iossNumber/outstanding-payments"
 }
 
 

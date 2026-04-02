@@ -1,11 +1,13 @@
 package uk.gov.hmrc.iossreturns.controllers.external
 
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito
 import org.mockito.Mockito.{doNothing, times, verify, when}
+import org.scalatest.BeforeAndAfterEach
 import play.api.inject
 import play.api.libs.json.{JsNull, Json}
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.iossreturns.base.SpecBase
 import uk.gov.hmrc.iossreturns.models.external.{ExternalEntryUrlResponse, ExternalRequest, ExternalResponse}
 import uk.gov.hmrc.iossreturns.services.external.ExternalEntryService
@@ -14,22 +16,29 @@ import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 
 import scala.concurrent.Future
 
-class ExternalEntryControllerSpec extends SpecBase {
+class ExternalEntryControllerSpec extends SpecBase with BeforeAndAfterEach {
 
   private val yourAccount = "your-account"
   private val startReturn = "start-your-return"
   private val payment = "make-payment"
   private val externalRequest = ExternalRequest("BTA", "exampleurl")
 
+  private val mockExternalService: ExternalEntryService = mock[ExternalEntryService]
+  private val mockAuditService: AuditService = mock[AuditService]
+
+  override def beforeEach(): Unit = {
+    Mockito.reset(
+      mockExternalService,
+      mockAuditService
+    )
+  }
 
   ".onExternal" - {
 
     "when correct ExternalRequest is posted" - {
       "must return OK" in {
-        val mockExternalService = mock[ExternalEntryService]
-        val mockAuditService = mock[AuditService]
 
-        when(mockExternalService.getExternalResponse(any(), any(), any(), any(), any())) thenReturn Right(ExternalResponse("url"))
+        when(mockExternalService.getExternalResponse(any(), any(), any(), any(), any(), any())) thenReturn Right(ExternalResponse("url"))
         doNothing().when(mockAuditService).audit(any())(any(), any())
 
         val application = applicationBuilder()
@@ -50,10 +59,8 @@ class ExternalEntryControllerSpec extends SpecBase {
       }
 
       "when navigating to payment page must return OK" in {
-        val mockExternalService = mock[ExternalEntryService]
-        val mockAuditService = mock[AuditService]
 
-        when(mockExternalService.getExternalResponse(any(), any(), any(), any(), any())) thenReturn Right(ExternalResponse("url"))
+        when(mockExternalService.getExternalResponse(any(), any(), any(), any(), any(), any())) thenReturn Right(ExternalResponse("url"))
         doNothing().when(mockAuditService).audit(any())(any(), any())
 
         val application = applicationBuilder()
@@ -77,10 +84,8 @@ class ExternalEntryControllerSpec extends SpecBase {
 
       "must respond with INTERNAL_SERVER_ERROR and not save return url if service responds with NotFound" - {
         "because no period provided where needed" in {
-          val mockExternalService = mock[ExternalEntryService]
-          val mockAuditService = mock[AuditService]
 
-          when(mockExternalService.getExternalResponse(any(), any(), any(), any(), any())) thenReturn Left(ErrorResponse(500, "Unknown external entry"))
+          when(mockExternalService.getExternalResponse(any(), any(), any(), any(), any(), any())) thenReturn Left(ErrorResponse(500, "Unknown external entry"))
           doNothing().when(mockAuditService).audit(any())(any(), any())
 
           val application = applicationBuilder()
@@ -132,7 +137,7 @@ class ExternalEntryControllerSpec extends SpecBase {
 
     "when correct request with authorization" - {
       "must respond with correct url when present" in {
-        val mockExternalService = mock[ExternalEntryService]
+
         val url = "/pay-vat-on-goods-sold-to-eu/northern-ireland-register"
 
         when(mockExternalService.getSavedResponseUrl(any())) thenReturn
@@ -151,7 +156,6 @@ class ExternalEntryControllerSpec extends SpecBase {
       }
 
       "must respond with none when no url present" in {
-        val mockExternalService = mock[ExternalEntryService]
 
         when(mockExternalService.getSavedResponseUrl(any())) thenReturn
           Future.successful(None)
