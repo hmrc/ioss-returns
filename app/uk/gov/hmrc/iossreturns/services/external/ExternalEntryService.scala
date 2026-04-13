@@ -33,6 +33,7 @@ class ExternalEntryService @Inject()(
 
   def getExternalResponse(externalRequest: ExternalRequest,
                           userId: String,
+                          iossNumber: String,
                           page: String,
                           period: Option[Period] = None,
                           language: Option[String] = None): Either[ErrorResponse, ExternalResponse] = {
@@ -43,16 +44,16 @@ class ExternalEntryService @Inject()(
         Right(ExternalResponse(YourAccount.url))
       case (ReturnsHistory.name, None) =>
         saveReturnUrl(userId, externalRequest)
-        Right(ExternalResponse(ReturnsHistory.url))
+        Right(ExternalResponse(ReturnsHistory.url(iossNumber)))
       case (StartReturn.name, Some(returnPeriod)) =>
         saveReturnUrl(userId, externalRequest)
-        Right(ExternalResponse(StartReturn.url(returnPeriod)))
+        Right(ExternalResponse(StartReturn.url(iossNumber, returnPeriod)))
       case (ContinueReturn.name, Some(returnPeriod)) =>
         saveReturnUrl(userId, externalRequest)
-        Right(ExternalResponse(ContinueReturn.url(returnPeriod)))
+        Right(ExternalResponse(ContinueReturn.url(iossNumber, returnPeriod)))
       case (Payment.name, None) =>
         saveReturnUrl(userId, externalRequest)
-        Right(ExternalResponse(Payment.url))
+        Right(ExternalResponse(Payment.url(iossNumber)))
       case (url, _) => Left(ErrorResponse(500, s"Unknown external entry $url"))
     }
 

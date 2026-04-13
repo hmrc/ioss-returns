@@ -1,9 +1,12 @@
 package uk.gov.hmrc.iossreturns.services.external
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
+import org.mockito.Mockito
+import org.mockito.Mockito.*
+import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.iossreturns.base.SpecBase
-import uk.gov.hmrc.iossreturns.models.external._
+import uk.gov.hmrc.iossreturns.models.Period
+import uk.gov.hmrc.iossreturns.models.external.*
 import uk.gov.hmrc.iossreturns.repository.ExternalEntryRepository
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 
@@ -11,69 +14,127 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ExternalEntryServiceSpec extends SpecBase {
+class ExternalEntryServiceSpec extends SpecBase with BeforeAndAfterEach {
   val userId = "1234"
   val externalRequest = ExternalRequest("BTA", "/bta")
-  val currentPeriod = arbitraryPeriod.arbitrary.sample.value
+  val currentPeriod: Period = arbitraryPeriod.arbitrary.sample.value
 
+  private val mockExternalEntryRepository: ExternalEntryRepository = mock[ExternalEntryRepository]
+
+  override def beforeEach(): Unit = {
+    Mockito.reset(mockExternalEntryRepository)
+  }
 
   ".getExternalResponse" - {
-    Seq(YourAccount, ReturnsHistory).foreach {
-      entryPage =>
-        s"when entry page in the request is ${entryPage}" - {
 
-          "and no period is provided" - {
-            "and language specified is Welsh" - {
-              "must return correct response" in {
-                val mockExternalEntryRepository = mock[ExternalEntryRepository]
-                val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
-                val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
+    "when entry page in the request is Your Account" - {
 
-                when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
-                val result = service.getExternalResponse(externalRequest, userId, entryPage.name, None, Some("cy"))
+      "and no period is provided" - {
+        "and language specified is Welsh" - {
+          "must return correct response" in {
 
-                result mustBe Right(
-                  ExternalResponse(
-                    NoMoreWelsh.url(entryPage.url)
-                  )
-                )
-                verify(mockExternalEntryRepository, times(1)).set(externalEntry)
-              }
-            }
+            val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+            val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
 
-            "and language is not Welsh" - {
-              "must return correct response" in {
-                val mockExternalEntryRepository = mock[ExternalEntryRepository]
-                val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
-                val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
+            when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
+            val result = service.getExternalResponse(externalRequest, userId, iossNumber, YourAccount.name, None, Some("cy"))
 
-                when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
-                val result = service.getExternalResponse(externalRequest, userId, entryPage.name, None, None)
-
-                result mustBe Right(
-                  ExternalResponse(
-                    entryPage.url
-                  )
-                )
-                verify(mockExternalEntryRepository, times(1)).set(externalEntry)
-              }
-            }
-
-            "and period is provided" - {
-              "must return Left(NotFound) and not save url in session" in {
-                val mockExternalEntryRepository = mock[ExternalEntryRepository]
-                val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
-                val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
-
-                when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
-                val result = service.getExternalResponse(externalRequest, userId, entryPage.name, Some(period), None)
-
-                result mustBe Left(ErrorResponse(500, s"Unknown external entry ${entryPage.name}"))
-                verifyNoInteractions(mockExternalEntryRepository)
-              }
-            }
+            result mustBe Right(
+              ExternalResponse(
+                NoMoreWelsh.url(YourAccount.url)
+              )
+            )
+            verify(mockExternalEntryRepository, times(1)).set(externalEntry)
           }
         }
+
+        "and language is not Welsh" - {
+          "must return correct response" in {
+
+            val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+            val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
+
+            when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
+            val result = service.getExternalResponse(externalRequest, userId, iossNumber, YourAccount.name, None, None)
+
+            result mustBe Right(
+              ExternalResponse(
+                YourAccount.url
+              )
+            )
+            verify(mockExternalEntryRepository, times(1)).set(externalEntry)
+          }
+        }
+
+        "and period is provided" - {
+          "must return Left(NotFound) and not save url in session" in {
+
+            val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+            val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
+
+            when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
+            val result = service.getExternalResponse(externalRequest, userId, iossNumber, YourAccount.name, Some(period), None)
+
+            result mustBe Left(ErrorResponse(500, s"Unknown external entry ${YourAccount.name}"))
+            verifyNoInteractions(mockExternalEntryRepository)
+          }
+        }
+      }
+    }
+
+    "when entry page in the request is Returns History" - {
+
+      "and no period is provided" - {
+        "and language specified is Welsh" - {
+          "must return correct response" in {
+
+            val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+            val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
+
+            when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
+            val result = service.getExternalResponse(externalRequest, userId, iossNumber, ReturnsHistory.name, None, Some("cy"))
+
+            result mustBe Right(
+              ExternalResponse(
+                NoMoreWelsh.url(ReturnsHistory.url(iossNumber))
+              )
+            )
+            verify(mockExternalEntryRepository, times(1)).set(externalEntry)
+          }
+        }
+
+        "and language is not Welsh" - {
+          "must return correct response" in {
+
+            val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+            val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
+
+            when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
+            val result = service.getExternalResponse(externalRequest, userId, iossNumber, ReturnsHistory.name, None, None)
+
+            result mustBe Right(
+              ExternalResponse(
+                ReturnsHistory.url(iossNumber)
+              )
+            )
+            verify(mockExternalEntryRepository, times(1)).set(externalEntry)
+          }
+        }
+
+        "and period is provided" - {
+          "must return Left(NotFound) and not save url in session" in {
+
+            val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
+            val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
+
+            when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
+            val result = service.getExternalResponse(externalRequest, userId, iossNumber, ReturnsHistory.name, Some(period), None)
+
+            result mustBe Left(ErrorResponse(500, s"Unknown external entry ${ReturnsHistory.name}"))
+            verifyNoInteractions(mockExternalEntryRepository)
+          }
+        }
+      }
     }
 
     Seq(StartReturn, ContinueReturn).foreach {
@@ -83,16 +144,16 @@ class ExternalEntryServiceSpec extends SpecBase {
           "and period is provided" - {
             "and language specified is Welsh" - {
               "must return correct response" in {
-                val mockExternalEntryRepository = mock[ExternalEntryRepository]
+
                 val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
                 val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
 
                 when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
-                val result = service.getExternalResponse(externalRequest, userId, entryPage.name, Some(currentPeriod), Some("cy"))
+                val result = service.getExternalResponse(externalRequest, userId, iossNumber, entryPage.name, Some(currentPeriod), Some("cy"))
 
                 result mustBe Right(
                   ExternalResponse(
-                    NoMoreWelsh.url(entryPage.url(currentPeriod))
+                    NoMoreWelsh.url(entryPage.url(iossNumber, currentPeriod))
                   )
                 )
 
@@ -102,16 +163,16 @@ class ExternalEntryServiceSpec extends SpecBase {
 
             "and language is not Welsh" - {
               "must return correct response" in {
-                val mockExternalEntryRepository = mock[ExternalEntryRepository]
+
                 val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
                 val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
 
                 when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
-                val result = service.getExternalResponse(externalRequest, userId, entryPage.name, Some(currentPeriod), None)
+                val result = service.getExternalResponse(externalRequest, userId, iossNumber, entryPage.name, Some(currentPeriod), None)
 
                 result mustBe Right(
                   ExternalResponse(
-                    entryPage.url(currentPeriod)
+                    entryPage.url(iossNumber, currentPeriod)
                   )
                 )
                 verify(mockExternalEntryRepository, times(1)).set(externalEntry)
@@ -121,12 +182,12 @@ class ExternalEntryServiceSpec extends SpecBase {
 
           "and period is not provided" - {
             "must return Left(NotFound) and not save url in session" in {
-              val mockExternalEntryRepository = mock[ExternalEntryRepository]
+
               val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
               val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
 
               when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
-              val result = service.getExternalResponse(externalRequest, userId, entryPage.name, None, None)
+              val result = service.getExternalResponse(externalRequest, userId, iossNumber, entryPage.name, None, None)
 
               result mustBe Left(ErrorResponse(500, s"Unknown external entry ${entryPage.name}"))
               verifyNoInteractions(mockExternalEntryRepository)
@@ -136,11 +197,11 @@ class ExternalEntryServiceSpec extends SpecBase {
     }
 
     "must return an External Response when sessionRepository fails due to exception" in {
-      val mockExternalEntryRepository = mock[ExternalEntryRepository]
+
       val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
 
       when(mockExternalEntryRepository.set(any())) thenReturn Future.failed(new Exception("Error saving in session"))
-      val result = service.getExternalResponse(externalRequest, userId, YourAccount.name, None, None)
+      val result = service.getExternalResponse(externalRequest, userId, iossNumber, YourAccount.name, None, None)
 
       result mustBe Right(
         ExternalResponse(
@@ -154,16 +215,16 @@ class ExternalEntryServiceSpec extends SpecBase {
       "and no period is provided" - {
         "and language is Welsh" - {
           "must return correct response" in {
-            val mockExternalEntryRepository = mock[ExternalEntryRepository]
+
             val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
             val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
 
             when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
-            val result = service.getExternalResponse(externalRequest, userId, Payment.name, None, Some("cy"))
+            val result = service.getExternalResponse(externalRequest, userId, iossNumber, Payment.name, None, Some("cy"))
 
             result mustBe Right(
               ExternalResponse(
-                NoMoreWelsh.url(Payment.url)
+                NoMoreWelsh.url(Payment.url(iossNumber))
               )
             )
             verify(mockExternalEntryRepository, times(1)).set(externalEntry)
@@ -172,16 +233,16 @@ class ExternalEntryServiceSpec extends SpecBase {
 
         "and language is not Welsh" - {
           "must return correct response" in {
-            val mockExternalEntryRepository = mock[ExternalEntryRepository]
+
             val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
             val externalEntry = ExternalEntry(userId, externalRequest.returnUrl, Instant.now(stubClockAtArbitraryDate))
 
             when(mockExternalEntryRepository.set(any())) thenReturn Future.successful(externalEntry)
-            val result = service.getExternalResponse(externalRequest, userId, Payment.name, None, None)
+            val result = service.getExternalResponse(externalRequest, userId, iossNumber, Payment.name, None, None)
 
             result mustBe Right(
               ExternalResponse(
-                Payment.url
+                Payment.url(iossNumber)
               )
             )
             verify(mockExternalEntryRepository, times(1)).set(externalEntry)
@@ -194,7 +255,7 @@ class ExternalEntryServiceSpec extends SpecBase {
 
   ".getSavedResponseUrl" - {
     "must return the saved return URL" in {
-      val mockExternalEntryRepository = mock[ExternalEntryRepository]
+
       val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
 
       val savedUrl = Some("/saved/return/url")
@@ -207,7 +268,7 @@ class ExternalEntryServiceSpec extends SpecBase {
     }
 
     "must return None when no saved URL is found" in {
-      val mockExternalEntryRepository = mock[ExternalEntryRepository]
+
       val service = new ExternalEntryService(mockExternalEntryRepository, stubClockAtArbitraryDate)
 
       when(mockExternalEntryRepository.get(userId)) thenReturn Future.successful(None)

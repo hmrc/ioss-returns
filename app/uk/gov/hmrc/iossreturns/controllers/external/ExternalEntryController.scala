@@ -40,7 +40,7 @@ class ExternalEntryController @Inject()(
 
   def onExternal(page: String, period: Option[Period] = None, lang: Option[String] = None): Action[ExternalRequest] = cc.auth()(parse.json[ExternalRequest]) {
     implicit request =>
-      externalEntryService.getExternalResponse(request.body, request.userId, page, period, lang) match {
+      externalEntryService.getExternalResponse(request.body, request.userId, request.iossNumber, page, period, lang) match {
         case Right(response) =>
           auditService.audit(BTAExternalEntryAuditModel.build(response.redirectUrl))
           Ok(Json.toJson(response))
