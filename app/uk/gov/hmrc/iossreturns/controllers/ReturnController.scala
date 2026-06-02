@@ -65,7 +65,7 @@ class ReturnController @Inject()(
           NotFound(Json.toJson(errorResponse.errorDetail)).toFuture
         case Left(errorResponse) =>
           auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
-          ServiceUnavailable(Json.toJson(errorResponse.errorDetail)).toFuture
+          InternalServerError(Json.toJson(errorResponse.errorDetail)).toFuture
       }
   }
 
@@ -92,7 +92,7 @@ class ReturnController @Inject()(
           NotFound(Json.toJson(errorResponse.errorDetail)).toFuture
         case Left(errorResponse) =>
           auditService.audit(CoreVatReturnAuditModel.build(request.body, SubmissionResult.Failure, Some(errorResponse.errorDetail)))
-          ServiceUnavailable(Json.toJson(errorResponse.errorDetail)).toFuture
+          InternalServerError(Json.toJson(errorResponse.errorDetail)).toFuture
       }
   }
 
