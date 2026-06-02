@@ -192,7 +192,7 @@ class ReturnControllerSpec
           Some(coreErrorResponse)
         )
 
-        status(result) mustEqual SERVICE_UNAVAILABLE
+        status(result) mustEqual INTERNAL_SERVER_ERROR
         verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
       }
     }
@@ -346,7 +346,7 @@ class ReturnControllerSpec
           Some(coreErrorResponse)
         )
 
-        status(result) mustEqual SERVICE_UNAVAILABLE
+        status(result) mustEqual INTERNAL_SERVER_ERROR
         verify(mockAuditService, times(1)).audit(eqTo(expectedAuditEvent))(any(), any())
       }
     }
