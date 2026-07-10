@@ -64,14 +64,19 @@ class VatReturnConnector @Inject()(
 
     logger.info(s"Sending request to core with headers $headersWithoutAuth")
 
-    httpClientV2.post(url).withBody(Json.toJson(coreVatReturn)).setHeader(headersWithCorrelationId: _*).execute[CoreVatReturnResponse].recover {
-      case e: HttpException =>
-        logger.error(s"Unexpected error response from core $url, received status ${e.responseCode}, body of response was: ${e.message}")
-        Left(
-          EisErrorResponse(
-            CoreErrorResponse(Instant.now(), None, s"UNEXPECTED_${e.responseCode}", e.message)
-          ))
-    }
+    httpClientV2
+      .post(url)
+      .withBody(Json.toJson(coreVatReturn))
+      .setHeader(headersWithCorrelationId: _*)
+      .execute[CoreVatReturnResponse]
+      .recover {
+        case e: HttpException =>
+          logger.error(s"Unexpected error response from core $url for IOSS Number ${coreVatReturn.traderId.IOSSNumber}, received status ${e.responseCode}, body of response was: ${e.message}")
+          Left(
+            EisErrorResponse(
+              CoreErrorResponse(Instant.now(), None, s"UNEXPECTED_${e.responseCode}", e.message)
+            ))
+      }
   }
 
   def get(iossNumber: String, period: Period): Future[EtmpDisplayVatReturnResponse] = {
@@ -113,9 +118,9 @@ class VatReturnConnector @Inject()(
       .setHeader(headersWithCorrelationId: _*)
       .transform(_.withQueryStringParameters(queryParameters.toSeqQueryParams: _*))
       .execute[EtmpListObligationsResponse].recover {
-      case e: HttpException =>
-        logger.error(s"Unexpected error response from ETMP $url, received status ${e.responseCode}, body of response was: ${e.message}")
-        Left(GatewayTimeout)
-    }
+        case e: HttpException =>
+          logger.error(s"Unexpected error response from ETMP $url, received status ${e.responseCode}, body of response was: ${e.message}")
+          Left(GatewayTimeout)
+      }
   }
 }
