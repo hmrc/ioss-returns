@@ -71,7 +71,7 @@ class VatReturnConnector @Inject()(
       .execute[CoreVatReturnResponse]
       .recover {
         case e: HttpException =>
-          logger.error(s"Unexpected error response from core $url for IOSS Number ${coreVatReturn.traderId.IOSSNumber}, received status ${e.responseCode}, body of response was: ${e.message}")
+          logger.error(s"Unexpected error response from core $url for IOSS Number ${coreVatReturn.traderId.IOSSNumber} via maybeIntermediary ${coreVatReturn.traderId.intermediary.map(_.intNumber)}, received status ${e.responseCode}, body of response was: ${e.message}")
           Left(
             EisErrorResponse(
               CoreErrorResponse(Instant.now(), None, s"UNEXPECTED_${e.responseCode}", e.message)
