@@ -86,7 +86,6 @@ class AuthAction(
                 throw InsufficientEnrolments("Insufficient enrolments")
               }
             case (Some(vrn), Some(latestIossNumber)) if requestedMaybeIossNumber.isEmpty =>
-              println(s"Test3 $latestIossNumber $requestedMaybeIossNumber")
               getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, maybeIntermediaryNumber, enrolments)
             case _ =>
               logger.warn(s"Insufficient enrolments for Organisation who didn't have ioss or int enrolment $maybeIntermediaryNumber $maybeIossNumber")
