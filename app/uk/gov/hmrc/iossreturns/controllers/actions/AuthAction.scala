@@ -77,7 +77,15 @@ class AuthAction(
                   logger.warn(s"Insufficient enrolments for Organisation who didn't request an ioss Number. Int number $maybeIntermediaryNumber with requested ioss number $requestedMaybeIossNumber")
                   throw InsufficientEnrolments("Insufficient enrolments")
               }
-            case (Some(vrn), Some(latestIossNumber)) =>
+            case (Some(vrn), Some(latestIossNumber)) if requestedMaybeIossNumber.nonEmpty =>
+              val requestedIossNumber = requestedMaybeIossNumber.get
+              if(getAllIossEnrolments(enrolments).contains(requestedIossNumber)) {
+                getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, requestedIossNumber, maybeIntermediaryNumber, enrolments)
+              } else {
+                logger.warn(s"User attempted to access ioss number $requestedIossNumber as someone who doesn't have this enrolment and is not an intermediary for them $maybeIntermediaryNumber")
+                throw InsufficientEnrolments("Insufficient enrolments")
+              }
+            case (Some(vrn), Some(latestIossNumber)) if requestedMaybeIossNumber.isEmpty =>
               getRegistrationAndBlock(request, block, internalId, credentials.providerId, vrn, latestIossNumber, maybeIntermediaryNumber, enrolments)
             case _ =>
               logger.warn(s"Insufficient enrolments for Organisation who didn't have ioss or int enrolment $maybeIntermediaryNumber $maybeIossNumber")
@@ -150,14 +158,16 @@ class AuthAction(
       }
 
   private def findIossFromEnrolments(enrolments: Enrolments, credId: String)(implicit hc: HeaderCarrier): Future[Option[String]] = {
-    val filteredIossNumbers = enrolments.enrolments.filter(_.key == config.iossEnrolment).flatMap(_.identifiers.filter(_.key == "IOSSNumber").map(_.value)).toSeq
-
-    filteredIossNumbers match {
+    getAllIossEnrolments(enrolments) match {
       case firstEnrolment :: Nil => Some(firstEnrolment).toFuture
       case multipleEnrolments if multipleEnrolments.nonEmpty =>
         accountService.getLatestAccount(credId).map(x => Some(x))
       case _ => None.toFuture
     }
+  }
+
+  private def getAllIossEnrolments(enrolments: Enrolments): Seq[String] = {
+    enrolments.enrolments.filter(_.key == config.iossEnrolment).flatMap(_.identifiers.filter(_.key == "IOSSNumber").map(_.value)).toSeq
   }
 
   private def findIntermediaryNumberFromEnrolments(enrolments: Enrolments): Option[String] = {
