@@ -80,6 +80,67 @@ class AuthActionSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
+      "when the user has multiple IOSS enrolments" - {
+        val multipleEnrolments =
+          Enrolments(Set(
+            Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", "123456789")), "Activated"),
+            Enrolment("HMRC-IOSS-ORG", Seq(EnrolmentIdentifier("IOSSNumber", "IM9001234567")), "Activated"),
+            Enrolment("HMRC-IOSS-ORG", Seq(EnrolmentIdentifier("IOSSNumber", "IM9002345678")), "Activated")
+          ))
+
+        "and they're accessing one of their IOSS numbers, but not the latest must succeed and retrieve an ETMP registration" in {
+
+          val application = applicationBuilder()
+            .configure(
+              "features.enrolment.ioss-enrolment-key" -> "HMRC-IOSS-ORG"
+            )
+            .overrides(bind[RegistrationConnector].toInstance(mockRegistrationConnector))
+            .build()
+
+          running(application) {
+            val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
+
+            when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ multipleEnrolments ~ Some(Organisation) ~ ConfidenceLevel.L50))
+            when(mockRegistrationConnector.getRegistrationForIossNumber(any())(any())) thenReturn registrationWrapper.toFuture
+            when(mockAccountService.getLatestAccount(any())(any())) thenReturn "IM9002345678".toFuture
+
+            val action = new AuthAction(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService, Some("IM9001234567"))
+            val controller = new Harness(action)
+            val result = controller.onPageLoad()(FakeRequest())
+
+            status(result) mustEqual OK
+            verify(mockRegistrationConnector, times(1)).getRegistrationForIossNumber(any())(any())
+          }
+        }
+
+        "and they're not accessing one of their IOSS number must return Unauthorized" in {
+
+          val application = applicationBuilder()
+            .configure(
+              "features.enrolment.ioss-enrolment-key" -> "HMRC-IOSS-ORG"
+            )
+            .overrides(bind[RegistrationConnector].toInstance(mockRegistrationConnector))
+            .build()
+
+          running(application) {
+            val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
+
+            when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
+              .thenReturn(Future.successful(Some(testCredentials) ~ Some("id") ~ multipleEnrolments ~ Some(Organisation) ~ ConfidenceLevel.L50))
+            when(mockRegistrationConnector.getRegistrationForIossNumber(any())(any())) thenReturn registrationWrapper.toFuture
+            when(mockAccountService.getLatestAccount(any())(any())) thenReturn "IM9002345678".toFuture
+
+            val action = new AuthAction(mockAuthConnector, bodyParsers, application.injector.instanceOf[AppConfig], mockRegistrationConnector, mockAccountService, Some("IM9004444444"))
+            val controller = new Harness(action)
+            val result = controller.onPageLoad()(FakeRequest())
+
+            status(result) mustEqual UNAUTHORIZED
+            verifyNoInteractions(mockRegistrationConnector)
+          }
+        }
+      }
+
       "when the user is logged in without a VAT enrolment nor OSS enrolment" - {
 
         "must return Unauthorized" in {
